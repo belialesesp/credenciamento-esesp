@@ -1,0 +1,84 @@
+@media screen and (max-width: 1022px) {
+  form {
+    width: 100%;
+  }
+
+  .main-title {
+    font-size: 42px;
+  }
+}
+
+@media screen and (max-width: 771px) {
+  label {
+    font-size: 10px !important;
+  }
+
+  .did-floating-input {
+    padding: 0 10px !important;
+  }
+
+  .form-control,
+  input:not([type="submit"]) {
+    font-size: 12px !important;
+  }
+
+  input[type="checkbox"] + label {
+    font-size: 14px !important;
+  }
+
+  .box {
+    align-items: flex-start !important;
+  }
+
+  .box > input {
+    margin-top: 4px;
+  }
+
+  .terms-label {
+    font-size: 13px !important;
+  }
+
+  p {
+    font-size: 14px !important;
+  }
+
+  .form-text {
+    font-size: 12px !important;
+  }
+
+  .container {
+    max-width: 999px !important;
+  }
+}
+
+@media screen and (max-width: 605px) {
+  .container {
+    width: 95% !important;
+  }
+
+  .main-title {
+    font-size: 36px;
+  }
+
+  .logo-esesp {
+    width: 50px;
+  }
+
+  .logo-ead {
+    width: 40px;
+  }
+
+  .form-btn {
+    width: 100%;
+  }
+
+  .form-subtitle {
+    font-size: 16px;
+  }
+}
+
+@media screen and (max-width: 350px) {
+  .form-subtitle {
+    font-size: 14px;
+  }
+}
