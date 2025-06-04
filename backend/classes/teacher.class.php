@@ -1,4 +1,5 @@
 <?php
+// backend/classes/teacher.class.php
 
 class Teacher {
   private $id;
@@ -19,7 +20,7 @@ class Teacher {
   public $lectures = [];
   public $enabled;
 
-  function __construct($id, $name, $email, $special_needs, $document_number, $document_emissor, $document_uf, $phone, $cpf, $created_at, $address, $file_path, $disciplines = [], $educations = [], $activities = [], $lectures = [], $enabled) {
+  function __construct($id, $name, $email, $special_needs, $document_number, $document_emissor, $document_uf, $phone, $cpf, $created_at, $address, $file_path, $disciplines = [], $educations = [], $activities = [], $lectures = [], $enabled = null) {
     $this->id = $id;
     $this->name = $name;
     $this->email = $email;
@@ -42,7 +43,4 @@ class Teacher {
   function update_status($status) {
     $this->enabled = $status;
   }
-
-
-
 }

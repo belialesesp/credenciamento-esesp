@@ -29,7 +29,7 @@ $interpreters = get_interpreter_call($conn, $date);
       <?php foreach ($interpreters as $interpreter): 
         $enabled = match ($interpreter['enabled']) {
           1 => 'Apto',
-          0 => 'Não apto',
+          0 => 'Inapto',
           default => 'Aguardando', 
         };
         $statusClass = match ($interpreter['enabled']) {

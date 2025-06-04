@@ -8,15 +8,42 @@ require_once '../pdf/assets/title_case.php';
 require_once '../backend/classes/database.class.php';
 require_once '../backend/services/teacher.service.php';
 
+// Initialize variables to prevent undefined warnings
+$teacher = null;
+$teacher_id = null;
 
-  if(isset($_GET["id"])) {
-    $teacher_id = $_GET['id'];
-    $conection = new Database();
-    $conn = $conection->connect();
-    $teacherService = new TeacherService($conn);
-    
+// Check if ID is provided
+if(!isset($_GET["id"]) || empty($_GET["id"])) {
+    echo '<div class="container">
+            <h1 class="main-title">Erro</h1>
+            <p>ID do docente não fornecido.</p>
+            <a href="docentes.php" class="btn btn-primary">Voltar para lista de docentes</a>
+          </div>';
+    include '../components/footer.php';
+    exit();
+}
+
+// Get teacher data
+$teacher_id = intval($_GET['id']);
+$conection = new Database();
+$conn = $conection->connect();
+$teacherService = new TeacherService($conn);
+
+try {
     $teacher = $teacherService->getTeacher($teacher_id);
-
+    
+    // Check if teacher was found
+    if (!$teacher) {
+        echo '<div class="container">
+                <h1 class="main-title">Erro</h1>
+                <p>Docente não encontrado.</p>
+                <a href="docentes.php" class="btn btn-primary">Voltar para lista de docentes</a>
+              </div>';
+        include '../components/footer.php';
+        exit();
+    }
+    
+    // Extract teacher data
     $name = $teacher->name;
     $document_number = $teacher->document_number;
     $document_emissor = $teacher->document_emissor;
@@ -37,32 +64,43 @@ require_once '../backend/services/teacher.service.php';
     $lectures = $teacher->lectures;
 
     $enabled = match ($teacher->enabled) {
-      1 => 'Apto',
-      0 => 'Não apto',
-      default => 'Aguardando aprovação', 
+        1 => 'Apto',
+        0 => 'Não apto',
+        default => 'Aguardando aprovação', 
     };
 
     $statusClass = match ($teacher->enabled) {
-      1 => 'status-approved',
-      0 => 'status-not-approved',
-      default => 'status-pending',
+        1 => 'status-approved',
+        0 => 'status-not-approved',
+        default => 'status-pending',
     };
 
-    // Formatar data
+    // Format date
     $date = new DateTime($created_at);
     $dateF = $date->format('d/m/Y H:i');
 
-    // Formatar filepath
-    $string = $file_path;
-    $position = strpos($string, "docentes");
-    $start = $position + strlen("docentes/");
-    $path = substr($string, $start);
-
-  }
- 
+    // Format filepath
+    $path = '';
+    if ($file_path) {
+        $string = $file_path;
+        $position = strpos($string, "docentes");
+        if ($position !== false) {
+            $start = $position + strlen("docentes/");
+            $path = substr($string, $start);
+        }
+    }
+    
+} catch (Exception $e) {
+    echo '<div class="container">
+            <h1 class="main-title">Erro</h1>
+            <p>Erro ao carregar dados do docente: ' . htmlspecialchars($e->getMessage()) . '</p>
+            <a href="docentes.php" class="btn btn-primary">Voltar para lista de docentes</a>
+          </div>';
+    include '../components/footer.php';
+    exit();
+}
 
 ?>
-
 
 <div class="container container-user">
   <a href="docentes.php" class="back-link">Voltar</a>
@@ -120,52 +158,93 @@ require_once '../backend/services/teacher.service.php';
 
   <div class="info-section">
     <h3>Habilitação</h3>
-    <?php foreach($education_degree as $degree): ?>
-      <div class="row">
-        <p class="col-12"><strong> <?= $degree->degree ?></strong> - <?= $degree->name ?></p>
-        <p class="col-12"> <?= $degree->institution ?></p>
-      </div>
-    <?php endforeach; ?>
+    <?php if (!empty($education_degree)): ?>
+      <?php foreach($education_degree as $degree): ?>
+        <div class="row">
+          <p class="col-12"><strong> <?= $degree->degree ?></strong> - <?= $degree->name ?></p>
+          <p class="col-12"> <?= $degree->institution ?></p>
+        </div>
+      <?php endforeach; ?>
+    <?php else: ?>
+      <p>Nenhuma habilitação cadastrada.</p>
+    <?php endif; ?>
   </div>
 
   <div class="info-section">
     <h3>Cursos</h3>
-    <?php foreach($disciplines as $discipline): ?>
-    <div class="row">
-      <div class="col-12">
-        <p><strong><?= $discipline->name ?></strong></p> 
-         <?php if (count($discipline->modules) > 1): ?> 
-          <?php foreach($discipline->modules as $module): ?> 
-          <p class="modules-span">Módulo: <?= $module ?></p>
-        <?php endforeach; endif; ?> 
+    <?php if (!empty($disciplines)): ?>
+      <?php foreach($disciplines as $discipline): 
+        $statusText = $discipline->getStatusText();
+        $statusClass = $discipline->getStatusClass();
+      ?>
+      <div class="discipline-item">
+        <div class="row">
+          <div class="col-8">
+            <p><strong><?= $discipline->name ?></strong>
+              <span class="discipline-status-badge <?= $statusClass ?>"><?= $statusText ?></span>
+            </p>
+            <?php if (!empty($discipline->modules) && count($discipline->modules) > 1): ?> 
+              <?php foreach($discipline->modules as $module): ?> 
+              <p class="modules-span">Módulo: <?= $module ?></p>
+            <?php endforeach; endif; ?> 
+          </div>
+          <p class="col-12">Eixo: <?= $discipline->eixo ?></p>
+          <p class="col-12">Estação: <?= $discipline->estacao ?></p>
+        </div>
+        <div class="discipline-actions">
+          <button class="btn-approve" 
+                  onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->getId() ?>, 1)" 
+                  <?= $discipline->enabled === 1 ? 'disabled' : '' ?>>
+            Aprovar para este curso
+          </button>
+          <button class="btn-reject" 
+                  onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->getId() ?>, 0)" 
+                  <?= $discipline->enabled === 0 ? 'disabled' : '' ?>>
+            Reprovar para este curso
+          </button>
+          <button class="btn-reset" 
+                  onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->getId() ?>, null)" 
+                  <?= $discipline->enabled === null ? 'disabled' : '' ?>>
+            Resetar status
+          </button>
+        </div>
       </div>
-      <p class="col-12">Eixo: <?= $discipline->eixo ?></p>
-      <p class="col-12">Estação: <?= $discipline->estacao ?></p>
-    </div>
-    <?php endforeach ?>
+      <?php endforeach ?>
+    <?php else: ?>
+      <p>Nenhum curso cadastrado.</p>
+    <?php endif; ?>
   </div>
 
   <div class="info-section">
     <h3>Categoria</h3>
-    <?php foreach($activities as $activity): ?>
-    <p><?= $activity['name'] ?></p>
-    <?php endforeach ?>
+    <?php if (!empty($activities)): ?>
+      <?php foreach($activities as $activity): ?>
+      <p><?= $activity['name'] ?></p>
+      <?php endforeach ?>
+    <?php else: ?>
+      <p>Nenhuma categoria cadastrada.</p>
+    <?php endif; ?>
   </div>
 
-  <?php $displayStyle = $lectures ? 'block' : 'none'; ?>
+  <?php $displayStyle = !empty($lectures) ? 'block' : 'none'; ?>
 
   <div class="info-section" style="display: <?= $displayStyle ?>;">
     <h3>Palestras</h3>
-    <?php foreach($lectures as $lecture): ?>
-    <p><strong><?= $lecture->name ?></strong></p>
-    <p style="text-align: justify;"><?= $lecture->details ?></p><br>
-    <?php endforeach ?>
+    <?php if (!empty($lectures)): ?>
+      <?php foreach($lectures as $lecture): ?>
+      <p><strong><?= $lecture->name ?></strong></p>
+      <p style="text-align: justify;"><?= $lecture->details ?></p><br>
+      <?php endforeach ?>
+    <?php endif; ?>
   </div>
 
   <div class="info-section">
     <h3>Documentos</h3>
-    <a href="../backend/documentos/docentes/<?=$path?>" target="_blank">Download</a>
-    
+    <?php if (!empty($path)): ?>
+      <a href="../backend/documentos/docentes/<?=$path?>" target="_blank">Download</a>
+    <?php else: ?>
+      <p>Nenhum documento disponível.</p>
+    <?php endif; ?>
   </div>
 
   <div class="btns-container">
@@ -177,59 +256,94 @@ require_once '../backend/services/teacher.service.php';
 
 <?php 
   include '../components/footer.php';
-
 ?>
 
 <script>
-
-  function updateTeacherStatus(teacherId, status) {
-
-    if(confirm("Tem certeza que deseja alterar o status do docente?")) {
-      fetch('../backend/api/update_teacher_status.php', {
-        method: 'POST',
-        headers: {
-          'Content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          teacher_id: teacherId,
-          status: status
-        })
+function updateDisciplineStatus(teacherId, disciplineId, status) {
+  const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar o status d');
+  
+  if(confirm(`Tem certeza que deseja ${statusText}o docente para este curso?`)) {
+    fetch('../backend/api/update_teacher_discipline_status.php', {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        teacher_id: teacherId,
+        discipline_id: disciplineId,
+        status: status
       })
-      .then(response=> response.json())
-      .then(data => {
-        if(data.success) {
-          
-          const statusElement = document.querySelector('.user-status');
-          const enableButton = document.querySelector('.ok-btn');
-          const disableButton = document.querySelector('.cancel-btn');
-          
-          const statusText = status === 1 ? 'Apto' : 'Não apto';
-
-          statusElement.textContent = statusText;
-          statusElement.className = 'user-status ' + (status === 1 ? 'status-approved' : 'status-not-approved');
-
-          enableButton.disabled = (status === 1);
-          disableButton.disabled = (status === 0);         
-
-          Toastify({
-            text: "Status do docente atualizado!",
-            className: "statusToast",
-            style: {
-              background: "#38b000",
-            },
-          }).showToast();
-
-        } else {
-          alert('Erro ao atualizar o status' + (data.message || 'Erro desconhecido'))
-        }
-      })
-      .catch(error => {
-        console.error('Erro: ', error);
-        alert('Erro ao atualizar o status');
-      })
-    }
-
+    })
+    .then(response => response.json())
+    .then(data => {
+      if(data.success) {
+        Toastify({
+          text: "Status do curso atualizado!",
+          className: "statusToast",
+          style: {
+            background: "#38b000",
+          },
+        }).showToast();
+        
+        // Reload the page to show updated status
+        setTimeout(() => {
+          location.reload();
+        }, 1000);
+      } else {
+        alert('Erro ao atualizar o status: ' + (data.message || 'Erro desconhecido'));
+      }
+    })
+    .catch(error => {
+      console.error('Erro: ', error);
+      alert('Erro ao atualizar o status');
+    });
   }
+}
 
+function updateTeacherStatus(teacherId, status) {
+  if(confirm("Tem certeza que deseja alterar o status do docente?")) {
+    fetch('../backend/api/update_teacher_status.php', {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        teacher_id: teacherId,
+        status: status
+      })
+    })
+    .then(response=> response.json())
+    .then(data => {
+      if(data.success) {
+        
+        const statusElement = document.querySelector('.user-status');
+        const enableButton = document.querySelector('.ok-btn');
+        const disableButton = document.querySelector('.cancel-btn');
+        
+        const statusText = status === 1 ? 'Apto' : 'Não apto';
 
+        statusElement.textContent = statusText;
+        statusElement.className = 'user-status ' + (status === 1 ? 'status-approved' : 'status-not-approved');
+
+        enableButton.disabled = (status === 1);
+        disableButton.disabled = (status === 0);         
+
+        Toastify({
+          text: "Status do docente atualizado!",
+          className: "statusToast",
+          style: {
+            background: "#38b000",
+          },
+        }).showToast();
+
+      } else {
+        alert('Erro ao atualizar o status' + (data.message || 'Erro desconhecido'))
+      }
+    })
+    .catch(error => {
+      console.error('Erro: ', error);
+      alert('Erro ao atualizar o status');
+    })
+  }
+}
 </script>

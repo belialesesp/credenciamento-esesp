@@ -31,7 +31,7 @@ $interpreters = get_interpreters($conn);
       <?php foreach ($interpreters as $interpreter): 
         $enabled = match ($interpreter['enabled']) {
           1 => 'Apto',
-          0 => 'Não apto',
+          0 => 'Inapto',
           default => 'Aguardando aprovação', 
         };
         $statusClass = match ($interpreter['enabled']) {

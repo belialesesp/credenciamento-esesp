@@ -31,7 +31,7 @@ $technicians = get_technicians($conn);
       <?php foreach ($technicians as $technician): 
         $enabled = match ($technician['enabled']) {
           1 => 'Apto',
-          0 => 'Não apto',
+          0 => 'Inapto',
           default => 'Aguardando aprovação', 
         };
         $statusClass = match ($technician['enabled']) {

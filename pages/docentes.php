@@ -6,13 +6,50 @@ require_once '../backend/api/get_registers.php';
 require_once '../backend/api/get_all_courses.php';
 require_once '../backend/classes/database.class.php';
 
-
 $conection = new Database();
 $conn = $conection->connect(); 
 
 $teachers = get_docente($conn);
 $courses = get_all_courses($conn);
 ?>
+
+<style>
+.discipline-status {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: #f0f0f0;
+}
+
+.discipline-status.status-approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.discipline-status.status-not-approved {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.discipline-status.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.discipline-info {
+  margin-bottom: 8px;
+}
+
+.teacher-row {
+  cursor: pointer;
+}
+
+.teacher-row:hover {
+  background-color: #f5f5f5;
+}
+</style>
 
 <div class="container">
   <h1 class="main-title">Docentes</h1>
@@ -44,46 +81,70 @@ $courses = get_all_courses($conn);
         <?php endforeach; ?>  
       </select>
     </div>
+    <div class="filter-group">
+      <label for="status">Filtrar por status</label>
+      <select name="status" id="status">
+        <option value=""></option>
+        <option value="1">Apto</option>
+        <option value="0">Inapto</option>
+        <option value="null">Aguardando</option>
+      </select>
+    </div>
   </div>
   <table class="table table-striped table-hover">
     <thead>
       <tr>
         <th>Nome</th>
         <th>Email</th>
-        <th>Chamado em</th>
         <th>Data de Inscrição</th>
-        <th>Situação</th>
+        <th>Cursos e Status</th>
       </tr>
     </thead>
     <tbody>
       <?php foreach ($teachers as $teacher): 
-        $enabled = match ($teacher['enabled']) {
-          1 => 'Apto',
-          0 => 'Não apto',
-          default => 'Aguardando', 
-        };
-        $statusClass = match ($teacher['enabled']) {
-          1 => 'status-approved',
-          0 => 'status-not-approved',
-          default => 'status-pending',
-        };
-
         $created_at = $teacher['created_at'];
         $date = new DateTime($created_at);
         $dateF = $date->format('d/m/Y H:i');
 
-        $called_at = $teacher['called_at'];
-        $date_calledF = ($called_at === null || $called_at === '') 
-            ? '---' 
-            : (new DateTime($called_at))->format('d/m/Y');
-
+        // Parse discipline statuses
+        $disciplineStatuses = [];
+        if (!empty($teacher['discipline_statuses'])) {
+          $statusPairs = explode('||', $teacher['discipline_statuses']);
+          foreach ($statusPairs as $pair) {
+            if (!empty($pair)) {
+              list($discId, $discName, $status) = explode(':', $pair);
+              $disciplineStatuses[] = [
+                'id' => $discId,
+                'name' => $discName,
+                'status' => $status === 'null' ? null : (int)$status
+              ];
+            }
+          }
+        }
       ?>
-      <tr onclick="window.location.href='docente.php?id=<?= $teacher['id']?>'" style="cursor: pointer;">
+      <tr class="teacher-row" onclick="window.location.href='docente.php?id=<?= $teacher['id']?>'">
         <td><?= titleCase($teacher['name']) ?></td>
         <td><?= strtolower($teacher['email']) ?></td>
-        <td><?= $date_calledF ?></td>
         <td><?= $dateF ?></td>
-        <td class="<?= $statusClass ?>"><?= $enabled ?></td>
+        <td>
+          <?php foreach ($disciplineStatuses as $disc): 
+            $statusText = match ($disc['status']) {
+              1 => 'Apto',
+              0 => 'Inapto',
+              default => 'Aguardando', 
+            };
+            $statusClass = match ($disc['status']) {
+              1 => 'status-approved',
+              0 => 'status-not-approved',
+              default => 'status-pending',
+            };
+          ?>
+            <div class="discipline-info">
+              <strong><?= htmlspecialchars($disc['name']) ?>:</strong>
+              <span class="discipline-status <?= $statusClass ?>"><?= $statusText ?></span>
+            </div>
+          <?php endforeach; ?>
+        </td>
       </tr>
       <?php endforeach; ?>
     </tbody>
@@ -91,24 +152,15 @@ $courses = get_all_courses($conn);
 </div>
 
 <script>
-
   function fetchFilteredData() {
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
 
-    if (!category && !course) {
-      fetch('../backend/api/get_filtered_teachers.php')
-        .then(response => response.json())
-        .then(data => {
-          updateTable(data);
-        })
-        .catch(error => console.error('Erro:', error));
-      return;
-    }
-    
     const queryParams = new URLSearchParams();
     if (category) queryParams.append('category', category);
     if (course) queryParams.append('course', course);
+    if (status) queryParams.append('status', status);
     
     fetch(`../backend/api/get_filtered_teachers.php?${queryParams.toString()}`)
     .then(response => response.json())
@@ -120,15 +172,13 @@ $courses = get_all_courses($conn);
 
   document.getElementById('category').addEventListener('change', fetchFilteredData);
   document.getElementById('course').addEventListener('change', fetchFilteredData);
-
+  document.getElementById('status').addEventListener('change', fetchFilteredData);
 
   function updateTable(teachers) {
     const tbody = document.querySelector('table tbody');
     tbody.innerHTML = '';
     
     teachers.forEach(teacher => {
-      const enabled = getStatusText(teacher.enabled);
-      const statusClass = getStatusClass(teacher.enabled);
       const date = new Date(teacher.created_at);
       const dateF = date.toLocaleString('pt-BR', {
           day: '2-digit',
@@ -137,21 +187,34 @@ $courses = get_all_courses($conn);
           hour: '2-digit',
           minute: '2-digit'
       });
-      const calledF = teacher.called_at 
-          ? new Date(teacher.called_at).toLocaleString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-          })
-          : '---';
+
+      // Parse discipline statuses
+      let disciplineStatusesHtml = '';
+      if (teacher.discipline_statuses) {
+        const statusPairs = teacher.discipline_statuses.split('||');
+        statusPairs.forEach(pair => {
+          if (pair) {
+            const [discId, discName, status] = pair.split(':');
+            const statusValue = status === 'null' ? null : parseInt(status);
+            const statusText = getStatusText(statusValue);
+            const statusClass = getStatusClass(statusValue);
+            
+            disciplineStatusesHtml += `
+              <div class="discipline-info">
+                <strong>${discName}:</strong>
+                <span class="discipline-status ${statusClass}">${statusText}</span>
+              </div>
+            `;
+          }
+        });
+      }
         
       const row = `
-        <tr onclick="window.location.href='docente.php?id=${teacher.id}'" style="cursor: pointer;">
+        <tr class="teacher-row" onclick="window.location.href='docente.php?id=${teacher.id}'">
           <td>${titleCase(teacher.name)}</td>
           <td>${teacher.email.toLowerCase()}</td>
-          <td>${calledF}</td>
           <td>${dateF}</td>
-          <td class="${statusClass}">${enabled}</td>
+          <td>${disciplineStatusesHtml}</td>
         </tr>
       `;
       tbody.innerHTML += row;
@@ -161,7 +224,7 @@ $courses = get_all_courses($conn);
   function getStatusText(enabled) {
     switch(enabled) {
       case 1: return 'Apto';
-      case 0: return 'Não apto';
+      case 0: return 'Inapto';
       default: return 'Aguardando';
     }
   }

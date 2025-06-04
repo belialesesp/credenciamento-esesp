@@ -29,7 +29,7 @@ $teachers = get_technicians_call($conn, $date);
       <?php foreach ($teachers as $teacher): 
         $enabled = match ($teacher['enabled']) {
           1 => 'Apto',
-          0 => 'Não apto',
+          0 => 'Inapto',
           default => 'Aguardando', 
         };
         $statusClass = match ($teacher['enabled']) {

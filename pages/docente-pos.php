@@ -37,7 +37,7 @@ require_once '../backend/services/teacherpos.service.php';
 
     $enabled = match ($teacher->enabled) {
       1 => 'Apto',
-      0 => 'Não apto',
+      0 => 'Inapto',
       default => 'Aguardando aprovação', 
     };
 
@@ -186,7 +186,7 @@ require_once '../backend/services/teacherpos.service.php';
           const enableButton = document.querySelector('.ok-btn');
           const disableButton = document.querySelector('.cancel-btn');
           
-          const statusText = status === 1 ? 'Apto' : 'Não apto';
+          const statusText = status === 1 ? 'Apto' : 'Inapto';
 
           statusElement.textContent = statusText;
           statusElement.className = 'user-status ' + (status === 1 ? 'status-approved' : 'status-not-approved');

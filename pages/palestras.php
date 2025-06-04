@@ -69,7 +69,7 @@ $courses = get_all_courses($conn);
       <?php foreach ($teachers as $teacher): 
         $enabled = match ($teacher['enabled']) {
           1 => 'Apto',
-          0 => 'Não apto',
+          0 => 'Inapto',
           default => 'Aguardando', 
         };
         $statusClass = match ($teacher['enabled']) {
@@ -176,7 +176,7 @@ $courses = get_all_courses($conn);
   function getStatusText(enabled) {
     switch(enabled) {
       case 1: return 'Apto';
-      case 0: return 'Não apto';
+      case 0: return 'Inapto';
       default: return 'Aguardando';
     }
   }

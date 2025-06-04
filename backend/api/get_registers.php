@@ -2,15 +2,46 @@
 
 // Selecionar todos os registros de credenciados
 function get_docente($conn) {
-  $query = "SELECT * FROM teacher ORDER BY called_at ASC, created_at ASC";
+  $query = "
+    SELECT DISTINCT
+      t.*,
+      GROUP_CONCAT(
+        CONCAT(
+          d.id, ':', 
+          d.name, ':', 
+          COALESCE(td.enabled, 'null')
+        ) SEPARATOR '||'
+      ) as discipline_statuses
+    FROM teacher t
+    LEFT JOIN teacher_disciplines td ON t.id = td.teacher_id
+    LEFT JOIN disciplinas d ON td.discipline_id = d.id
+    GROUP BY t.id
+    ORDER BY t.created_at ASC
+  ";
   $stmt = $conn->prepare($query);
   $stmt->execute();
 
   $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
   return $result;
 }
+
 function get_postg_docente($conn) {
-  $query = "SELECT * FROM postg_teacher ORDER BY called_at ASC, created_at ASC";
+  $query = "
+    SELECT DISTINCT
+      t.*,
+      GROUP_CONCAT(
+        CONCAT(
+          d.id, ':', 
+          d.name, ':', 
+          COALESCE(td.enabled, 'null')
+        ) SEPARATOR '||'
+      ) as discipline_statuses
+    FROM postg_teacher t
+    LEFT JOIN postg_teacher_disciplines td ON t.id = td.teacher_id
+    LEFT JOIN postg_disciplinas d ON td.discipline_id = d.id
+    GROUP BY t.id
+    ORDER BY t.created_at ASC
+  ";
   $stmt = $conn->prepare($query);
   $stmt->execute();
 
@@ -26,6 +57,7 @@ function get_technicians($conn) {
   $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
   return $result;
 }
+
 function get_interpreters($conn) {
   $query = "SELECT * FROM interpreter ORDER BY created_at ASC";
   $stmt = $conn->prepare($query);
@@ -36,14 +68,14 @@ function get_interpreters($conn) {
 }
 
 // Selecionar os registros dos credenciados com curso para lista de chamada
-
 function get_docentes_call($conn, $date) {
   $query = "
   SELECT
     t.id,
     t.name,
-    t.enabled,
+    td.enabled,
     d.name AS course,
+    d.id AS course_id,
     td.created_at,
     a.name AS category
   FROM 
@@ -64,8 +96,6 @@ function get_docentes_call($conn, $date) {
     d.name is NOT NULL
   AND
     td.created_at < :date
-  AND
-    t.enabled = 1
   ORDER BY d.name ASC, a.name ASC, td.created_at ASC
   ";
   $stmt = $conn->prepare($query);
@@ -77,13 +107,15 @@ function get_docentes_call($conn, $date) {
   $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
   return $result;  
 }
+
 function get_postdocentes_call($conn, $date) {
   $query = "
   SELECT
     t.id,
     t.name,
-    t.enabled,
+    td.enabled,
     d.name AS course,
+    d.id AS course_id,
     td.created_at,
     a.name AS category
   FROM 
@@ -104,8 +136,6 @@ function get_postdocentes_call($conn, $date) {
     d.name is NOT NULL
   AND
     td.created_at < :date
-  AND
-    t.enabled = 1
   ORDER BY d.name ASC, a.name ASC, td.created_at ASC
   ";
   $stmt = $conn->prepare($query);
@@ -142,6 +172,7 @@ function get_interpreter_call($conn, $date) {
   $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
   return $result;  
 }
+
 function get_technicians_call($conn, $date) {
   $query = "
   SELECT
@@ -166,4 +197,3 @@ function get_technicians_call($conn, $date) {
   $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
   return $result;  
 }
-
