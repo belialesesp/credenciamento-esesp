@@ -43,27 +43,32 @@ if ($course) {
     $params[':course'] = $course;
 }
 
-// Add status condition if filtering by status
-if ($status !== null && $status !== '') {
-    if ($status === 'null') {
-        $conditions[] = "(td.enabled IS NULL OR td.enabled = '')";
-    } else {
-        $conditions[] = "td.enabled = :status";
-        $params[':status'] = $status;
-    }
-}
-
 // Apply joins
 foreach ($joins as $join) {
     $sql .= " " . $join;
 }
 
-// Apply conditions
+// Apply conditions (but not status yet)
 if (!empty($conditions)) {
     $sql .= " WHERE " . implode(" AND ", $conditions);
 }
 
-$sql .= " GROUP BY t.id ORDER BY t.created_at ASC";
+// Handle status filtering differently - as a HAVING clause after GROUP BY
+$sql .= " GROUP BY t.id";
+
+// Add status filter using HAVING clause to filter after grouping
+if ($status !== null && $status !== '') {
+    if ($status === 'null') {
+        // Find teachers with at least one discipline with NULL/empty status
+        $sql .= " HAVING SUM(CASE WHEN td.enabled IS NULL OR td.enabled = '' THEN 1 ELSE 0 END) > 0";
+    } else {
+        // Find teachers with at least one discipline with the specified status
+        $sql .= " HAVING SUM(CASE WHEN td.enabled = :status THEN 1 ELSE 0 END) > 0";
+        $params[':status'] = intval($status);
+    }
+}
+
+$sql .= " ORDER BY t.created_at ASC";
 
 try {
     $stmt = $conn->prepare($sql);
