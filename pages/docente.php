@@ -248,8 +248,8 @@ try {
   </div>
 
   <div class="btns-container">
-    <button class="ok-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 1)" <?= $teacher->enabled === 1 ? 'disabled' : '' ?> >Habilitar Docente</button>
-    <button class="cancel-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 0)" <?= $teacher->enabled === 0 ? 'disabled' : '' ?> >Desabilitar Docente</button>
+    <button class="ok-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 1)" <?= isset($teacher) && $teacher->enabled === 1 ? 'disabled' : '' ?> >Habilitar Docente</button>
+    <button class="cancel-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 0)" <?= isset($teacher) && $teacher->enabled === 0 ? 'disabled' : '' ?> >Desabilitar Docente</button>
   </div>
 
 </div>

@@ -152,7 +152,6 @@ $courses = get_all_courses($conn);
 </div>
 
 <script>
-// Update the JavaScript status handling
 function fetchFilteredData() {
   const category = document.getElementById('category').value;
   const course = document.getElementById('course').value;
@@ -171,26 +170,83 @@ function fetchFilteredData() {
   .catch(error => console.error('Erro:', error));
 }
 
-// Update the status text/class functions to handle null properly
+function updateTable(teachers) {
+  const tbody = document.querySelector('table tbody');
+  tbody.innerHTML = '';
+  
+  teachers.forEach(teacher => {
+    const date = new Date(teacher.created_at);
+    const dateF = date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Parse discipline statuses
+    let disciplineStatusesHtml = '';
+    if (teacher.discipline_statuses) {
+      const statusPairs = teacher.discipline_statuses.split('||');
+      statusPairs.forEach(pair => {
+        if (pair) {
+          const [discId, discName, status] = pair.split(':');
+          const statusText = getStatusText(status);
+          const statusClass = getStatusClass(status);
+          disciplineStatusesHtml += `
+            <div class="discipline-info">
+              <strong>${discName}:</strong>
+              <span class="discipline-status ${statusClass}">${statusText}</span>
+            </div>
+          `;
+        }
+      });
+    }
+      
+    const row = `
+      <tr class="teacher-row" onclick="window.location.href='docente.php?id=${teacher.id}'">
+        <td>${titleCase(teacher.name)}</td>
+        <td>${teacher.email.toLowerCase()}</td>
+        <td>${dateF}</td>
+        <td>${disciplineStatusesHtml}</td>
+      </tr>
+    `;
+    tbody.innerHTML += row;
+  });
+}
+
+// Update the status text/class functions to handle numeric values
 function getStatusText(status) {
+  // Handle both string and numeric values
   if (status === null || status === 'null' || status === '') {
     return 'Aguardando';
-  } else if (status == 1) {
+  } else if (status == 1 || status === '1') {  // == handles type conversion
     return 'Apto';
-  } else if (status == 0) {
+  } else if (status == 0 || status === '0') {  // == handles type conversion
     return 'Inapto';
   }
   return 'Aguardando';
 }
 
 function getStatusClass(status) {
+  // Handle both string and numeric values
   if (status === null || status === 'null' || status === '') {
     return 'status-pending';
-  } else if (status == 1) {
+  } else if (status == 1 || status === '1') {  // == handles type conversion
     return 'status-approved';
-  } else if (status == 0) {
+  } else if (status == 0 || status === '0') {  // == handles type conversion
     return 'status-not-approved';
   }
   return 'status-pending';
 }
+
+function titleCase(str) {
+  return str.toLowerCase().replace(/(?:^|\s)\w/g, function(letter) {
+    return letter.toUpperCase();
+  });
+}
+
+document.getElementById('category').addEventListener('change', fetchFilteredData);
+document.getElementById('course').addEventListener('change', fetchFilteredData);
+document.getElementById('status').addEventListener('change', fetchFilteredData);
 </script>
