@@ -4,7 +4,17 @@
 function get_docente($conn) {
   $query = "
     SELECT DISTINCT
-      t.*,
+      t.id,
+      t.name,
+      t.email,
+      t.phone,
+      t.cpf,
+      t.created_at,
+      t.document_number,
+      t.document_emissor,
+      t.document_uf,
+      t.special_needs,
+      t.address_id,
       GROUP_CONCAT(
         CONCAT(
           d.id, ':', 
@@ -28,7 +38,18 @@ function get_docente($conn) {
 function get_postg_docente($conn) {
   $query = "
     SELECT DISTINCT
-      t.*,
+      t.id,
+      t.name,
+      t.email,
+      t.phone,
+      t.cpf,
+      t.created_at,
+      t.called_at,
+      t.document_number,
+      t.document_emissor,
+      t.document_uf,
+      t.special_needs,
+      t.address_id,
       GROUP_CONCAT(
         CONCAT(
           d.id, ':', 
@@ -49,6 +70,7 @@ function get_postg_docente($conn) {
   return $result;
 }
 
+// These functions remain the same as they use their own enabled field
 function get_technicians($conn) {
   $query = "SELECT * FROM technician ORDER BY created_at ASC";
   $stmt = $conn->prepare($query);
@@ -67,7 +89,7 @@ function get_interpreters($conn) {
   return $result;
 }
 
-// Selecionar os registros dos credenciados com curso para lista de chamada
+// Updated call functions to check discipline-specific status
 function get_docentes_call($conn, $date) {
   $query = "
   SELECT
@@ -148,6 +170,7 @@ function get_postdocentes_call($conn, $date) {
   return $result;  
 }
 
+// Interpreters and technicians keep their own enabled field
 function get_interpreter_call($conn, $date) {
   $query = "
   SELECT
