@@ -1,79 +1,125 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Discipline Parsing</title>
+    <meta charset="UTF-8">
+    <title>Verify Filter Results</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .test { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
         .good { background: #d4edda; }
         .bad { background: #f8d7da; }
-        pre { background: #f5f5f5; padding: 10px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        table { border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        .status-1 { background: #d4edda; }
+        .status-0 { background: #f8d7da; }
+        .status-null { background: #fff3cd; }
     </style>
 </head>
 <body>
-    <h1>Test Discipline Status Parsing</h1>
+    <h1>Verify Filter Results</h1>
+    
+    <div>
+        <button onclick="testFilter('No filter', '')">No Filter</button>
+        <button onclick="testFilter('Apto (1)', '?status=1')">Apto Only</button>
+        <button onclick="testFilter('Inapto (0)', '?status=0')">Inapto Only</button>
+        <button onclick="testFilter('Aguardando (null)', '?status=null')">Aguardando Only</button>
+    </div>
     
     <div id="results"></div>
 
     <script>
-    // The actual discipline_statuses string from ALEF
-    const discipline_statuses = "9:Elaboração de Estudo Técnico Preliminar e Termo de Referência com Ênfase na Lei nº 14.133/21:1||13:Gestão e Fiscalização Contratual na Lei 14.133:1||7:Nova Lei de Licitações Públicas: Aspectos Gerais e Pontos de Atenção:1||15:Sistema de Registros de Preços na Lei 14.133:1";
-    
-    // Current parsing method (WRONG)
-    function parseOldWay(discipline_statuses) {
-        const results = [];
-        const statusPairs = discipline_statuses.split('||');
-        statusPairs.forEach(pair => {
-            const [discId, discName, status] = pair.split(':');
-            results.push({ discId, discName, status });
-        });
-        return results;
+    function testFilter(title, queryString) {
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '<p>Loading...</p>';
+        
+        fetch('../backend/api/get_filtered_teachers.php' + queryString)
+            .then(response => response.json())
+            .then(data => {
+                let html = `<h2>${title}</h2>`;
+                html += `<p>Total teachers: ${data.length}</p>`;
+                
+                if (data.length > 0) {
+                    html += '<table>';
+                    html += '<tr><th>Teacher</th><th>Disciplines</th></tr>';
+                    
+                    data.forEach((teacher, index) => {
+                        if (index < 5) { // Show first 5
+                            html += '<tr>';
+                            html += `<td>${teacher.name}</td>`;
+                            html += '<td>';
+                            
+                            if (teacher.discipline_statuses) {
+                                const pairs = teacher.discipline_statuses.split('||');
+                                pairs.forEach(pair => {
+                                    const parts = pair.split(':');
+                                    if (parts.length >= 3) {
+                                        const id = parts[0];
+                                        const status = parts[parts.length - 1];
+                                        const name = parts.slice(1, -1).join(':');
+                                        
+                                        const statusText = status === '1' ? 'Apto' : 
+                                                         status === '0' ? 'Inapto' : 'Aguardando';
+                                        const statusClass = `status-${status}`;
+                                        
+                                        html += `<div class="${statusClass}" style="margin: 2px 0; padding: 4px;">`;
+                                        html += `${name}: <strong>${statusText}</strong>`;
+                                        html += '</div>';
+                                    }
+                                });
+                            }
+                            
+                            html += '</td>';
+                            html += '</tr>';
+                        }
+                    });
+                    
+                    html += '</table>';
+                    
+                    // Verify no wrong statuses
+                    html += '<h3>Verification:</h3>';
+                    let hasWrongStatus = false;
+                    
+                    data.forEach(teacher => {
+                        if (teacher.discipline_statuses) {
+                            const pairs = teacher.discipline_statuses.split('||');
+                            pairs.forEach(pair => {
+                                const parts = pair.split(':');
+                                if (parts.length >= 3) {
+                                    const status = parts[parts.length - 1];
+                                    
+                                    // Check if status matches filter
+                                    if (queryString.includes('status=1') && status !== '1') {
+                                        hasWrongStatus = true;
+                                        html += `<p class="bad">ERROR: Teacher ${teacher.name} has status ${status} in Apto filter!</p>`;
+                                    } else if (queryString.includes('status=0') && status !== '0') {
+                                        hasWrongStatus = true;
+                                        html += `<p class="bad">ERROR: Teacher ${teacher.name} has status ${status} in Inapto filter!</p>`;
+                                    } else if (queryString.includes('status=null') && status !== 'null') {
+                                        hasWrongStatus = true;
+                                        html += `<p class="bad">ERROR: Teacher ${teacher.name} has status ${status} in Aguardando filter!</p>`;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    
+                    if (!hasWrongStatus && queryString.includes('status=')) {
+                        html += '<p class="good">✓ All statuses match the filter correctly!</p>';
+                    }
+                }
+                
+                resultsDiv.innerHTML = html;
+            })
+            .catch(error => {
+                resultsDiv.innerHTML = `<p class="bad">Error: ${error.message}</p>`;
+                console.error(error);
+            });
     }
     
-    // Fixed parsing method
-    function parseNewWay(discipline_statuses) {
-        const results = [];
-        const statusPairs = discipline_statuses.split('||');
-        statusPairs.forEach(pair => {
-            const parts = pair.split(':');
-            if (parts.length >= 3) {
-                const discId = parts[0];
-                const status = parts[parts.length - 1];
-                const discName = parts.slice(1, -1).join(':');
-                results.push({ discId, discName, status });
-            }
-        });
-        return results;
-    }
-    
-    // Test both methods
-    const oldResults = parseOldWay(discipline_statuses);
-    const newResults = parseNewWay(discipline_statuses);
-    
-    let html = '<h2>Original String:</h2>';
-    html += '<pre>' + discipline_statuses + '</pre>';
-    
-    html += '<h2>Old Parsing Method (WRONG):</h2>';
-    oldResults.forEach(r => {
-        const isCorrect = r.status === '1' || r.status === '0' || r.status === 'null';
-        html += `<div class="test ${isCorrect ? 'good' : 'bad'}">`;
-        html += `ID: ${r.discId}<br>`;
-        html += `Name: ${r.discName}<br>`;
-        html += `Status: "${r.status}" (${isCorrect ? 'CORRECT' : 'WRONG - should be 1'})`;
-        html += '</div>';
-    });
-    
-    html += '<h2>New Parsing Method (CORRECT):</h2>';
-    newResults.forEach(r => {
-        const isCorrect = r.status === '1' || r.status === '0' || r.status === 'null';
-        html += `<div class="test ${isCorrect ? 'good' : 'bad'}">`;
-        html += `ID: ${r.discId}<br>`;
-        html += `Name: ${r.discName}<br>`;
-        html += `Status: "${r.status}" (${isCorrect ? 'CORRECT' : 'WRONG'})`;
-        html += '</div>';
-    });
-    
-    document.getElementById('results').innerHTML = html;
+    // Test on load
+    window.onload = () => testFilter('No filter', '');
     </script>
 </body>
 </html>

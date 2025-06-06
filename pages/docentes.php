@@ -189,11 +189,17 @@ function fetchFilteredData() {
   });
 }
 
+// Replace the updateTable function in docentes.php with this:
+
 function updateTable(teachers) {
   const tbody = document.querySelector('table tbody');
   tbody.innerHTML = '';
   
-  teachers.forEach(teacher => {
+  console.log('Updating table with', teachers.length, 'teachers');
+  
+  teachers.forEach((teacher, index) => {
+    console.log(`Processing teacher ${index + 1}:`, teacher.name);
+    
     const date = new Date(teacher.created_at);
     const dateF = date.toLocaleString('pt-BR', {
         day: '2-digit',
@@ -206,36 +212,38 @@ function updateTable(teachers) {
     // Parse discipline statuses
     let disciplineHtml = '';
     if (teacher.discipline_statuses) {
+      console.log('  discipline_statuses:', teacher.discipline_statuses);
+      
       const statusPairs = teacher.discipline_statuses.split('||');
-      statusPairs.forEach(pair => {
+      statusPairs.forEach((pair, pairIndex) => {
         if (pair && pair.trim()) {
-          // Debug log
-          console.log('Processing pair:', pair);
+          console.log(`    Processing pair ${pairIndex}: "${pair}"`);
           
-          // Handle discipline names that may contain colons
-          // The format is: ID:Name:Status where Name might contain colons
-          const firstColonIndex = pair.indexOf(':');
-          const lastColonIndex = pair.lastIndexOf(':');
-          
-          if (firstColonIndex !== -1 && lastColonIndex !== -1 && firstColonIndex !== lastColonIndex) {
-            const discId = pair.substring(0, firstColonIndex);
-            const status = pair.substring(lastColonIndex + 1);
-            const discName = pair.substring(firstColonIndex + 1, lastColonIndex);
+          // Use the robust parsing method
+          const parts = pair.split(':');
+          if (parts.length >= 3) {
+            const discId = parts[0];
+            const status = parts[parts.length - 1];
+            const discName = parts.slice(1, -1).join(':'); // Handle names with colons
             
-            console.log('Parsed:', { discId, discName, status });
+            console.log(`      Parsed: ID=${discId}, Name="${discName}", Status=${status}`);
             
             const statusText = getStatusText(status);
             const statusClass = getStatusClass(status);
             
             disciplineHtml += `
               <div class="discipline-info">
-                <strong>${discName}:</strong>
+                <strong>${escapeHtml(discName)}:</strong>
                 <span class="discipline-status ${statusClass}">${statusText}</span>
               </div>
             `;
+          } else {
+            console.error(`      Failed to parse - only ${parts.length} parts`);
           }
         }
       });
+    } else {
+      console.log('  No discipline_statuses');
     }
       
     const row = `
@@ -243,10 +251,57 @@ function updateTable(teachers) {
         <td>${titleCase(teacher.name)}</td>
         <td>${teacher.email.toLowerCase()}</td>
         <td>${dateF}</td>
-        <td>${disciplineHtml}</td>
+        <td>${disciplineHtml || '<em>Sem disciplinas</em>'}</td>
       </tr>
     `;
     tbody.innerHTML += row;
+  });
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Fixed status functions
+function getStatusText(status) {
+  const statusStr = String(status).trim();
+  
+  switch(statusStr) {
+    case '1':
+      return 'Apto';
+    case '0':
+      return 'Inapto';
+    case 'null':
+    case '':
+      return 'Aguardando';
+    default:
+      console.warn('Unknown status:', status);
+      return 'Aguardando';
+  }
+}
+
+function getStatusClass(status) {
+  const statusStr = String(status).trim();
+  
+  switch(statusStr) {
+    case '1':
+      return 'status-approved';
+    case '0':
+      return 'status-not-approved';
+    case 'null':
+    case '':
+      return 'status-pending';
+    default:
+      return 'status-pending';
+  }
+}
+
+function titleCase(str) {
+  return str.toLowerCase().replace(/(?:^|\s)\w/g, function(letter) {
+    return letter.toUpperCase();
   });
 }
 
