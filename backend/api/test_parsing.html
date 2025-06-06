@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Discipline Parsing</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .good { background: #d4edda; }
+        .bad { background: #f8d7da; }
+        pre { background: #f5f5f5; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Test Discipline Status Parsing</h1>
+    
+    <div id="results"></div>
+
+    <script>
+    // The actual discipline_statuses string from ALEF
+    const discipline_statuses = "9:Elaboração de Estudo Técnico Preliminar e Termo de Referência com Ênfase na Lei nº 14.133/21:1||13:Gestão e Fiscalização Contratual na Lei 14.133:1||7:Nova Lei de Licitações Públicas: Aspectos Gerais e Pontos de Atenção:1||15:Sistema de Registros de Preços na Lei 14.133:1";
+    
+    // Current parsing method (WRONG)
+    function parseOldWay(discipline_statuses) {
+        const results = [];
+        const statusPairs = discipline_statuses.split('||');
+        statusPairs.forEach(pair => {
+            const [discId, discName, status] = pair.split(':');
+            results.push({ discId, discName, status });
+        });
+        return results;
+    }
+    
+    // Fixed parsing method
+    function parseNewWay(discipline_statuses) {
+        const results = [];
+        const statusPairs = discipline_statuses.split('||');
+        statusPairs.forEach(pair => {
+            const parts = pair.split(':');
+            if (parts.length >= 3) {
+                const discId = parts[0];
+                const status = parts[parts.length - 1];
+                const discName = parts.slice(1, -1).join(':');
+                results.push({ discId, discName, status });
+            }
+        });
+        return results;
+    }
+    
+    // Test both methods
+    const oldResults = parseOldWay(discipline_statuses);
+    const newResults = parseNewWay(discipline_statuses);
+    
+    let html = '<h2>Original String:</h2>';
+    html += '<pre>' + discipline_statuses + '</pre>';
+    
+    html += '<h2>Old Parsing Method (WRONG):</h2>';
+    oldResults.forEach(r => {
+        const isCorrect = r.status === '1' || r.status === '0' || r.status === 'null';
+        html += `<div class="test ${isCorrect ? 'good' : 'bad'}">`;
+        html += `ID: ${r.discId}<br>`;
+        html += `Name: ${r.discName}<br>`;
+        html += `Status: "${r.status}" (${isCorrect ? 'CORRECT' : 'WRONG - should be 1'})`;
+        html += '</div>';
+    });
+    
+    html += '<h2>New Parsing Method (CORRECT):</h2>';
+    newResults.forEach(r => {
+        const isCorrect = r.status === '1' || r.status === '0' || r.status === 'null';
+        html += `<div class="test ${isCorrect ? 'good' : 'bad'}">`;
+        html += `ID: ${r.discId}<br>`;
+        html += `Name: ${r.discName}<br>`;
+        html += `Status: "${r.status}" (${isCorrect ? 'CORRECT' : 'WRONG'})`;
+        html += '</div>';
+    });
+    
+    document.getElementById('results').innerHTML = html;
+    </script>
+</body>
+</html>

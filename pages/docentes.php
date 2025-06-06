@@ -152,22 +152,41 @@ $courses = get_all_courses($conn);
 </div>
 
 <script>
+// Add this to your docentes.php fetchFilteredData function
 function fetchFilteredData() {
   const category = document.getElementById('category').value;
   const course = document.getElementById('course').value;
   const status = document.getElementById('status').value;
+  
+  console.log('=== Filter Debug ===');
+  console.log('Category:', category);
+  console.log('Course:', course);
+  console.log('Status:', status);
 
   const queryParams = new URLSearchParams();
   if (category) queryParams.append('category', category);
   if (course) queryParams.append('course', course);
   if (status) queryParams.append('status', status);
   
-  fetch(`../backend/api/get_filtered_teachers.php?${queryParams.toString()}`)
-  .then(response => response.json())
+  const url = `../backend/api/get_filtered_teachers.php?${queryParams.toString()}`;
+  console.log('Fetching:', url);
+  
+  fetch(url)
+  .then(response => {
+      console.log('Response status:', response.status);
+      return response.json();
+  })
   .then(data => {
+      console.log('Received data:', data);
+      console.log('Number of teachers:', data.length);
+      if (data.length > 0) {
+          console.log('First teacher:', data[0]);
+      }
       updateTable(data);
   })
-  .catch(error => console.error('Erro:', error));
+  .catch(error => {
+      console.error('Erro:', error);
+  });
 }
 
 function updateTable(teachers) {
@@ -185,20 +204,36 @@ function updateTable(teachers) {
     });
     
     // Parse discipline statuses
-    let disciplineStatusesHtml = '';
+    let disciplineHtml = '';
     if (teacher.discipline_statuses) {
       const statusPairs = teacher.discipline_statuses.split('||');
       statusPairs.forEach(pair => {
-        if (pair) {
-          const [discId, discName, status] = pair.split(':');
-          const statusText = getStatusText(status);
-          const statusClass = getStatusClass(status);
-          disciplineStatusesHtml += `
-            <div class="discipline-info">
-              <strong>${discName}:</strong>
-              <span class="discipline-status ${statusClass}">${statusText}</span>
-            </div>
-          `;
+        if (pair && pair.trim()) {
+          // Debug log
+          console.log('Processing pair:', pair);
+          
+          // Handle discipline names that may contain colons
+          // The format is: ID:Name:Status where Name might contain colons
+          const firstColonIndex = pair.indexOf(':');
+          const lastColonIndex = pair.lastIndexOf(':');
+          
+          if (firstColonIndex !== -1 && lastColonIndex !== -1 && firstColonIndex !== lastColonIndex) {
+            const discId = pair.substring(0, firstColonIndex);
+            const status = pair.substring(lastColonIndex + 1);
+            const discName = pair.substring(firstColonIndex + 1, lastColonIndex);
+            
+            console.log('Parsed:', { discId, discName, status });
+            
+            const statusText = getStatusText(status);
+            const statusClass = getStatusClass(status);
+            
+            disciplineHtml += `
+              <div class="discipline-info">
+                <strong>${discName}:</strong>
+                <span class="discipline-status ${statusClass}">${statusText}</span>
+              </div>
+            `;
+          }
         }
       });
     }
@@ -208,33 +243,37 @@ function updateTable(teachers) {
         <td>${titleCase(teacher.name)}</td>
         <td>${teacher.email.toLowerCase()}</td>
         <td>${dateF}</td>
-        <td>${disciplineStatusesHtml}</td>
+        <td>${disciplineHtml}</td>
       </tr>
     `;
     tbody.innerHTML += row;
   });
 }
 
-// Update the status text/class functions to handle numeric values
+// Update the status text/class functions to handle all cases
 function getStatusText(status) {
-  // Handle both string and numeric values
-  if (status === null || status === 'null' || status === '') {
+  // Convert to string for consistent comparison
+  const statusStr = String(status);
+  
+  if (statusStr === 'null' || statusStr === '' || status === null) {
     return 'Aguardando';
-  } else if (status == 1 || status === '1') {  // == handles type conversion
+  } else if (statusStr === '1') {
     return 'Apto';
-  } else if (status == 0 || status === '0') {  // == handles type conversion
+  } else if (statusStr === '0') {
     return 'Inapto';
   }
   return 'Aguardando';
 }
 
 function getStatusClass(status) {
-  // Handle both string and numeric values
-  if (status === null || status === 'null' || status === '') {
+  // Convert to string for consistent comparison
+  const statusStr = String(status);
+  
+  if (statusStr === 'null' || statusStr === '' || status === null) {
     return 'status-pending';
-  } else if (status == 1 || status === '1') {  // == handles type conversion
+  } else if (statusStr === '1') {
     return 'status-approved';
-  } else if (status == 0 || status === '0') {  // == handles type conversion
+  } else if (statusStr === '0') {
     return 'status-not-approved';
   }
   return 'status-pending';
