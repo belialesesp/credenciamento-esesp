@@ -38,6 +38,16 @@ $courses = get_all_postg_courses($conn);
         <?php endforeach; ?>  
       </select>
     </div>
+    <div class="filter-group">
+      <label for="status">Filtrar por status</label>
+      <select name="status" id="status">
+        <option value=""></option>
+        <option value="1">Apto</option>
+        <option value="0">Inapto</option>
+        <option value="null">Aguardando</option>
+      </select>
+    </div>
+
   </div>
   <table class="table table-striped table-hover">
     <thead>
@@ -90,8 +100,9 @@ $courses = get_all_postg_courses($conn);
   function fetchFilteredData() {
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
 
-    if (!category && !course) {
+    if (!category && !course && !status) {
       fetch('../backend/api/get_filtered_teachers_postg.php')
         .then(response => response.json())
         .then(data => {
@@ -104,6 +115,7 @@ $courses = get_all_postg_courses($conn);
     const queryParams = new URLSearchParams();
     if (category) queryParams.append('category', category);
     if (course) queryParams.append('course', course);
+    if (status) queryParams.append('status', status);
     
     fetch(`../backend/api/get_filtered_teachers_postg.php?${queryParams.toString()}`)
     .then(response => response.json())
@@ -112,6 +124,10 @@ $courses = get_all_postg_courses($conn);
     })
     .catch(error => console.error('Erro:', error));
   }
+
+  document.getElementById('category').addEventListener('change', fetchFilteredData);
+  document.getElementById('course').addEventListener('change', fetchFilteredData);
+  document.getElementById('status').addEventListener('change', fetchFilteredData);
 
   document.getElementById('category').addEventListener('change', fetchFilteredData);
   document.getElementById('course').addEventListener('change', fetchFilteredData);
