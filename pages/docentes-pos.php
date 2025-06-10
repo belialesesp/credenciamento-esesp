@@ -61,35 +61,54 @@ $courses = get_all_postg_courses($conn);
     </thead>
     <tbody>
       <?php foreach ($teachers as $teacher): 
-        $enabled = match ($teacher['enabled']) {
-          1 => 'Apto',
-          0 => 'Inapto',
-          default => 'Aguardando', 
-        };
-        $statusClass = match ($teacher['enabled']) {
-          1 => 'status-approved',
-          0 => 'status-not-approved',
-          default => 'status-pending',
-        };
+    $created_at = $teacher['created_at'];
+    $date = new DateTime($created_at);
+    $dateF = $date->format('d/m/Y H:i');
 
-        $created_at = $teacher['created_at'];
-        $date = new DateTime($created_at);
-        $dateF = $date->format('d/m/Y H:i');
+    $called_at = $teacher['called_at'];
+    $date_calledF = ($called_at === null || $called_at === '') 
+        ? '---' 
+        : (new DateTime($called_at))->format('d/m/Y');
 
-        $called_at = $teacher['called_at'];
-        $date_calledF = ($called_at === null || $called_at === '') 
-            ? '---' 
-            : (new DateTime($called_at))->format('d/m/Y');
+    // ✅ Parse discipline statuses instead of using enabled
+    $disciplinesList = "";
+    if (!empty($teacher['discipline_statuses'])) {
+        $disciplines = explode('||', $teacher['discipline_statuses']);
+        $disciplineItems = [];
         
-
-      ?>
+        foreach ($disciplines as $disc) {
+            if (empty($disc)) continue;
+            $parts = explode(':', $disc);
+            if (count($parts) >= 3) {
+                $discName = $parts[1];
+                $discStatus = $parts[2];
+                
+                $statusText = match($discStatus) {
+                    '1' => 'Apto',
+                    '0' => 'Inapto',
+                    default => 'Aguardando'
+                };
+                
+                $statusClass = match($discStatus) {
+                    '1' => 'text-success',
+                    '0' => 'text-danger',
+                    default => 'text-warning'
+                };
+                
+                $disciplineItems[] = "<span class='d-block'><strong>{$discName}:</strong> <span class='{$statusClass}'>{$statusText}</span></span>";
+            }
+        }
+        
+        $disciplinesList = implode("", $disciplineItems);
+    }
+  ?>
       <tr onclick="window.location.href='docente-pos.php?id=<?= $teacher['id']?>'" style="cursor: pointer;">
-        <td><?= titleCase($teacher['name']) ?></td>
-        <td><?= strtolower($teacher['email']) ?></td>
-        <td><?= $date_calledF ?></td>
-        <td><?= $dateF ?></td>
-        <td class="<?= $statusClass ?>"><?= $enabled ?></td>
-      </tr>
+    <td><?= titleCase($teacher['name']) ?></td>
+    <td><?= strtolower($teacher['email']) ?></td>
+    <td><?= $date_calledF ?></td>
+    <td><?= $dateF ?></td>
+    <td><?= $disciplinesList ?: '<span class="text-muted">Sem disciplinas</span>' ?></td>  // ✅ Shows all disciplines
+  </tr>
       <?php endforeach; ?>
     </tbody>
   </table>

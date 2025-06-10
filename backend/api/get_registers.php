@@ -9,6 +9,7 @@ function get_docente($conn) {
       t.email,
       t.phone,
       t.cpf,
+      t.called_at,
       t.created_at,
       t.document_number,
       t.document_emissor,
