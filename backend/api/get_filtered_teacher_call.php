@@ -1,4 +1,5 @@
 <?php
+// backend/api/get_filtered_teacher_call.php - FIXED NULL FILTER
 require_once '../classes/database.class.php';
 
 error_reporting(0);
@@ -55,10 +56,17 @@ if ($course) {
     $params[':course'] = $course;
 }
 
+// FIXED: Apply status filter with BINARY for exact comparison
 if ($status !== null && $status !== '') {
     if ($status === 'pending') {
-        $conditions[] = "(td.enabled IS NULL OR td.enabled = '')";
+        // FIXED: Use BINARY to prevent 0 from matching empty string
+        $conditions[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
+    } else if ($status === '1') {
+        $conditions[] = "BINARY td.enabled = '1'";
+    } else if ($status === '0') {
+        $conditions[] = "BINARY td.enabled = '0'";
     } else {
+        // Handle any other status values
         $conditions[] = "td.enabled = :status";
         $params[':status'] = $status;
     }

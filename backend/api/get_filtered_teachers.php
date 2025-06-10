@@ -1,5 +1,5 @@
 <?php
-// backend/api/get_filtered_teachers.php - FINAL VERSION
+// backend/api/get_filtered_teachers.php - FIXED NULL FILTER
 require_once '../classes/database.class.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -32,13 +32,14 @@ try {
             $params[':course'] = $course;
         }
         
-        // Use BINARY for exact comparison to avoid type coercion
+        // FIXED: Use BINARY for exact comparison to avoid type coercion
         if ($status === '1') {
             $where[] = "BINARY td.enabled = '1'";
         } else if ($status === '0') {
             $where[] = "BINARY td.enabled = '0'";
         } else if ($status === 'null') {
-            $where[] = "(td.enabled IS NULL OR td.enabled = '')";
+            // FIXED: Use BINARY to prevent 0 from matching empty string
+            $where[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
         }
     }
     
@@ -72,13 +73,14 @@ try {
             $discParams[':course'] = $course;
         }
         
-        // Use BINARY for exact comparison
+        // FIXED: Use BINARY for exact comparison in discipline query too
         if ($status === '1') {
             $discSql .= " AND BINARY td.enabled = '1'";
         } else if ($status === '0') {
             $discSql .= " AND BINARY td.enabled = '0'";
         } else if ($status === 'null') {
-            $discSql .= " AND (td.enabled IS NULL OR td.enabled = '')";
+            // FIXED: Use BINARY to prevent 0 from matching empty string
+            $discSql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
         }
         
         $discSql .= " ORDER BY d.name";

@@ -1,10 +1,12 @@
 <?php
+// backend/api/get_filtered_postg_call.php - FIXED NULL FILTER
 require_once '../classes/database.class.php';
 
 error_reporting(0);
 
 $category = isset($_GET['category']) ? $_GET['category'] : null;
 $course = isset($_GET['course']) ? $_GET['course'] : null;
+$status = isset($_GET['status']) ? $_GET['status'] : null;
 $date = '2025-02-28'; // Data atual como padrão
 
 $conection = new Database();
@@ -36,13 +38,11 @@ $sql = "
     d.name is NOT NULL
   AND
     td.created_at < :date
-  AND
-    t.enabled = 1
 ";
 
 $params = [':date' => $date];
 
-if (!$category && !$course) {
+if (!$category && !$course && !$status) {
   try {
     $sql .= " ORDER BY d.name ASC, a.name ASC, td.created_at ASC";
     $stmt = $conn->prepare($sql);
@@ -69,6 +69,18 @@ if ($category) {
 if ($course) {
     $conditions[] = "d.id = :course";
     $params[':course'] = $course;
+}
+
+// FIXED: Apply status filter with BINARY for exact comparison
+if ($status !== null && $status !== '') {
+    if ($status === 'pending' || $status === 'null') {
+        // FIXED: Use BINARY to prevent 0 from matching empty string
+        $conditions[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
+    } else if ($status === '1') {
+        $conditions[] = "BINARY td.enabled = '1'";
+    } else if ($status === '0') {
+        $conditions[] = "BINARY td.enabled = '0'";
+    }
 }
 
 // Adiciona as condições à consulta

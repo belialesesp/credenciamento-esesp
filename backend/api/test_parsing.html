@@ -2,23 +2,24 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Verify Filter Results</title>
+    <title>Verify Filter Results - Updated</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .test { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
         .good { background: #d4edda; }
         .bad { background: #f8d7da; }
         button { padding: 10px 20px; margin: 5px; cursor: pointer; }
-        table { border-collapse: collapse; margin: 10px 0; }
+        table { border-collapse: collapse; margin: 10px 0; width: 100%; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f5f5f5; }
         .status-1 { background: #d4edda; }
         .status-0 { background: #f8d7da; }
         .status-null { background: #fff3cd; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; font-family: monospace; }
     </style>
 </head>
 <body>
-    <h1>Verify Filter Results</h1>
+    <h1>Verify Filter Results - Updated Version</h1>
     
     <div>
         <button onclick="testFilter('No filter', '')">No Filter</button>
@@ -34,8 +35,13 @@
         const resultsDiv = document.getElementById('results');
         resultsDiv.innerHTML = '<p>Loading...</p>';
         
-        fetch('../backend/api/get_filtered_teachers.php' + queryString)
-            .then(response => response.json())
+        fetch('get_filtered_teachers.php' + queryString)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 let html = `<h2>${title}</h2>`;
                 html += `<p>Total teachers: ${data.length}</p>`;
@@ -44,8 +50,11 @@
                     html += '<table>';
                     html += '<tr><th>Teacher</th><th>Disciplines</th></tr>';
                     
+                    let errorCount = 0;
+                    let errorDetails = [];
+                    
                     data.forEach((teacher, index) => {
-                        if (index < 5) { // Show first 5
+                        if (index < 10) { // Show first 10
                             html += '<tr>';
                             html += `<td>${teacher.name}</td>`;
                             html += '<td>';
@@ -58,6 +67,18 @@
                                         const id = parts[0];
                                         const status = parts[parts.length - 1];
                                         const name = parts.slice(1, -1).join(':');
+                                        
+                                        // Check for errors
+                                        if (queryString.includes('status=1') && status !== '1') {
+                                            errorCount++;
+                                            errorDetails.push({teacher: teacher.name, discipline: name, expected: '1', got: status});
+                                        } else if (queryString.includes('status=0') && status !== '0') {
+                                            errorCount++;
+                                            errorDetails.push({teacher: teacher.name, discipline: name, expected: '0', got: status});
+                                        } else if (queryString.includes('status=null') && status !== 'null') {
+                                            errorCount++;
+                                            errorDetails.push({teacher: teacher.name, discipline: name, expected: 'null', got: status});
+                                        }
                                         
                                         const statusText = status === '1' ? 'Apto' : 
                                                          status === '0' ? 'Inapto' : 'Aguardando';
@@ -77,44 +98,35 @@
                     
                     html += '</table>';
                     
-                    // Verify no wrong statuses
-                    html += '<h3>Verification:</h3>';
-                    let hasWrongStatus = false;
+                    // Show verification results
+                    html += '<h3>Verification Results:</h3>';
                     
-                    data.forEach(teacher => {
-                        if (teacher.discipline_statuses) {
-                            const pairs = teacher.discipline_statuses.split('||');
-                            pairs.forEach(pair => {
-                                const parts = pair.split(':');
-                                if (parts.length >= 3) {
-                                    const status = parts[parts.length - 1];
-                                    
-                                    // Check if status matches filter
-                                    if (queryString.includes('status=1') && status !== '1') {
-                                        hasWrongStatus = true;
-                                        html += `<p class="bad">ERROR: Teacher ${teacher.name} has status ${status} in Apto filter!</p>`;
-                                    } else if (queryString.includes('status=0') && status !== '0') {
-                                        hasWrongStatus = true;
-                                        html += `<p class="bad">ERROR: Teacher ${teacher.name} has status ${status} in Inapto filter!</p>`;
-                                    } else if (queryString.includes('status=null') && status !== 'null') {
-                                        hasWrongStatus = true;
-                                        html += `<p class="bad">ERROR: Teacher ${teacher.name} has status ${status} in Aguardando filter!</p>`;
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    
-                    if (!hasWrongStatus && queryString.includes('status=')) {
-                        html += '<p class="good">✓ All statuses match the filter correctly!</p>';
+                    if (errorCount === 0 && queryString.includes('status=')) {
+                        html += '<p class="good">✓ All statuses match the filter correctly! No errors found.</p>';
+                    } else if (errorCount > 0) {
+                        html += `<p class="bad">✗ Found ${errorCount} incorrect statuses!</p>`;
+                        html += '<div class="debug">';
+                        html += '<h4>Error Details:</h4>';
+                        errorDetails.forEach(error => {
+                            html += `<p>Teacher: ${error.teacher}, Discipline: ${error.discipline}, Expected: ${error.expected}, Got: ${error.got}</p>`;
+                        });
+                        html += '</div>';
                     }
+                    
+                    // Debug info
+                    html += '<div class="debug">';
+                    html += '<h4>Debug Info:</h4>';
+                    html += `<p>Query string: ${queryString || 'none'}</p>`;
+                    html += `<p>First teacher data:</p>`;
+                    html += `<pre>${JSON.stringify(data[0], null, 2)}</pre>`;
+                    html += '</div>';
                 }
                 
                 resultsDiv.innerHTML = html;
             })
             .catch(error => {
                 resultsDiv.innerHTML = `<p class="bad">Error: ${error.message}</p>`;
-                console.error(error);
+                console.error('Full error:', error);
             });
     }
     
