@@ -96,6 +96,7 @@ $courses = get_all_courses($conn);
       <tr>
         <th>Nome</th>
         <th>Email</th>
+        <th>Chamado Em</th>
         <th>Data de Inscrição</th>
         <th>Cursos e Status</th>
       </tr>
@@ -125,6 +126,7 @@ $courses = get_all_courses($conn);
         <tr class="teacher-row" onclick="window.location.href='docente.php?id=<?= $teacher['id'] ?>'">
           <td><?= titleCase($teacher['name']) ?></td>
           <td><?= strtolower($teacher['email']) ?></td>
+          <td><?= isset($teacher['called_at']) && $teacher['called_at'] ? (new DateTime($teacher['called_at']))->format('d/m/Y') : '---' ?></td>
           <td><?= $dateF ?></td>
           <td>
             <?php foreach ($disciplineStatuses as $disc):
@@ -250,6 +252,7 @@ function updateTable(teachers) {
       <tr class="teacher-row" onclick="window.location.href='docente.php?id=${teacher.id}'">
         <td>${titleCase(teacher.name)}</td>
         <td>${teacher.email.toLowerCase()}</td>
+        <td><?= isset($teacher['called_at']) && $teacher['called_at'] ? date('d/m/Y', strtotime($teacher['called_at'])) : '---' ?></td>
         <td>${dateF}</td>
         <td>${disciplineHtml || '<em>Sem disciplinas</em>'}</td>
       </tr>

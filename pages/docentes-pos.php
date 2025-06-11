@@ -15,7 +15,43 @@ $conn = $conection->connect();
 $teachers = get_postg_docente($conn);
 $courses = get_all_postg_courses($conn);
 ?>
+<style>
+  .discipline-status {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 2px;
+    border-radius: 4px;
+    font-size: 12px;
+    background-color: #f0f0f0;
+  }
 
+  .discipline-status.status-approved {
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  .discipline-status.status-not-approved {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .discipline-status.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+
+  .discipline-info {
+    margin-bottom: 8px;
+  }
+
+  .teacher-row {
+    cursor: pointer;
+  }
+
+  .teacher-row:hover {
+    background-color: #f5f5f5;
+  }
+</style>
 <div class="container">
   <h1 class="main-title">Docentes / Assessoramento Técnico <br> Pós Graduação</h1>
   <div class="filter-container">
@@ -56,7 +92,7 @@ $courses = get_all_postg_courses($conn);
         <th>Email</th>
         <th>Chamado em</th>
         <th>Data de Inscrição</th>
-        <th>Situação</th>
+        <th>Cursos e Status</th>
       </tr>
     </thead>
     <tbody>
@@ -107,7 +143,7 @@ $courses = get_all_postg_courses($conn);
     <td><?= strtolower($teacher['email']) ?></td>
     <td><?= $date_calledF ?></td>
     <td><?= $dateF ?></td>
-    <td><?= $disciplinesList ?: '<span class="text-muted">Sem disciplinas</span>' ?></td>  // ✅ Shows all disciplines
+    <td><?= $disciplinesList ?: '<span class="text-muted">Sem disciplinas</span>' ?></td>
   </tr>
       <?php endforeach; ?>
     </tbody>
