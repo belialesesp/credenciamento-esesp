@@ -1,5 +1,5 @@
 <?php
-// backend/api/get_filtered_teacher_call.php - FIXED NULL FILTER
+// backend/api/get_filtered_teacher_call.php - FIXED VERSION
 require_once '../classes/database.class.php';
 
 error_reporting(0);
@@ -56,14 +56,17 @@ if ($course) {
     $params[':course'] = $course;
 }
 
-// FIXED: Apply status filter with BINARY for exact comparison
+// FIXED: Handle both 'pending' and 'null' values for Aguardando status
 if ($status !== null && $status !== '') {
-    if ($status === 'pending') {
-        // FIXED: Use BINARY to prevent 0 from matching empty string
+    if ($status === 'pending' || $status === 'null') {
+        // For "Aguardando" status - check for NULL or empty string
+        // Use BINARY to prevent '0' from matching empty string
         $conditions[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
     } else if ($status === '1') {
+        // For "Apto" status
         $conditions[] = "BINARY td.enabled = '1'";
     } else if ($status === '0') {
+        // For "Inapto" status
         $conditions[] = "BINARY td.enabled = '0'";
     } else {
         // Handle any other status values

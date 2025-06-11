@@ -1,5 +1,5 @@
 <?php
-// backend/api/get_filtered_teachers_postg.php - FIXED NULL FILTER
+// backend/api/get_filtered_teachers_postg.php - FIXED VERSION
 require_once '../classes/database.class.php';
 
 error_reporting(0);
@@ -26,13 +26,23 @@ $sql = "
         t.document_uf,
         t.special_needs,
         t.address_id,
-        t.enabled
+        GROUP_CONCAT(
+            DISTINCT CONCAT(
+                d.id, ':', 
+                d.name, ':', 
+                COALESCE(td.enabled, 'null')
+            ) SEPARATOR '||'
+        ) as discipline_statuses
     FROM postg_teacher t
 ";
 
 $conditions = [];
 $params = [];
 $joins = [];
+
+// Always join with disciplines to get the status info
+$joins[] = "LEFT JOIN postg_teacher_disciplines td ON t.id = td.teacher_id";
+$joins[] = "LEFT JOIN postg_disciplinas d ON td.discipline_id = d.id";
 
 // Add activity join if filtering by category
 if ($category) {
@@ -41,24 +51,10 @@ if ($category) {
     $params[':category'] = $category;
 }
 
-// Add discipline join if filtering by course or status
-if ($course || $status !== null) {
-    $joins[] = "INNER JOIN postg_teacher_disciplines td ON t.id = td.teacher_id";
-    
-    if ($course) {
-        $conditions[] = "td.discipline_id = :course";
-        $params[':course'] = $course;
-    }
-    
-    // FIXED: Apply status filter with BINARY for exact comparison
-    if ($status === '1') {
-        $conditions[] = "BINARY td.enabled = '1'";
-    } else if ($status === '0') {
-        $conditions[] = "BINARY td.enabled = '0'";
-    } else if ($status === 'null') {
-        // FIXED: Use BINARY to prevent 0 from matching empty string
-        $conditions[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
-    }
+// Add discipline condition if filtering by course
+if ($course) {
+    $conditions[] = "td.discipline_id = :course";
+    $params[':course'] = $course;
 }
 
 // Apply joins
@@ -66,9 +62,31 @@ foreach ($joins as $join) {
     $sql .= " " . $join;
 }
 
-// Apply WHERE conditions
+// Apply WHERE conditions (category and course filters)
 if (!empty($conditions)) {
     $sql .= " WHERE " . implode(" AND ", $conditions);
+}
+
+// Group by teacher
+$sql .= " GROUP BY t.id";
+
+// FIXED: Handle status filtering with HAVING clause
+if ($status !== null && $status !== '') {
+    if ($status === 'null' || $status === 'pending') {
+        // Find teachers with at least one discipline with NULL/pending status
+        // Use BINARY in the CASE statement to ensure exact comparison
+        $sql .= " HAVING SUM(CASE WHEN (td.enabled IS NULL OR BINARY td.enabled = '') THEN 1 ELSE 0 END) > 0";
+    } else if ($status === '1') {
+        // Find teachers with at least one discipline with status '1'
+        $sql .= " HAVING SUM(CASE WHEN BINARY td.enabled = '1' THEN 1 ELSE 0 END) > 0";
+    } else if ($status === '0') {
+        // Find teachers with at least one discipline with status '0'
+        $sql .= " HAVING SUM(CASE WHEN BINARY td.enabled = '0' THEN 1 ELSE 0 END) > 0";
+    } else {
+        // Handle any other status values
+        $sql .= " HAVING SUM(CASE WHEN BINARY td.enabled = :status THEN 1 ELSE 0 END) > 0";
+        $params[':status'] = $status;
+    }
 }
 
 // Order by creation date
@@ -78,77 +96,9 @@ try {
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
     $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Now get discipline information for each teacher
-    $result = [];
-    foreach ($teachers as $teacher) {
-        // Get disciplines for this teacher
-        $discSql = "
-            SELECT 
-                d.id,
-                d.name,
-                td.enabled
-            FROM postg_teacher_disciplines td
-            INNER JOIN postg_disciplinas d ON td.discipline_id = d.id
-            WHERE td.teacher_id = :teacher_id
-        ";
-        
-        $discParams = [':teacher_id' => $teacher['id']];
-        
-        if ($course) {
-            $discSql .= " AND d.id = :course";
-            $discParams[':course'] = $course;
-        }
-        
-        // FIXED: Apply status filter to discipline query with BINARY
-        if ($status === '1') {
-            $discSql .= " AND BINARY td.enabled = '1'";
-        } else if ($status === '0') {
-            $discSql .= " AND BINARY td.enabled = '0'";
-        } else if ($status === 'null') {
-            // FIXED: Use BINARY to prevent 0 from matching empty string
-            $discSql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
-        }
-        
-        $discSql .= " ORDER BY d.name";
-        
-        $discStmt = $conn->prepare($discSql);
-        $discStmt->execute($discParams);
-        $disciplines = $discStmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Only include teacher if they have matching disciplines
-        if (!empty($disciplines)) {
-            $disciplineStatuses = [];
-            
-            foreach ($disciplines as $disc) {
-                // Clean discipline name to prevent parsing issues
-                $cleanName = str_replace([':', '||'], ' ', $disc['name']);
-                
-                // Determine status value
-                $enabledRaw = $disc['enabled'];
-                
-                if ($enabledRaw === null) {
-                    $statusValue = 'null';
-                } elseif ($enabledRaw === '') {
-                    $statusValue = 'null';  
-                } elseif ($enabledRaw == 0 && !is_null($enabledRaw)) {
-                    $statusValue = '0';
-                } elseif ($enabledRaw == 1) {
-                    $statusValue = '1';
-                } else {
-                    $statusValue = 'null';
-                }
-                
-                $disciplineStatuses[] = $disc['id'] . ':' . $cleanName . ':' . $statusValue;
-            }
-            
-            $teacher['discipline_statuses'] = implode('||', $disciplineStatuses);
-            $result[] = $teacher;
-        }
-    }
-    
+
     header('Content-Type: application/json');
-    echo json_encode($result);
+    echo json_encode($teachers);
 } catch(PDOException $e) {
     header('Content-Type: application/json');
     echo json_encode(['error' => $e->getMessage()]);

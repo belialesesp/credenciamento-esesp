@@ -1,5 +1,5 @@
 <?php
-// backend/api/get_filtered_postg_call.php - FIXED NULL FILTER
+// backend/api/get_filtered_postg_call.php - FIXED VERSION
 require_once '../classes/database.class.php';
 
 error_reporting(0);
@@ -16,7 +16,7 @@ $sql = "
   SELECT
     t.id,
     t.name,
-    t.enabled,
+    td.enabled,
     d.name AS course,
     td.created_at,
     a.name AS category
@@ -28,12 +28,12 @@ $sql = "
   LEFT JOIN
     postg_disciplinas AS d 
       ON td.discipline_id = d.id
-   LEFT JOIN
-   	postg_teacher_activities AS ta
-    	ON ta.teacher_id = t.id
-   LEFT JOIN
-   	activities AS a
-    	ON a.id = ta.activity_id
+  LEFT JOIN
+    postg_teacher_activities AS ta
+      ON ta.teacher_id = t.id
+  LEFT JOIN
+    activities AS a
+      ON a.id = ta.activity_id
   WHERE
     d.name is NOT NULL
   AND
@@ -42,23 +42,7 @@ $sql = "
 
 $params = [':date' => $date];
 
-if (!$category && !$course && !$status) {
-  try {
-    $sql .= " ORDER BY d.name ASC, a.name ASC, td.created_at ASC";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute($params);
-    $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    header('Content-Type: application/json');
-    echo json_encode($teachers);
-    exit;
-  } catch(PDOException $e) {
-    header('Content-Type: application/json');
-    echo json_encode(['error' => $e->getMessage()]);
-  }
-}
-
-// Condições de filtro
+// Apply filters
 $conditions = [];
 
 if ($category) {
@@ -71,24 +55,31 @@ if ($course) {
     $params[':course'] = $course;
 }
 
-// FIXED: Apply status filter with BINARY for exact comparison
+// FIXED: Handle both 'pending' and 'null' values for Aguardando status
 if ($status !== null && $status !== '') {
     if ($status === 'pending' || $status === 'null') {
-        // FIXED: Use BINARY to prevent 0 from matching empty string
+        // For "Aguardando" status - check for NULL or empty string
+        // Use BINARY to prevent '0' from matching empty string
         $conditions[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
     } else if ($status === '1') {
+        // For "Apto" status
         $conditions[] = "BINARY td.enabled = '1'";
     } else if ($status === '0') {
+        // For "Inapto" status
         $conditions[] = "BINARY td.enabled = '0'";
+    } else {
+        // Handle any other status values
+        $conditions[] = "BINARY td.enabled = :status";
+        $params[':status'] = $status;
     }
 }
 
-// Adiciona as condições à consulta
+// Add conditions to query
 if (!empty($conditions)) {
     $sql .= " AND " . implode(" AND ", $conditions);
 }
 
-// Ordem
+// Order
 $sql .= " ORDER BY d.name ASC, a.name ASC, td.created_at ASC";
 
 try {
