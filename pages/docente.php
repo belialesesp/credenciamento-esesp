@@ -62,10 +62,13 @@ try {
     $activities = $teacher->activities;
     $special_needs = $teacher->special_needs;
     $lectures = $teacher->lectures;
-
+// Add debugging
+error_log('Teacher ID: ' . $teacher_id);
+error_log('Disciplines loaded: ' . json_encode($disciplines));
+error_log('Number of disciplines: ' . count($disciplines));
     $enabled = match ($teacher->enabled) {
         1 => 'Apto',
-        0 => 'Não apto',
+        0 => 'Inapto',
         default => 'Aguardando aprovação', 
     };
 
@@ -105,8 +108,6 @@ try {
 <div class="container container-user">
   <a href="docentes.php" class="back-link">Voltar</a>
   <h1 class="main-title">Dados do Docente</h1>
-
-  <p class="user-status <?= $statusClass ?>"><?= $enabled ?></p>
 
   <div class="info-section">
     <h3 class="">Dados pessoais</h3>
@@ -247,11 +248,6 @@ try {
     <?php endif; ?>
   </div>
 
-  <div class="btns-container">
-    <button class="ok-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 1)" <?= isset($teacher) && $teacher->enabled === 1 ? 'disabled' : '' ?> >Habilitar Docente</button>
-    <button class="cancel-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 0)" <?= isset($teacher) && $teacher->enabled === 0 ? 'disabled' : '' ?> >Desabilitar Docente</button>
-  </div>
-
 </div>
 
 <?php 
@@ -271,7 +267,7 @@ function updateDisciplineStatus(teacherId, disciplineId, status) {
       body: JSON.stringify({
         teacher_id: teacherId,
         discipline_id: disciplineId,
-        status: status
+        status: status === null ? 'null' : status
       })
     })
     .then(response => response.json())
@@ -320,7 +316,7 @@ function updateTeacherStatus(teacherId, status) {
         const enableButton = document.querySelector('.ok-btn');
         const disableButton = document.querySelector('.cancel-btn');
         
-        const statusText = status === 1 ? 'Apto' : 'Não apto';
+        const statusText = status === 1 ? 'Apto' : 'Inapto';
 
         statusElement.textContent = statusText;
         statusElement.className = 'user-status ' + (status === 1 ? 'status-approved' : 'status-not-approved');

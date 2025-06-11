@@ -14,6 +14,27 @@ $conn = $conection->connect();
 
 $teachers = get_postg_docente($conn);
 $courses = get_all_postg_courses($conn);
+
+function truncate_text($text, $length = 50, $suffix = '...') {
+    // Remove extra whitespace and line breaks
+    $text = trim(preg_replace('/\s+/', ' ', $text));
+    
+    // If text is already short enough, return it
+    if (strlen($text) <= $length) {
+        return $text;
+    }
+    
+    // Find the last space within the length limit
+    $truncated = substr($text, 0, $length);
+    $lastSpace = strrpos($truncated, ' ');
+    
+    // If we found a space, truncate there; otherwise at the length limit
+    if ($lastSpace !== false) {
+        $truncated = substr($truncated, 0, $lastSpace);
+    }
+    
+    return $truncated . $suffix;
+}
 ?>
 <style>
   .discipline-status {
@@ -68,9 +89,11 @@ $courses = get_all_postg_courses($conn);
       <label for="course">Filtrar por cursos</label>
       <select name="course" id="course">
         <option value=""></option>
-        <?php 
-          foreach($courses as $course):?>
-          <option value="<?= $course['id']?>"><?= $course['name'] ?></option>
+        <?php foreach($courses as $course): ?>
+            <option value="<?= $course['id'] ?>" 
+                    title="<?= htmlspecialchars($course['name']) ?>">
+                <?= htmlspecialchars(truncate_text($course['name'], 45)) ?>
+            </option>
         <?php endforeach; ?>  
       </select>
     </div>
