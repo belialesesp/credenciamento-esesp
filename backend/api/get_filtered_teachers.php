@@ -1,5 +1,5 @@
 <?php
-// backend/api/get_filtered_teachers.php - FIXED VERSION
+// backend/api/get_filtered_teachers.php - COMPLETE FIXED VERSION
 require_once '../classes/database.class.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -12,12 +12,13 @@ try {
     $conection = new Database();
     $conn = $conection->connect();
     
-    // Get teachers matching filters
+    // First, get teachers that match the filters
     $sql = "SELECT DISTINCT t.* FROM teacher t";
     $joins = [];
     $where = [];
     $params = [];
     
+    // Add necessary joins based on filters
     if ($category !== '') {
         $joins[] = "INNER JOIN teacher_activities ta ON t.id = ta.teacher_id";
         $where[] = "ta.activity_id = :category";
@@ -25,20 +26,20 @@ try {
     }
     
     if ($status !== '' || $course !== '') {
-        $joins[] = "INNER JOIN teacher_disciplines td ON t.id = td.teacher_id";
+        $joins[] = "INNER JOIN teacher_disciplines td_filter ON t.id = td_filter.teacher_id";
         
         if ($course !== '') {
-            $where[] = "td.discipline_id = :course";
+            $where[] = "td_filter.discipline_id = :course";
             $params[':course'] = $course;
         }
         
-        // FIXED: Handle both 'pending' and 'null' values for Aguardando
         if ($status === '1') {
-            $where[] = "BINARY td.enabled = '1'";
+            $where[] = "BINARY td_filter.enabled = '1'";
         } else if ($status === '0') {
-            $where[] = "BINARY td.enabled = '0'";
-        } else if ($status === 'null' || $status === 'pending') {
-            $where[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
+            $where[] = "BINARY td_filter.enabled = '0'";
+        } else if ($status === 'null') {
+            // FIXED: Use BINARY for empty string to prevent '0' from matching ''
+            $where[] = "(td_filter.enabled IS NULL OR BINARY td_filter.enabled = '')";
         }
     }
     
@@ -52,10 +53,10 @@ try {
     $stmt->execute($params);
     $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Process each teacher
+    // Now get disciplines for each teacher (filtered by status if applicable)
     $result = [];
     foreach ($teachers as $teacher) {
-        // Get discipline statuses for this teacher
+        // Build discipline query
         $discSql = "
             SELECT 
                 d.id,
@@ -68,18 +69,22 @@ try {
         
         $discParams = [':teacher_id' => $teacher['id']];
         
+        // Apply course filter to disciplines
         if ($course !== '') {
             $discSql .= " AND d.id = :course";
             $discParams[':course'] = $course;
         }
         
-        // Apply status filter to disciplines as well
-        if ($status === '1') {
-            $discSql .= " AND BINARY td.enabled = '1'";
-        } else if ($status === '0') {
-            $discSql .= " AND BINARY td.enabled = '0'";
-        } else if ($status === 'null' || $status === 'pending') {
-            $discSql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
+        // Apply status filter to disciplines
+        if ($status !== '') {
+            if ($status === '1') {
+                $discSql .= " AND BINARY td.enabled = '1'";
+            } else if ($status === '0') {
+                $discSql .= " AND BINARY td.enabled = '0'";
+            } else if ($status === 'null') {
+                // FIXED: Use BINARY for empty string to prevent '0' from matching ''
+                $discSql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
+            }
         }
         
         $discSql .= " ORDER BY d.name";
@@ -88,37 +93,36 @@ try {
         $discStmt->execute($discParams);
         $disciplines = $discStmt->fetchAll(PDO::FETCH_ASSOC);
         
-        if (!empty($disciplines)) {
-            $disciplineStatuses = [];
+        // Build discipline statuses string
+        $disciplineStatuses = [];
+        foreach ($disciplines as $disc) {
+            $disciplineName = $disc['name']; // Keep full name with colons
             
-            foreach ($disciplines as $disc) {
-                $cleanName = str_replace([':', '||'], ' ', $disc['name']);
-                
-                // Determine status value with strict type checking
-                $enabledRaw = $disc['enabled'];
-                
-                if ($enabledRaw === null || $enabledRaw === '') {
-                    $statusValue = 'null';
-                } else if ($enabledRaw === '0' || $enabledRaw === 0) {
-                    $statusValue = '0';
-                } else if ($enabledRaw === '1' || $enabledRaw === 1) {
-                    $statusValue = '1';
-                } else {
-                    $statusValue = 'null';
-                }
-                
-                $disciplineStatuses[] = $disc['id'] . ':' . $cleanName . ':' . $statusValue;
+            // Determine status value
+            $enabledRaw = $disc['enabled'];
+            if ($enabledRaw === null || $enabledRaw === '') {
+                $statusValue = 'null';
+            } elseif ($enabledRaw == 0 && !is_null($enabledRaw)) {
+                $statusValue = '0';
+            } elseif ($enabledRaw == 1) {
+                $statusValue = '1';
+            } else {
+                $statusValue = 'null';
             }
             
-            $teacher['discipline_statuses'] = implode('||', $disciplineStatuses);
-            $result[] = $teacher;
+            // Use |~| as delimiter instead of :
+            $disciplineStatuses[] = $disc['id'] . '|~|' . $disciplineName . '|~|' . $statusValue;
         }
+        
+        // Always include the teacher, even if no disciplines match
+        $teacher['discipline_statuses'] = implode('|~~|', $disciplineStatuses);
+        $result[] = $teacher;
     }
     
     echo json_encode($result, JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
-    error_log("Error: " . $e->getMessage());
+    error_log("Error in get_filtered_teachers.php: " . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }

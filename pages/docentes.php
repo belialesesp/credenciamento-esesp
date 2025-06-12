@@ -131,21 +131,26 @@ function truncate_text($text, $length = 50, $suffix = '...') {
         $dateF = $date->format('d/m/Y H:i');
 
         // Parse discipline statuses
-        $disciplineStatuses = [];
-        if (!empty($teacher['discipline_statuses'])) {
-          $statusPairs = explode('||', $teacher['discipline_statuses']);
-          foreach ($statusPairs as $pair) {
-            if (!empty($pair)) {
-              list($discId, $discName, $status) = explode(':', $pair);
-              $disciplineStatuses[] = [
-                'id' => $discId,
-                'name' => $discName,
-                'status' => $status === 'null' ? null : (int)$status
-              ];
-            }
-          }
-        }
-      ?>
+$disciplineStatuses = [];
+if (!empty($teacher['discipline_statuses'])) {
+  // Use the new delimiter |~~| for records
+  $statusPairs = explode('|~~|', $teacher['discipline_statuses']);
+  foreach ($statusPairs as $pair) {
+    if (!empty($pair)) {
+      // Use the new delimiter |~| for fields
+      $parts = explode('|~|', $pair);
+      if (count($parts) >= 3) {
+        list($discId, $discName, $status) = $parts;
+        $disciplineStatuses[] = [
+          'id' => $discId,
+          'name' => $discName, // Now contains the full name with colons preserved
+          'status' => $status === 'null' ? null : (int)$status
+        ];
+      }
+    }
+  }
+}
+?>
         <tr class="teacher-row" onclick="window.location.href='docente.php?id=<?= $teacher['id'] ?>'">
           <td><?= titleCase($teacher['name']) ?></td>
           <td><?= strtolower($teacher['email']) ?></td>
@@ -220,11 +225,7 @@ function updateTable(teachers) {
   const tbody = document.querySelector('table tbody');
   tbody.innerHTML = '';
   
-  console.log('Updating table with', teachers.length, 'teachers');
-  
-  teachers.forEach((teacher, index) => {
-    console.log(`Processing teacher ${index + 1}:`, teacher.name);
-    
+  teachers.forEach(teacher => {
     const date = new Date(teacher.created_at);
     const dateF = date.toLocaleString('pt-BR', {
         day: '2-digit',
@@ -234,24 +235,21 @@ function updateTable(teachers) {
         minute: '2-digit'
     });
     
-    // Parse discipline statuses
+    const calledAt = teacher.called_at 
+        ? new Date(teacher.called_at).toLocaleDateString('pt-BR') 
+        : '---';
+    
+    // Parse discipline statuses with NEW delimiters
     let disciplineHtml = '';
     if (teacher.discipline_statuses) {
-      console.log('  discipline_statuses:', teacher.discipline_statuses);
-      
-      const statusPairs = teacher.discipline_statuses.split('||');
-      statusPairs.forEach((pair, pairIndex) => {
+      const statusPairs = teacher.discipline_statuses.split('|~~|');  // NEW
+      statusPairs.forEach(pair => {
         if (pair && pair.trim()) {
-          console.log(`    Processing pair ${pairIndex}: "${pair}"`);
-          
-          // Use the robust parsing method
-          const parts = pair.split(':');
+          const parts = pair.split('|~|');  // NEW
           if (parts.length >= 3) {
             const discId = parts[0];
-            const status = parts[parts.length - 1];
-            const discName = parts.slice(1, -1).join(':'); // Handle names with colons
-            
-            console.log(`      Parsed: ID=${discId}, Name="${discName}", Status=${status}`);
+            const discName = parts[1];
+            const status = parts[2];
             
             const statusText = getStatusText(status);
             const statusClass = getStatusClass(status);
@@ -262,22 +260,22 @@ function updateTable(teachers) {
                 <span class="discipline-status ${statusClass}">${statusText}</span>
               </div>
             `;
-          } else {
-            console.error(`      Failed to parse - only ${parts.length} parts`);
           }
         }
       });
-    } else {
-      console.log('  No discipline_statuses');
+    }
+    
+    if (!disciplineHtml) {
+      disciplineHtml = '<em>Sem disciplinas</em>';
     }
       
     const row = `
       <tr class="teacher-row" onclick="window.location.href='docente.php?id=${teacher.id}'">
         <td>${titleCase(teacher.name)}</td>
         <td>${teacher.email.toLowerCase()}</td>
-        <td><?= isset($teacher['called_at']) && $teacher['called_at'] ? date('d/m/Y', strtotime($teacher['called_at'])) : '---' ?></td>
+        <td>${calledAt}</td>
         <td>${dateF}</td>
-        <td>${disciplineHtml || '<em>Sem disciplinas</em>'}</td>
+        <td>${disciplineHtml}</td>
       </tr>
     `;
     tbody.innerHTML += row;

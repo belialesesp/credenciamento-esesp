@@ -25,7 +25,7 @@ class Discipline {
   function getStatusText() {
     return match ($this->enabled) {
       1 => 'Apto',
-      0 => 'Não apto',
+      0 => 'Inapto',
       default => 'Aguardando aprovação', 
     };
   }

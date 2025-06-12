@@ -18,10 +18,10 @@ function get_docente($conn) {
       t.address_id,
       GROUP_CONCAT(
         CONCAT(
-          d.id, ':', 
-          d.name, ':', 
+          d.id, '|~|', 
+          d.name, '|~|', 
           COALESCE(td.enabled, 'null')
-        ) SEPARATOR '||'
+        ) SEPARATOR '|~~|'
       ) as discipline_statuses
     FROM teacher t
     LEFT JOIN teacher_disciplines td ON t.id = td.teacher_id
