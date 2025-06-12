@@ -107,11 +107,12 @@ function truncate_text($text, $length = 50, $suffix = '...') {
     <div class="filter-group">
       <label for="status">Filtrar por status</label>
       <select name="status" id="status">
-        <option value="">Todos</option>
-        <option value="1">Apto</option>
-        <option value="0">Inapto</option>
-        <option value="null">Aguardando</option>
-      </select>
+  <option value="">Todos</option>
+  <option value="1">Apto</option>
+  <option value="0">Inapto</option>
+  <option value="null">Aguardando</option>
+  <option value="no-disciplines">Sem disciplinas</option>
+</select>
     </div>
   </div>
   <table class="table table-striped table-hover">
