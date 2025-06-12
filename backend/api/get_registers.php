@@ -70,7 +70,6 @@ function get_postg_docente($conn) {
   $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
   return $result;
 }
-
 // These functions remain the same as they use their own enabled field
 function get_technicians($conn) {
   $query = "SELECT * FROM technician ORDER BY created_at ASC";
