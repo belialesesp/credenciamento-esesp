@@ -2,16 +2,16 @@
 
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
-require_once '../backend/api/get_registers.php';
 require_once '../backend/api/get_all_courses.php';
 require_once '../backend/classes/database.class.php';
-
-// session_start();
 
 $conection = new Database();
 $conn = $conection->connect();
 
-$teachers = get_postg_docente($conn);
+// CHANGED: Always get teachers from the filtering API, not from get_registers.php
+// This ensures consistent discipline status handling
+$teachers = []; // Will be populated by JavaScript, just like regular docentes.php
+
 $courses = get_all_postg_courses($conn);
 
 function truncate_text($text, $length = 50, $suffix = '...')
@@ -121,71 +121,20 @@ function truncate_text($text, $length = 50, $suffix = '...')
       </tr>
     </thead>
     <tbody>
-      <?php foreach ($teachers as $teacher):
-        $created_at = $teacher['created_at'];
-        $date = new DateTime($created_at);
-        $dateF = $date->format('d/m/Y H:i');
-
-        // Format called_at date
-        $called_at = $teacher['called_at'];
-        $date_calledF = ($called_at === null || $called_at === '')
-          ? '---'
-          : (new DateTime($called_at))->format('d/m/Y');
-
-        // Parse discipline statuses
-        $disciplineStatuses = [];
-        if (!empty($teacher['discipline_statuses'])) {
-          $statusPairs = explode('||', $teacher['discipline_statuses']);
-          foreach ($statusPairs as $pair) {
-            if (!empty($pair)) {
-              $parts = explode(':', $pair);
-              if (count($parts) >= 3) {
-                list($discId, $discName, $status) = $parts;
-                $disciplineStatuses[] = [
-                  'id' => $discId,
-                  'name' => $discName,
-                  'status' => $status === 'null' ? null : (int)$status
-                ];
-              }
-            }
-          }
-        }
-      ?>
-        <tr class="teacher-row" onclick="window.location.href='docente-pos.php?id=<?= $teacher['id'] ?>'">
-          <td><?= titleCase($teacher['name']) ?></td>
-          <td><?= strtolower($teacher['email']) ?></td>
-          <td><?= $date_calledF ?></td>
-          <td><?= $dateF ?></td>
-          <td>
-            <?php if (empty($disciplineStatuses)): ?>
-              <span class="text-muted">Sem disciplinas</span>
-            <?php else: ?>
-              <?php foreach ($disciplineStatuses as $disc):
-                $statusText = match ($disc['status']) {
-                  1 => 'Apto',
-                  0 => 'Inapto',
-                  default => 'Aguardando',
-                };
-                $statusClass = match ($disc['status']) {
-                  1 => 'status-approved',
-                  0 => 'status-not-approved',
-                  default => 'status-pending',
-                };
-              ?>
-                <div class="discipline-info">
-                  <strong><?= htmlspecialchars($disc['name']) ?>:</strong>
-                  <span class="discipline-status <?= $statusClass ?>"><?= $statusText ?></span>
-                </div>
-              <?php endforeach; ?>
-            <?php endif; ?>
-          </td>
-        </tr>
-      <?php endforeach; ?>
+      <!-- Table will be populated by JavaScript -->
+      <tr>
+        <td colspan="5" style="text-align: center;">Carregando...</td>
+      </tr>
     </tbody>
   </table>
 </div>
 
 <script>
+  // Load all teachers on page load (no filters applied)
+  document.addEventListener('DOMContentLoaded', function() {
+    fetchFilteredData(); // Load all teachers initially
+  });
+
   // Fetch filtered data based on selected filters
   function fetchFilteredData() {
     const category = document.getElementById('category').value;
@@ -199,12 +148,16 @@ function truncate_text($text, $length = 50, $suffix = '...')
     console.log('Status:', status);
 
     const queryParams = new URLSearchParams();
-    if (category) queryParams.append('category', category);
-    if (course) queryParams.append('course', course);
-    if (status) queryParams.append('status', status);
+    if (category && category !== '') queryParams.append('category', category);
+    if (course && course !== '') queryParams.append('course', course);
+    if (status && status !== '') queryParams.append('status', status);
 
     const url = `../backend/api/get_filtered_teachers_postg.php?${queryParams.toString()}`;
     console.log('Fetching:', url);
+
+    // Show loading state
+    const tbody = document.querySelector('table tbody');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Carregando...</td></tr>';
 
     fetch(url)
       .then(response => {
@@ -221,6 +174,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
       })
       .catch(error => {
         console.error('Erro:', error);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
       });
   }
 
@@ -234,6 +188,11 @@ function truncate_text($text, $length = 50, $suffix = '...')
     const tbody = document.querySelector('table tbody');
     tbody.innerHTML = '';
 
+    if (teachers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum docente encontrado</td></tr>';
+      return;
+    }
+
     teachers.forEach(teacher => {
       const date = new Date(teacher.created_at);
       const dateF = date.toLocaleString('pt-BR', {
@@ -244,9 +203,9 @@ function truncate_text($text, $length = 50, $suffix = '...')
         minute: '2-digit'
       });
 
-      const calledAt = teacher.called_at ?
-        new Date(teacher.called_at).toLocaleDateString('pt-BR') :
-        '---';
+      const calledAt = teacher.called_at && teacher.called_at !== '0000-00-00 00:00:00'
+        ? new Date(teacher.called_at).toLocaleDateString('pt-BR')
+        : '---';
 
       // Parse discipline statuses
       let disciplineStatuses = [];
@@ -258,8 +217,8 @@ function truncate_text($text, $length = 50, $suffix = '...')
             if (parts.length >= 3) {
               disciplineStatuses.push({
                 id: parts[0],
-                name: parts[1],
-                status: parts[2] === 'null' ? null : parseInt(parts[2])
+                name: parts.slice(1, -1).join(':'), // Handle names with colons
+                status: parts[parts.length - 1] === 'null' ? null : parseInt(parts[parts.length - 1])
               });
             }
           }
@@ -280,29 +239,34 @@ function truncate_text($text, $length = 50, $suffix = '...')
             'status-pending';
 
           disciplineHtml += `
-                  <div class="discipline-info">
-                      <strong>${escapeHtml(disc.name)}:</strong>
-                      <span class="discipline-status ${statusClass}">${statusText}</span>
-                  </div>
-              `;
+            <div class="discipline-info">
+              <strong>${escapeHtml(disc.name)}:</strong>
+              <span class="discipline-status ${statusClass}">${statusText}</span>
+            </div>
+          `;
         });
       }
 
-      const row = document.createElement('tr');
-      row.className = 'teacher-row';
-      row.onclick = () => window.location.href = `docente-pos.php?id=${teacher.id}`;
-      row.innerHTML = `
+      const row = `
+        <tr class="teacher-row" onclick="window.location.href='docente-pos.php?id=${teacher.id}'">
           <td>${titleCase(teacher.name)}</td>
           <td>${teacher.email.toLowerCase()}</td>
           <td>${calledAt}</td>
           <td>${dateF}</td>
           <td>${disciplineHtml}</td>
+        </tr>
       `;
-      tbody.appendChild(row);
+      tbody.innerHTML += row;
     });
   }
 
-  // Helper function to escape HTML
+  // Utility functions
+  function titleCase(str) {
+    return str.toLowerCase().split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  }
+
   function escapeHtml(text) {
     const map = {
       '&': '&amp;',
@@ -313,15 +277,6 @@ function truncate_text($text, $length = 50, $suffix = '...')
     };
     return text.replace(/[&<>"']/g, m => map[m]);
   }
-
-  // Helper function for title case
-  function titleCase(str) {
-    return str.toLowerCase().replace(/(?:^|\s)\w/g, function(letter) {
-      return letter.toUpperCase();
-    });
-  }
 </script>
 
-<?php
-include '../components/footer.php';
-?>
+<?php include '../components/footer.php'; ?>

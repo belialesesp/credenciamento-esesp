@@ -56,7 +56,7 @@ try {
         exit;
     }
     
-    // Regular filtering logic for other statuses - SAME AS REGULAR DOCENTES
+    // Regular filtering logic - Get teachers based on filters
     $sql = "SELECT DISTINCT t.* FROM postg_teacher t";
     $joins = [];
     $where = [];
@@ -69,6 +69,7 @@ try {
         $params[':category'] = $category;
     }
     
+    // Only add discipline filtering if we have status or course filters
     if ($status !== '' || $course !== '') {
         $joins[] = "INNER JOIN postg_teacher_disciplines td_filter ON t.id = td_filter.teacher_id";
         
@@ -97,9 +98,10 @@ try {
     $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Process each teacher to get their discipline statuses
-    // KEY: Only show disciplines that match the current filter
+    // KEY: Get all disciplines when no status filter, only matching disciplines when status filter applied
     $result = [];
     foreach ($teachers as $teacher) {
+        // Start with base query for disciplines
         $discSql = "
             SELECT 
                 d.id,
@@ -112,12 +114,14 @@ try {
         
         $discParams = [':teacher_id' => $teacher['id']];
         
+        // Apply course filter if specified
         if ($course !== '') {
             $discSql .= " AND d.id = :course";
             $discParams[':course'] = $course;
         }
         
-        // CRITICAL: Apply the same status filter to disciplines shown
+        // Apply status filter ONLY if status filter is specified
+        // This is the key fix - when no status filter, show all disciplines
         if ($status === '1') {
             $discSql .= " AND BINARY td.enabled = '1'";
         } else if ($status === '0') {
@@ -125,6 +129,7 @@ try {
         } else if ($status === 'null') {
             $discSql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
         }
+        // When no status filter ($status === ''), show ALL disciplines for this teacher
         
         $discSql .= " ORDER BY d.name";
         
@@ -132,6 +137,7 @@ try {
         $discStmt->execute($discParams);
         $disciplines = $discStmt->fetchAll(PDO::FETCH_ASSOC);
         
+        // Build the discipline status string
         if (!empty($disciplines)) {
             $disciplineStatuses = [];
             
@@ -158,8 +164,13 @@ try {
             }
             
             $teacher['discipline_statuses'] = implode('||', $disciplineStatuses);
-            $result[] = $teacher;
+        } else {
+            // Teacher has no disciplines (or no disciplines matching the filter)
+            $teacher['discipline_statuses'] = '';
         }
+        
+        // Always include the teacher in results
+        $result[] = $teacher;
     }
     
     echo json_encode($result, JSON_UNESCAPED_UNICODE);
