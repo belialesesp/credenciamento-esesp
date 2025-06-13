@@ -66,7 +66,8 @@ try {
     error_log('Teacher ID: ' . $teacher_id);
     error_log('Disciplines loaded: ' . json_encode($disciplines));
     error_log('Number of disciplines: ' . count($disciplines));
-$enabled = match ($teacher->enabled) {
+
+    $enabled = match ($teacher->enabled) {
         1 => 'Apto',
         0 => 'Inapto',
         default => 'Aguardando aprovação', 
@@ -171,158 +172,82 @@ $enabled = match ($teacher->enabled) {
     <?php endif; ?>
   </div>
 
-<div class="info-section">
-  <h3>Cursos</h3>
-  <?php if (!empty($disciplines)): ?>
-    <?php foreach($disciplines as $discipline): 
-      // Get the status for this specific discipline
-      $discStatusQuery = "
-        SELECT enabled 
-        FROM postg_teacher_disciplines 
-        WHERE teacher_id = :teacher_id AND discipline_id = :discipline_id
-        LIMIT 1
-      ";
-      $discStatusStmt = $conn->prepare($discStatusQuery);
-      $discStatusStmt->execute([
-        ':teacher_id' => $teacher_id,
-        ':discipline_id' => $discipline->id
-      ]);
-      $discStatus = $discStatusStmt->fetchColumn();
-      
-      $statusText = match ($discStatus) {
-        '1', 1 => 'Apto',
-        '0', 0 => 'Inapto',
-        default => 'Aguardando',
-      };
-      
-      $statusBadgeClass = match ($discStatus) {
-        '1', 1 => 'status-approved',
-        '0', 0 => 'status-not-approved',
-        default => 'status-pending',
-      };
-      
-      // Convert status to integer for comparison
-      $statusInt = $discStatus === null || $discStatus === '' ? null : (int)$discStatus;
-    ?>
-    <div class="discipline-item">
-      <div class="discipline-header">
-        <div class="discipline-info">
-          <p>
-            <strong><?= htmlspecialchars($discipline->name) ?></strong>
-            <span class="discipline-status <?= $statusBadgeClass ?>"><?= $statusText ?></span>
-          </p>
-          <p><?= htmlspecialchars($discipline->post_graduation) ?></p>
-          <p>Eixo: <?= htmlspecialchars($discipline->eixo) ?></p>
-        </div>
-        <div class="discipline-actions">
-          <button 
-            class="btn-approve" 
-            onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->id ?>, 1)"
-            <?= $statusInt === 1 ? 'disabled' : '' ?>>
-            Aprovar
-          </button>
-          <button 
-            class="btn-reject" 
-            onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->id ?>, 0)"
-            <?= $statusInt === 0 ? 'disabled' : '' ?>>
-            Reprovar
-          </button>
-          <button 
-            class="btn-reset" 
-            onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->id ?>, null)"
-            <?= $statusInt === null ? 'disabled' : '' ?>>
-            Resetar
-          </button>
+  <div class="info-section">
+    <h3>Cursos</h3>
+    <?php if (!empty($disciplines)): ?>
+      <?php foreach($disciplines as $discipline): ?>
+      <div class="discipline-item">
+        <div class="discipline-header">
+          <div class="discipline-info">
+            <p>
+              <strong><?= htmlspecialchars($discipline->name) ?></strong>
+              <span class="discipline-status <?= $discipline->getStatusClass() ?>"><?= $discipline->getStatusText() ?></span>
+            </p>
+            <p><?= htmlspecialchars($discipline->post_graduation) ?></p>
+            <p>Eixo: <?= htmlspecialchars($discipline->eixo) ?></p>
+          </div>
+          <div class="discipline-actions">
+            <button 
+              class="btn-approve" 
+              onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->getId() ?>, 1)"
+              <?= $discipline->enabled === 1 ? 'disabled' : '' ?>>
+              Aprovar
+            </button>
+            <button 
+              class="btn-reject" 
+              onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->getId() ?>, 0)"
+              <?= $discipline->enabled === 0 ? 'disabled' : '' ?>>
+              Reprovar
+            </button>
+            <button 
+              class="btn-reset" 
+              onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->getId() ?>, null)"
+              <?= $discipline->enabled === null ? 'disabled' : '' ?>>
+              Resetar
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-    <?php endforeach ?>
-  <?php else: ?>
-    <p>Nenhum curso cadastrado.</p>
-  <?php endif; ?>
+      <?php endforeach ?>
+    <?php else: ?>
+      <p>Nenhum curso cadastrado.</p>
+    <?php endif; ?>
+  </div>
+
+  <div class="info-section">
+    <h3>Categoria</h3>
+    <?php if (!empty($activities)): ?>
+      <?php foreach($activities as $activity): ?>
+      <p><?= $activity['name'] ?></p>
+      <?php endforeach ?>
+    <?php else: ?>
+      <p>Nenhuma categoria cadastrada.</p>
+    <?php endif; ?>
+  </div>
+
+  <div class="info-section">
+    <h3>Documentos</h3>
+    <?php if (!empty($path)): ?>
+      <a href="../backend/documentos/posgraduacao/<?=$path?>" target="_blank">Download</a>
+    <?php else: ?>
+      <p>Nenhum documento disponível.</p>
+    <?php endif; ?>
+  </div>
+
 </div>
 
-<!-- Update the buttons section at the bottom of the page -->
-<div class="btns-container">
-  <button 
-    class="ok-btn" 
-    onclick="updateTeacherStatus(<?= $teacher_id ?>, 1)" 
-    <?= $teacherStatus === 1 ? 'disabled' : '' ?>>
-    Habilitar Todas Disciplinas
-  </button>
-  <button 
-    class="cancel-btn" 
-    onclick="updateTeacherStatus(<?= $teacher_id ?>, 0)" 
-    <?= $teacherStatus === 0 ? 'disabled' : '' ?>>
-    Desabilitar Todas Disciplinas
-  </button>
-</div>
-
-
+<?php 
+  include '../components/footer.php';
+?>
 
 <script>
-function updateDisciplineStatus(teacherId, disciplineId, status) {
-    // Show loading state
-    const buttons = document.querySelectorAll(`[onclick*="updateDisciplineStatus(${teacherId}, ${disciplineId}"]`);
-    buttons.forEach(btn => {
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
-    });
-
-    // Prepare JSON data (matching your existing API pattern)
-    const data = {
-        teacher_id: teacherId,
-        discipline_id: disciplineId,
-        status: status === null ? 'null' : status
-    };
-
-    fetch('../backend/api/update_postg_teacher_discipline_status.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Reload the page to show updated status
-            window.location.reload();
-        } else {
-            alert('Erro ao atualizar status: ' + (data.error || 'Erro desconhecido'));
-            // Re-enable buttons on error
-            buttons.forEach(btn => {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Erro ao atualizar status');
-        // Re-enable buttons on error
-        buttons.forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-        });
-    });
-}
-
-// Optional: Add confirmation for status changes
-function confirmUpdateDisciplineStatus(teacherId, disciplineId, status) {
-    const statusText = status === 1 ? 'Aprovado' : status === 0 ? 'Reprovado' : 'Aguardando';
-    if (confirm(`Confirma a alteração do status para "${statusText}"?`)) {
-        updateDisciplineStatus(teacherId, disciplineId, status);
-    }
-}
-// Add this test function to docente-pos.php temporarily for debugging
-
+// Debug function - TEMPORARY
 function testUpdateAPI() {
     console.log('Testing API call...');
     
     const testData = {
-        teacher_id: 1,
-        discipline_id: 1, 
+        teacher_id: <?= $teacher_id ?>,
+        discipline_id: <?= !empty($disciplines) ? $disciplines[0]->getId() : 1 ?>, 
         status: 1
     };
     
@@ -353,5 +278,59 @@ function testUpdateAPI() {
     });
 }
 
-// Call this in browser console: testUpdateAPI()
+// Main function for updating discipline status
+function updateDisciplineStatus(teacherId, disciplineId, status) {
+    console.log('updateDisciplineStatus called with:', {teacherId, disciplineId, status});
+    
+    // Show loading state
+    const buttons = document.querySelectorAll(`[onclick*="updateDisciplineStatus(${teacherId}, ${disciplineId}"]`);
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+    });
+
+    // Prepare JSON data
+    const data = {
+        teacher_id: parseInt(teacherId),
+        discipline_id: parseInt(disciplineId),
+        status: status === null ? 'null' : parseInt(status)
+    };
+    
+    console.log('Sending data:', data);
+
+    fetch('../backend/api/update_postg_teacher_discipline_status.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            alert('Status atualizado com sucesso!');
+            window.location.reload();
+        } else {
+            alert('Erro ao atualizar status: ' + data.message);
+            // Re-enable buttons on error
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao atualizar status: ' + error.message);
+        // Re-enable buttons on error
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        });
+    });
+}
 </script>
