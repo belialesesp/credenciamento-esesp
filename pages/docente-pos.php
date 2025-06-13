@@ -261,143 +261,61 @@ $enabled = match ($teacher->enabled) {
 <!-- Add this script section before the closing body tag -->
 // Replace the existing JavaScript in pages/docentes-pos.php with this improved version
 
+// Add this JavaScript to the bottom of docente-pos.php (before closing </body> tag)
+
 <script>
-// Fetch filtered data based on selected filters
-function fetchFilteredData() {
-  const category = document.getElementById('category').value;
-  const course = document.getElementById('course').value;
-  const status = document.getElementById('status').value;
+function updateDisciplineStatus(teacherId, disciplineId, status) {
+    // Show loading state
+    const buttons = document.querySelectorAll(`[onclick*="updateDisciplineStatus(${teacherId}, ${disciplineId}"]`);
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+    });
 
-  // Debug logging
-  console.log('=== Filter Debug ===');
-  console.log('Category:', category);
-  console.log('Course:', course);
-  console.log('Status:', status);
+    // Prepare JSON data (matching your existing API pattern)
+    const data = {
+        teacher_id: teacherId,
+        discipline_id: disciplineId,
+        status: status === null ? 'null' : status
+    };
 
-  const queryParams = new URLSearchParams();
-  if (category && category !== '') queryParams.append('category', category);
-  if (course && course !== '') queryParams.append('course', course);
-  if (status && status !== '') queryParams.append('status', status);
-
-  const url = `../backend/api/get_filtered_teachers_postg.php?${queryParams.toString()}`;
-  console.log('Fetching:', url);
-
-  // Show loading state
-  const tbody = document.querySelector('table tbody');
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Carregando...</td></tr>';
-
-  fetch(url)
-    .then(response => {
-      console.log('Response status:', response.status);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
+    fetch('../backend/api/update_postg_teacher_discipline_status.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
     })
-    .then(teachers => {
-      console.log('Received teachers:', teachers.length);
-      console.log('First teacher:', teachers[0]);
-      
-      updateTeachersTable(teachers);
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the page to show updated status
+            window.location.reload();
+        } else {
+            alert('Erro ao atualizar status: ' + (data.error || 'Erro desconhecido'));
+            // Re-enable buttons on error
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+        }
     })
     .catch(error => {
-      console.error('Error fetching filtered data:', error);
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
+        console.error('Error:', error);
+        alert('Erro ao atualizar status');
+        // Re-enable buttons on error
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        });
     });
 }
 
-function updateTeachersTable(teachers) {
-  const tbody = document.querySelector('table tbody');
-  
-  if (teachers.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum docente encontrado com os filtros aplicados</td></tr>';
-    return;
-  }
-
-  let html = '';
-  
-  teachers.forEach(teacher => {
-    // Format dates
-    const createdDate = new Date(teacher.created_at);
-    const dateF = createdDate.toLocaleDateString('pt-BR') + ' ' + 
-                 createdDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
-    
-    const calledDate = teacher.called_at && teacher.called_at !== '0000-00-00 00:00:00'
-      ? new Date(teacher.called_at).toLocaleDateString('pt-BR')
-      : '---';
-
-    // Parse discipline statuses
-    let disciplineStatusesHtml = '';
-    if (teacher.discipline_statuses) {
-      const statusPairs = teacher.discipline_statuses.split('||');
-      statusPairs.forEach(pair => {
-        if (pair) {
-          const parts = pair.split(':');
-          if (parts.length >= 3) {
-            const discId = parts[0];
-            const discName = parts.slice(1, -1).join(':'); // Handle names with colons
-            const status = parts[parts.length - 1];
-            
-            const statusText = status === '1' ? 'Apto' : 
-                              status === '0' ? 'Inapto' : 'Aguardando';
-            const statusClass = status === '1' ? 'status-approved' : 
-                               status === '0' ? 'status-not-approved' : 'status-pending';
-            
-            disciplineStatusesHtml += `
-              <div class="discipline-info">
-                <strong>${escapeHtml(discName)}:</strong>
-                <span class="discipline-status ${statusClass}">${statusText}</span>
-              </div>
-            `;
-          }
-        }
-      });
+// Optional: Add confirmation for status changes
+function confirmUpdateDisciplineStatus(teacherId, disciplineId, status) {
+    const statusText = status === 1 ? 'Aprovado' : status === 0 ? 'Reprovado' : 'Aguardando';
+    if (confirm(`Confirma a alteração do status para "${statusText}"?`)) {
+        updateDisciplineStatus(teacherId, disciplineId, status);
     }
-    
-    if (!disciplineStatusesHtml) {
-      disciplineStatusesHtml = '<span class="text-muted">Sem disciplinas</span>';
-    }
-
-    html += `
-      <tr class="teacher-row" onclick="window.location.href='docente-pos.php?id=${teacher.id}'">
-        <td>${titleCase(teacher.name)}</td>
-        <td>${teacher.email.toLowerCase()}</td>
-        <td>${calledDate}</td>
-        <td>${dateF}</td>
-        <td>${disciplineStatusesHtml}</td>
-      </tr>
-    `;
-  });
-  
-  tbody.innerHTML = html;
 }
-
-// Utility functions
-function titleCase(str) {
-  return str.toLowerCase().split(' ').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
-}
-
-function escapeHtml(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, m => map[m]);
-}
-
-// Add event listeners to filter dropdowns
-document.addEventListener('DOMContentLoaded', function() {
-  const categorySelect = document.getElementById('category');
-  const courseSelect = document.getElementById('course');
-  const statusSelect = document.getElementById('status');
-  
-  if (categorySelect) categorySelect.addEventListener('change', fetchFilteredData);
-  if (courseSelect) courseSelect.addEventListener('change', fetchFilteredData);
-  if (statusSelect) statusSelect.addEventListener('change', fetchFilteredData);
-});
 </script>

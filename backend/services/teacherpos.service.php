@@ -94,7 +94,8 @@ class TeacherPostGService {
     }   
   }
 
- // Update this method in backend/services/teacherpos.service.php
+
+// Replace the entire getTeacherDisciplines method in backend/services/teacherpos.service.php
 
 function getTeacherDisciplines($teacher_id) {
   $sql = "
