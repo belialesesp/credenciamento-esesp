@@ -94,50 +94,54 @@ class TeacherPostGService {
     }   
   }
 
-  function getTeacherDisciplines($teacher_id) {
-    $sql = "
-      SELECT
-        d.id AS discipline_id,
-        d.name AS discipline_name,
-        ex.name AS eixo_name,
-        pg.name AS postg_name
-      FROM
-        postg_disciplinas AS d
-      LEFT JOIN
-        postg_eixo AS ex 
-          ON d.eixo_id = ex.id
-      LEFT JOIN
-        postgraduation AS pg
-          ON ex.postg_id = pg.id
-      INNER JOIN
-        postg_teacher_disciplines as td
-          ON td.discipline_id = d.id
-      WHERE
-        td.teacher_id = :teacher_id
-    ";
+ // Update this method in backend/services/teacherpos.service.php
 
-    $stmt = $this->db->prepare($sql);
-    $stmt->bindParam(":teacher_id", $teacher_id, PDO::PARAM_INT);
-    $stmt->execute();
+function getTeacherDisciplines($teacher_id) {
+  $sql = "
+    SELECT
+      d.id AS discipline_id,
+      d.name AS discipline_name,
+      ex.name AS eixo_name,
+      pg.name AS postg_name,
+      td.enabled AS discipline_enabled
+    FROM
+      postg_disciplinas AS d
+    LEFT JOIN
+      postg_eixo AS ex 
+        ON d.eixo_id = ex.id
+    LEFT JOIN
+      postgraduation AS pg
+        ON ex.postg_id = pg.id
+    INNER JOIN
+      postg_teacher_disciplines as td
+        ON td.discipline_id = d.id
+    WHERE
+      td.teacher_id = :teacher_id
+  ";
 
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $stmt = $this->db->prepare($sql);
+  $stmt->bindParam(":teacher_id", $teacher_id, PDO::PARAM_INT);
+  $stmt->execute();
 
-    $disciplines = [];
-    $post_graduation = [];
+  $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    foreach ($results as $result) {
-      $disciplines[] = new DisciplinePostg(
-        $result["discipline_id"],
-        $result["discipline_name"],
-        $result["postg_name"],
-        $result["eixo_name"]
-      );
-      $post_graduation[] = $result['postg_name'];
-    }
+  $disciplines = [];
+  $post_graduation = [];
 
-    return array($disciplines, $post_graduation);
-
+  foreach ($results as $result) {
+    // Pass the enabled status to the constructor
+    $disciplines[] = new DisciplinePostg(
+      $result["discipline_id"],
+      $result["discipline_name"],
+      $result["postg_name"],
+      $result["eixo_name"],
+      $result["discipline_enabled"] // Add the enabled status
+    );
+    $post_graduation[] = $result['postg_name'];
   }
+
+  return array($disciplines, $post_graduation);
+}
 
   function getTeacherLectures($teacher_id) {
     $sql = "
