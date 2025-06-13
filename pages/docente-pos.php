@@ -258,10 +258,7 @@ $enabled = match ($teacher->enabled) {
   </button>
 </div>
 
-<!-- Add this script section before the closing body tag -->
-// Replace the existing JavaScript in pages/docentes-pos.php with this improved version
 
-// Add this JavaScript to the bottom of docente-pos.php (before closing </body> tag)
 
 <script>
 function updateDisciplineStatus(teacherId, disciplineId, status) {
@@ -318,4 +315,43 @@ function confirmUpdateDisciplineStatus(teacherId, disciplineId, status) {
         updateDisciplineStatus(teacherId, disciplineId, status);
     }
 }
+// Add this test function to docente-pos.php temporarily for debugging
+
+function testUpdateAPI() {
+    console.log('Testing API call...');
+    
+    const testData = {
+        teacher_id: 1,
+        discipline_id: 1, 
+        status: 1
+    };
+    
+    console.log('Sending data:', testData);
+    
+    fetch('../backend/api/update_postg_teacher_discipline_status.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testData)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.text(); // Use text() first to see raw response
+    })
+    .then(text => {
+        console.log('Raw response:', text);
+        try {
+            const data = JSON.parse(text);
+            console.log('Parsed data:', data);
+        } catch (e) {
+            console.error('JSON parse error:', e);
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+    });
+}
+
+// Call this in browser console: testUpdateAPI()
 </script>
