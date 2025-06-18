@@ -110,6 +110,12 @@ function truncate_text($text, $length = 50, $suffix = '...')
       </select>
     </div>
   </div>
+  <div class="action-buttons" style="margin: 20px 0;">
+    <button type="button" class="btn btn-success" onclick="exportToPDFPos()">
+      <i class="fas fa-file-pdf"></i> Exportar para PDF
+    </button>
+    <span id="export-status-pos" style="margin-left: 10px; font-weight: bold;"></span>
+  </div>
   <table class="table table-striped table-hover">
     <thead>
       <tr>
@@ -170,15 +176,99 @@ function truncate_text($text, $length = 50, $suffix = '...')
         if (data.length > 0) {
           console.log('First teacher:', data[0]);
         }
-        updateTable(data);
+        updateTablePos(data);
+        
+        // Update export button state
+        updateExportButtonPos(data.length);
       })
       .catch(error => {
         console.error('Erro:', error);
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
       });
   }
+function exportToPDFPos() {
+    const statusElement = document.getElementById('export-status-pos');
+    const button = document.querySelector('button[onclick="exportToPDFPos()"]');
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+    statusElement.textContent = 'Preparando exportação...';
+    statusElement.className = '';
+    
+    // Get current filter values
+    const category = document.getElementById('category').value;
+    const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
+    
+    // Build URL with current filters
+    const queryParams = new URLSearchParams();
+    if (category && category !== '') queryParams.append('category', category);
+    if (course && course !== '') queryParams.append('course', course);
+    if (status && status !== '') queryParams.append('status', status);
+    
+    const exportUrl = `../backend/api/export_docentes_pos_pdf.php?${queryParams.toString()}`;
+    
+    // Handle the download
+    fetch(exportUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro na exportação');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create blob URL and trigger download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `docentes_pos_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        // Show success message
+        statusElement.textContent = 'PDF exportado com sucesso!';
+        statusElement.className = '';
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          statusElement.textContent = '';
+        }, 3000);
+      })
+      .catch(error => {
+        console.error('Erro na exportação:', error);
+        statusElement.textContent = 'Erro ao exportar PDF. Tente novamente.';
+        statusElement.className = 'export-error';
+        
+        // Clear error message after 5 seconds
+        setTimeout(() => {
+          statusElement.textContent = '';
+          statusElement.className = '';
+        }, 5000);
+      })
+      .finally(() => {
+        // Re-enable button
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar para PDF';
+      });
+  }
 
-  // Add event listeners to filters
+  function updateExportButtonPos(dataCount) {
+    const button = document.querySelector('button[onclick="exportToPDFPos()"]');
+    if (button) {
+      if (dataCount === 0) {
+        button.disabled = true;
+        button.title = 'Nenhum dado para exportar';
+      } else {
+        button.disabled = false;
+        button.title = `Exportar ${dataCount} registro(s) para PDF`;
+      }
+    }
+  }
+
+  // ADD event listeners at the end of the script section
   document.getElementById('category').addEventListener('change', fetchFilteredData);
   document.getElementById('course').addEventListener('change', fetchFilteredData);
   document.getElementById('status').addEventListener('change', fetchFilteredData);
