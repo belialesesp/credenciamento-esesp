@@ -231,8 +231,14 @@ function truncate_text($text, $length = 50, $suffix = '...')
   </table>
 </div>
 
+
+
 <script>
-  // Add this to your docentes.php fetchFilteredData function
+  // Load page with initial state
+  document.addEventListener('DOMContentLoaded', function() {
+    updateExportButtonState(); // Set initial export button state
+  });
+
   function fetchFilteredData() {
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
@@ -270,6 +276,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
         
         // Update export button state
         updateExportButton(data.length);
+        updateExportButtonState(); // Update based on filters
       })
       .catch(error => {
         console.error('Erro:', error);
@@ -277,11 +284,14 @@ function truncate_text($text, $length = 50, $suffix = '...')
       });
   }
 
-  // Replace the updateTable function in docentes.php with this:
-
   function updateTable(teachers) {
     const tbody = document.querySelector('table tbody');
     tbody.innerHTML = '';
+
+    if (teachers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum docente encontrado</td></tr>';
+      return;
+    }
 
     teachers.forEach(teacher => {
       const date = new Date(teacher.created_at);
@@ -293,7 +303,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
         minute: '2-digit'
       });
 
-      const calledAt = teacher.called_at ?
+      const calledAt = teacher.called_at ? 
         new Date(teacher.called_at).toLocaleDateString('pt-BR') :
         '---';
 
@@ -387,41 +397,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
     });
   }
 
-  // Update the status text/class functions to handle all cases
-  function getStatusText(status) {
-    // Convert to string for consistent comparison
-    const statusStr = String(status);
-
-    if (statusStr === 'null' || statusStr === '' || status === null) {
-      return 'Aguardando';
-    } else if (statusStr === '1') {
-      return 'Apto';
-    } else if (statusStr === '0') {
-      return 'Inapto';
-    }
-    return 'Aguardando';
-  }
-
-  function getStatusClass(status) {
-    // Convert to string for consistent comparison
-    const statusStr = String(status);
-
-    if (statusStr === 'null' || statusStr === '' || status === null) {
-      return 'status-pending';
-    } else if (statusStr === '1') {
-      return 'status-approved';
-    } else if (statusStr === '0') {
-      return 'status-not-approved';
-    }
-    return 'status-pending';
-  }
-
-  function titleCase(str) {
-    return str.toLowerCase().replace(/(?:^|\s)\w/g, function(letter) {
-      return letter.toUpperCase();
-    });
-  }
-function exportToPDF() {
+  function exportToPDF() {
     const statusElement = document.getElementById('export-status');
     const button = document.querySelector('button[onclick="exportToPDF()"]');
     
@@ -503,9 +479,40 @@ function exportToPDF() {
     }
   }
 
-  // ADD event listeners at the end of the script section
+  // NEW: Function to disable export when no filters are applied
+  function updateExportButtonState() {
+    const category = document.getElementById('category').value;
+    const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
+    
+    const hasFilters = (category && category !== '') || 
+                      (course && course !== '') || 
+                      (status && status !== '');
+    
+    const button = document.querySelector('button[onclick="exportToPDF()"]');
+    if (button && !hasFilters) {
+      button.disabled = true;
+      button.title = 'Aplique filtros para exportar';
+      button.style.opacity = '0.6';
+    } else if (button && hasFilters) {
+      button.style.opacity = '1';
+      // Button will be enabled/disabled by updateExportButton based on data count
+    }
+  }
 
-  document.getElementById('category').addEventListener('change', fetchFilteredData);
-  document.getElementById('course').addEventListener('change', fetchFilteredData);
-  document.getElementById('status').addEventListener('change', fetchFilteredData);
+  // ADD event listeners
+  document.getElementById('category').addEventListener('change', function() {
+    fetchFilteredData();
+    updateExportButtonState();
+  });
+  
+  document.getElementById('course').addEventListener('change', function() {
+    fetchFilteredData();
+    updateExportButtonState();
+  });
+  
+  document.getElementById('status').addEventListener('change', function() {
+    fetchFilteredData();
+    updateExportButtonState();
+  });
 </script>

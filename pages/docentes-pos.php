@@ -135,10 +135,12 @@ function truncate_text($text, $length = 50, $suffix = '...')
   </table>
 </div>
 
+
 <script>
   // Load all teachers on page load (no filters applied)
   document.addEventListener('DOMContentLoaded', function() {
     fetchFilteredData(); // Load all teachers initially
+    updateExportButtonState(); // Set initial export button state
   });
 
   // Fetch filtered data based on selected filters
@@ -176,17 +178,20 @@ function truncate_text($text, $length = 50, $suffix = '...')
         if (data.length > 0) {
           console.log('First teacher:', data[0]);
         }
-        updateTablePos(data);
+        // FIX: Change updateTablePos to updateTable
+        updateTable(data);
         
         // Update export button state
         updateExportButtonPos(data.length);
+        updateExportButtonState(); // Update based on filters
       })
       .catch(error => {
         console.error('Erro:', error);
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
       });
   }
-function exportToPDFPos() {
+
+  function exportToPDFPos() {
     const statusElement = document.getElementById('export-status-pos');
     const button = document.querySelector('button[onclick="exportToPDFPos()"]');
     
@@ -268,10 +273,42 @@ function exportToPDFPos() {
     }
   }
 
+  // NEW: Function to disable export when no filters are applied
+  function updateExportButtonState() {
+    const category = document.getElementById('category').value;
+    const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
+    
+    const hasFilters = (category && category !== '') || 
+                      (course && course !== '') || 
+                      (status && status !== '');
+    
+    const button = document.querySelector('button[onclick="exportToPDFPos()"]');
+    if (button && !hasFilters) {
+      button.disabled = true;
+      button.title = 'Aplique filtros para exportar';
+      button.style.opacity = '0.6';
+    } else if (button && hasFilters) {
+      button.style.opacity = '1';
+      // Button will be enabled/disabled by updateExportButtonPos based on data count
+    }
+  }
+
   // ADD event listeners at the end of the script section
-  document.getElementById('category').addEventListener('change', fetchFilteredData);
-  document.getElementById('course').addEventListener('change', fetchFilteredData);
-  document.getElementById('status').addEventListener('change', fetchFilteredData);
+  document.getElementById('category').addEventListener('change', function() {
+    fetchFilteredData();
+    updateExportButtonState();
+  });
+  
+  document.getElementById('course').addEventListener('change', function() {
+    fetchFilteredData();
+    updateExportButtonState();
+  });
+  
+  document.getElementById('status').addEventListener('change', function() {
+    fetchFilteredData();
+    updateExportButtonState();
+  });
 
   // Update the table with filtered data
   function updateTable(teachers) {
