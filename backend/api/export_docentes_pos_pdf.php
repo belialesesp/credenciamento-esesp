@@ -1,9 +1,10 @@
 <?php
-// backend/api/export_docentes_pos_pdf.php - FIXED TO SHOW DISCIPLINE NAMES
+// backend/api/export_docentes_pos_pdf.php - FIXED VERSION
 require_once '../classes/database.class.php';
 require_once '../../vendor/autoload.php';
 
-use TCPDF;
+// Fix: Use proper TCPDF namespace or direct class reference
+use \TCPDF;
 
 // Get filter parameters
 $category = $_GET['category'] ?? '';
@@ -13,8 +14,6 @@ $status = $_GET['status'] ?? '';
 try {
     $conection = new Database();
     $conn = $conection->connect();
-    
-    // USE THE EXACT SAME LOGIC AS THE WORKING get_filtered_teachers_postg.php
     
     // Special handling for "no-disciplines" filter
     if ($status === 'no-disciplines') {
@@ -42,7 +41,7 @@ try {
         $stmt->execute($params);
         $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } else {
-        // STEP 1: Get teachers matching filters (exactly like working postg API)
+        // STEP 1: Get teachers matching filters
         $sql = "SELECT DISTINCT t.* FROM postg_teacher t";
         $joins = [];
         $where = [];
@@ -81,7 +80,7 @@ try {
         $stmt->execute($params);  
         $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // STEP 2: For each teacher, get their disciplines (exactly like working postg API)
+        // STEP 2: For each teacher, get their disciplines
         $result = [];
         foreach ($teachers as $teacher) {
             $discSql = "
@@ -102,7 +101,7 @@ try {
                 $discParams[':course'] = $course;
             }
             
-            // Apply status filter to disciplines (KEY FIX: This makes PDF match page results)
+            // Apply status filter to disciplines
             if ($status !== '' && $status !== 'no-disciplines') {
                 if ($status === '1') {
                     $discSql .= " AND BINARY td.enabled = '1'";
@@ -119,12 +118,12 @@ try {
             $discStmt->execute($discParams);
             $disciplines = $discStmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Build discipline statuses string using || and : delimiters (postg format)
+            // Build discipline statuses string using || and : delimiters
             $disciplineStatuses = [];
             foreach ($disciplines as $disc) {
                 $disciplineName = $disc['name'];
                 
-                // Determine status value (exactly like working API)
+                // Determine status value
                 $enabledRaw = $disc['enabled'];
                 if ($enabledRaw === null || $enabledRaw === '') {
                     $statusValue = 'null';
@@ -196,57 +195,46 @@ try {
     $pdf->SetHeaderData('', 0, $headerText, $subHeaderText);
     
     // Set header and footer fonts
-    $pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
-    $pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+    $pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', 10));
+    $pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', 8));
     
     // Set margins
-    $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
-    $pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
-    $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+    $pdf->SetMargins(15, 25, 15);
+    $pdf->SetHeaderMargin(10);
+    $pdf->SetFooterMargin(10);
     
     // Set auto page breaks
     $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
     
     // Add a page
-    $pdf->AddPage();
+    $pdf->AddPage('P', 'A4');
     
     // Set font
-    $pdf->SetFont('helvetica', '', 9);
+    $pdf->SetFont('helvetica', '', 10);
     
-    // Create HTML content
-    $html = '<style>
-        table { border-collapse: collapse; width: 100%; }
-        th { background-color: #f0f0f0; font-weight: bold; padding: 6px; border: 1px solid #ddd; font-size: 10px; }
-        td { padding: 5px; border: 1px solid #ddd; font-size: 9px; }
-        .status-approved { background-color: #d4edda; color: #155724; padding: 2px 4px; border-radius: 3px; }
-        .status-not-approved { background-color: #f8d7da; color: #721c24; padding: 2px 4px; border-radius: 3px; }
-        .status-pending { background-color: #fff3cd; color: #856404; padding: 2px 4px; border-radius: 3px; }
-        .discipline-item { margin-bottom: 3px; font-size: 8px; }
-    </style>';
-    
-    $html .= '<table>
+    // Create HTML content with TCPDF-compatible table
+    $html = '<table border="1" cellpadding="5" cellspacing="0">
         <thead>
-            <tr>
-                <th width="20%">Nome</th>
-                <th width="20%">Email</th>
-                <th width="12%">Chamado em</th>
-                <th width="12%">Data de Inscrição</th>
-                <th width="36%">Cursos e Status</th>
+            <tr bgcolor="#e9ecef">
+                <td width="30%"><b>Nome</b></td>
+                <td width="15%" align="center"><b>Chamado em</b></td>
+                <td width="20%" align="center"><b>Data de Inscrição</b></td>
+                <td width="35%"><b>Cursos e Status</b></td>
             </tr>
         </thead>
         <tbody>';
     
+    // Generate table rows
     foreach ($teachers as $teacher) {
         $created_at = new DateTime($teacher['created_at']);
         $dateF = $created_at->format('d/m/Y H:i');
         $called_at = $teacher['called_at'] ? (new DateTime($teacher['called_at']))->format('d/m/Y') : '---';
         
         $html .= '<tr>';
-        $html .= '<td>' . htmlspecialchars($teacher['name']) . '</td>';
-        $html .= '<td>' . htmlspecialchars($teacher['email']) . '</td>';
-        $html .= '<td>' . $called_at . '</td>';
-        $html .= '<td>' . $dateF . '</td>';
-        $html .= '<td>';
+        $html .= '<td width="30%">' . htmlspecialchars($teacher['name']) . '</td>';
+        $html .= '<td width="15%" align="center">' . $called_at . '</td>';
+        $html .= '<td width="20%" align="center">' . $dateF . '</td>';
+        $html .= '<td width="35%">';
         
         // Parse discipline statuses with CORRECT delimiters for postg (|| and :)
         if (!empty($teacher['discipline_statuses'])) {
@@ -259,7 +247,7 @@ try {
                         $discName = $parts[1];
                         $status = $parts[2];
                         
-                        // Handle names with colons by joining all parts except first and last
+                        // Handle discipline names that might contain colons
                         if (count($parts) > 3) {
                             $discName = implode(':', array_slice($parts, 1, -1));
                             $status = $parts[count($parts) - 1];
@@ -270,21 +258,35 @@ try {
                             '0' => 'Inapto',
                             default => 'Aguardando',
                         };
-                        $statusClass = match ($status) {
-                            '1' => 'status-approved',
-                            '0' => 'status-not-approved',
-                            default => 'status-pending',
+                        $statusBgColor = match ($status) {
+                            '1' => '#d4edda',
+                            '0' => '#f8d7da',
+                            default => '#fff3cd',
+                        };
+                        $statusTextColor = match ($status) {
+                            '1' => '#155724',
+                            '0' => '#721c24',
+                            default => '#856404',
                         };
                         
-                        $html .= '<div class="discipline-item">';
-                        $html .= '<strong>' . htmlspecialchars($discName) . ':</strong> ';
-                        $html .= '<span class="' . $statusClass . '">' . $statusText . '</span>';
-                        $html .= '</div>';
+                        $statusBgColor = match ($status) {
+                            '1' => '#d4edda',
+                            '0' => '#f8d7da',
+                            default => '#fff3cd',
+                        };
+                        $statusTextColor = match ($status) {
+                            '1' => '#155724',
+                            '0' => '#721c24',
+                            default => '#856404',
+                        };
+                        
+                        $html .= '<b>' . htmlspecialchars($discName) . ':</b> ';
+                        $html .= '<font color="' . $statusTextColor . '" bgcolor="' . $statusBgColor . '">' . $statusText . '</font><br/>';
                     }
                 }
             }
         } else {
-            $html .= '<em>Sem disciplinas</em>';
+            $html .= '<i><font color="#6c757d">Sem disciplinas</font></i>';
         }
         
         $html .= '</td>';
@@ -294,10 +296,13 @@ try {
     $html .= '</tbody></table>';
     
     // Add summary information
-    $html .= '<br><div style="font-size: 10px; color: #666;">';
-    $html .= '<strong>Total de docentes:</strong> ' . count($teachers) . '<br>';
-    $html .= '<strong>Filtros aplicados:</strong> ' . (empty($filterLabels) ? 'Nenhum' : implode(', ', $filterLabels));
-    $html .= '</div>';
+    $html .= '<br/><br/>';
+    $html .= '<table border="0" cellpadding="5">
+        <tr>
+            <td><b>Total de docentes:</b> ' . count($teachers) . '</td>
+            <td><b>Filtros aplicados:</b> ' . (empty($filterLabels) ? 'Nenhum' : implode(', ', $filterLabels)) . '</td>
+        </tr>
+    </table>';
     
     // Output the HTML content
     $pdf->writeHTML($html, true, false, true, false, '');
@@ -307,10 +312,14 @@ try {
     $pdf->Output($filename, 'D'); // D = download
     
 } catch(PDOException $e) {
+    // Important: Set proper content type for errors
     header('Content-Type: application/json');
     echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    exit;
 } catch(Exception $e) {
+    // Important: Set proper content type for errors
     header('Content-Type: application/json');
     echo json_encode(['error' => 'PDF generation error: ' . $e->getMessage()]);
+    exit;
 }
 ?>
