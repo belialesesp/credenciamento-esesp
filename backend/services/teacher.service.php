@@ -98,37 +98,40 @@ class TeacherService {
   }
 
   function getTeacherDisciplines($teacher_id) {
-    $sql = "
-      SELECT
-        d.id AS discipline_id,
-        d.name AS discipline_name,
-        es.name AS estacao_name,
-        ex.name AS eixo_name,
-        dt.enabled AS discipline_status,
-        GROUP_CONCAT(DISTINCT m.id ORDER BY m.id SEPARATOR ',') AS module_ids,
-        GROUP_CONCAT(DISTINCT m.name ORDER BY m.id SEPARATOR '|') AS module_names
-      FROM 
-        disciplinas AS d
-      LEFT JOIN 
-        estacao AS es 
-        ON es.id = d.estacao_id
-      LEFT JOIN 
-        eixo AS ex 
-        ON ex.id = es.eixo_id
-      LEFT JOIN 
-        teacher_disciplines AS dt 
-        ON dt.discipline_id = d.id AND dt.teacher_id = :teacher_id
-      LEFT JOIN (
-        module AS m
-        INNER JOIN teacher_module AS tm ON tm.module_id = m.id AND tm.teacher_id = :teacher_id
-      ) ON m.discipline_id = d.id
-      WHERE 
-        EXISTS (SELECT 1 FROM teacher_disciplines AS dt2 WHERE dt2.discipline_id = d.id AND dt2.teacher_id = :teacher_id)
-        OR EXISTS (SELECT 1 FROM teacher_module AS tm2 
-          INNER JOIN module AS m2 ON tm2.module_id = m2.id 
-          WHERE m2.discipline_id = d.id AND tm2.teacher_id = :teacher_id)
-      GROUP BY
-          d.id, d.name, es.name, ex.name, dt.enabled";
+    // In the getTeacherDisciplines method, add td.called_at to the SELECT
+$sql = "
+  SELECT
+    d.id AS discipline_id,
+    d.name AS discipline_name,
+    es.name AS estacao_name,
+    ex.name AS eixo_name,
+    dt.enabled AS discipline_status,
+    dt.called_at AS discipline_called_at,
+    GROUP_CONCAT(DISTINCT m.id ORDER BY m.id SEPARATOR ',') AS module_ids,
+    GROUP_CONCAT(DISTINCT m.name ORDER BY m.id SEPARATOR '|') AS module_names
+  FROM 
+    disciplinas AS d
+  LEFT JOIN 
+    estacao AS es 
+    ON es.id = d.estacao_id
+  LEFT JOIN 
+    eixo AS ex 
+    ON ex.id = es.eixo_id
+  LEFT JOIN 
+    teacher_disciplines AS dt 
+    ON dt.discipline_id = d.id AND dt.teacher_id = :teacher_id
+  LEFT JOIN (
+    module AS m
+    INNER JOIN teacher_module AS tm ON tm.module_id = m.id AND tm.teacher_id = :teacher_id
+  ) ON m.discipline_id = d.id
+  WHERE 
+    EXISTS (SELECT 1 FROM teacher_disciplines AS dt2 WHERE dt2.discipline_id = d.id AND dt2.teacher_id = :teacher_id)
+    OR EXISTS (SELECT 1 FROM teacher_module AS tm2 
+       INNER JOIN module AS m2 ON tm2.module_id = m2.id 
+       WHERE m2.discipline_id = d.id AND tm2.teacher_id = :teacher_id)
+  GROUP BY d.id, d.name, es.name, ex.name, dt.enabled, dt.called_at
+  ORDER BY ex.name, es.name, d.name
+";
 
     
     $stmt = $this->db->prepare($sql);

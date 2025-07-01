@@ -9,7 +9,6 @@ function get_docente($conn) {
       t.email,
       t.phone,
       t.cpf,
-      t.called_at,
       t.created_at,
       t.document_number,
       t.document_emissor,
@@ -20,7 +19,8 @@ function get_docente($conn) {
         CONCAT(
           d.id, '|~|', 
           d.name, '|~|', 
-          COALESCE(td.enabled, 'null')
+          COALESCE(td.enabled, 'null'), '|~|',
+          COALESCE(td.called_at, '')
         ) SEPARATOR '|~~|'
       ) as discipline_statuses
     FROM teacher t
@@ -45,7 +45,6 @@ function get_postg_docente($conn) {
       t.phone,
       t.cpf,
       t.created_at,
-      t.called_at,
       t.document_number,
       t.document_emissor,
       t.document_uf,
@@ -55,7 +54,8 @@ function get_postg_docente($conn) {
         CONCAT(
           d.id, ':', 
           d.name, ':', 
-          COALESCE(td.enabled, 'null')
+          COALESCE(td.enabled, 'null'), ':',
+          COALESCE(td.called_at, '')
         ) SEPARATOR '||'
       ) as discipline_statuses
     FROM postg_teacher t

@@ -1,6 +1,5 @@
 <?php
 // backend/classes/discipline.class.php
-
 class Discipline {
   private $id;
   public $name;
@@ -8,15 +7,18 @@ class Discipline {
   public $estacao;
   public $modules = [];
   public $enabled; // Status específico para esta disciplina
+  public $called_at;
 
-  function __construct($id, $name, $eixo, $estacao, $modules = [], $enabled = null) {
+  function __construct($id, $name, $eixo, $estacao, $modules = [], $enabled = null, $called_at = null) {
     $this->id = $id;
     $this->name = $name;
     $this->eixo = $eixo;
     $this->estacao = $estacao;
     $this->modules = $modules;
     $this->enabled = $enabled;
+    $this->called_at = $called_at; // Now properly defined as parameter
   }
+
 
   function getId() {
     return $this->id;

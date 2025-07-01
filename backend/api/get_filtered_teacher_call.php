@@ -12,11 +12,14 @@ $date = '2025-02-28'; // Data atual como padrão
 $conection = new Database();
 $conn = $conection->connect();
 
+// In backend/api/get_filtered_teacher_call.php
 $sql = "
   SELECT
     t.id,
     t.name,
     td.enabled,
+    td.called_at as discipline_called_at,
+    t.called_at as teacher_called_at,
     d.name AS course,
     d.id AS course_id,
     td.created_at,

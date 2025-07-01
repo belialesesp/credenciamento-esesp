@@ -71,6 +71,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
   .teacher-row:hover {
     background-color: #f5f5f5;
   }
+
   .action-buttons {
     display: flex;
     align-items: center;
@@ -112,7 +113,35 @@ function truncate_text($text, $length = 50, $suffix = '...')
   .export-error {
     color: #dc3545 !important;
   }
+  
+  .disciplines-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
 
+  .discipline-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .discipline-item:last-child {
+    border-bottom: none;
+  }
+
+  .discipline-name {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .discipline-item small {
+    font-size: 0.85em;
+    margin-left: 8px;
+    color: #666;
+  }
 </style>
 
 <div class="container">
@@ -169,7 +198,6 @@ function truncate_text($text, $length = 50, $suffix = '...')
       <tr>
         <th>Nome</th>
         <th>Email</th>
-        <th>Chamado Em</th>
         <th>Data de Inscrição</th>
         <th>Cursos e Status</th>
       </tr>
@@ -183,18 +211,17 @@ function truncate_text($text, $length = 50, $suffix = '...')
         // Parse discipline statuses
         $disciplineStatuses = [];
         if (!empty($teacher['discipline_statuses'])) {
-          // Use the new delimiter |~~| for records
           $statusPairs = explode('|~~|', $teacher['discipline_statuses']);
           foreach ($statusPairs as $pair) {
             if (!empty($pair)) {
-              // Use the new delimiter |~| for fields
               $parts = explode('|~|', $pair);
-              if (count($parts) >= 3) {
-                list($discId, $discName, $status) = $parts;
+              if (count($parts) >= 4) {
+                list($discId, $discName, $status, $calledAt) = $parts;
                 $disciplineStatuses[] = [
                   'id' => $discId,
-                  'name' => $discName, // Now contains the full name with colons preserved
-                  'status' => $status === 'null' ? null : (int)$status
+                  'name' => $discName,
+                  'status' => $status === 'null' ? null : (int)$status,
+                  'called_at' => $calledAt
                 ];
               }
             }
@@ -204,34 +231,35 @@ function truncate_text($text, $length = 50, $suffix = '...')
         <tr class="teacher-row" onclick="window.location.href='docente.php?id=<?= $teacher['id'] ?>'">
           <td><?= titleCase($teacher['name']) ?></td>
           <td><?= strtolower($teacher['email']) ?></td>
-          <td><?= isset($teacher['called_at']) && $teacher['called_at'] ? (new DateTime($teacher['called_at']))->format('d/m/Y') : '---' ?></td>
           <td><?= $dateF ?></td>
           <td>
-            <?php foreach ($disciplineStatuses as $disc):
-              $statusText = match ($disc['status']) {
-                1 => 'Apto',
-                0 => 'Inapto',
-                default => 'Aguardando',
-              };
-              $statusClass = match ($disc['status']) {
-                1 => 'status-approved',
-                0 => 'status-not-approved',
-                default => 'status-pending',
-              };
-            ?>
-              <div class="discipline-info">
-                <strong><?= htmlspecialchars($disc['name']) ?>:</strong>
-                <span class="discipline-status <?= $statusClass ?>"><?= $statusText ?></span>
+            <?php if (!empty($disciplineStatuses)): ?>
+              <div class="disciplines-list">
+                <?php foreach ($disciplineStatuses as $disc): ?>
+                  <div class="discipline-info">
+                    <strong><?= htmlspecialchars($disc['name']) ?>:</strong>
+                    <?php if ($disc['status'] === 1): ?>
+                      <span class="discipline-status status-approved">Apto</span>
+                      <?php if (!empty($disc['called_at'])): ?>
+                        <small>Chamado em: <?= date('d/m/Y', strtotime($disc['called_at'])) ?></small>
+                      <?php endif; ?>
+                    <?php elseif ($disc['status'] === 0): ?>
+                      <span class="discipline-status status-not-approved">Inapto</span>
+                    <?php else: ?>
+                      <span class="discipline-status status-pending">Aguardando</span>
+                    <?php endif; ?>
+                  </div>
+                <?php endforeach; ?>
               </div>
-            <?php endforeach; ?>
+            <?php else: ?>
+              <em>Sem disciplinas</em>
+            <?php endif; ?>
           </td>
         </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
 </div>
-
-
 
 <script>
   // Load page with initial state
@@ -259,7 +287,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
 
     // Show loading state
     const tbody = document.querySelector('table tbody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Carregando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Carregando...</td></tr>';
 
     fetch(url)
       .then(response => {
@@ -273,14 +301,14 @@ function truncate_text($text, $length = 50, $suffix = '...')
           console.log('First teacher:', data[0]);
         }
         updateTable(data);
-        
+
         // Update export button state
         updateExportButton(data.length);
         updateExportButtonState(); // Update based on filters
       })
       .catch(error => {
         console.error('Erro:', error);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
       });
   }
 
@@ -289,7 +317,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
     tbody.innerHTML = '';
 
     if (teachers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum docente encontrado</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum docente encontrado</td></tr>';
       return;
     }
 
@@ -303,37 +331,42 @@ function truncate_text($text, $length = 50, $suffix = '...')
         minute: '2-digit'
       });
 
-      const calledAt = teacher.called_at ? 
-        new Date(teacher.called_at).toLocaleDateString('pt-BR') :
-        '---';
-
       // Parse discipline statuses with NEW delimiters
       let disciplineHtml = '';
       if (teacher.discipline_statuses) {
-        const statusPairs = teacher.discipline_statuses.split('|~~|'); // NEW
+        disciplineHtml = '<div class="disciplines-list">';
+        const statusPairs = teacher.discipline_statuses.split('|~~|');
         statusPairs.forEach(pair => {
           if (pair && pair.trim()) {
-            const parts = pair.split('|~|'); // NEW
+            const parts = pair.split('|~|');
             if (parts.length >= 3) {
               const discId = parts[0];
               const discName = parts[1];
               const status = parts[2];
+              const discCalledAt = parts[3] || '';
 
               const statusText = getStatusText(status);
               const statusClass = getStatusClass(status);
 
               disciplineHtml += `
-              <div class="discipline-info">
-                <strong>${escapeHtml(discName)}:</strong>
-                <span class="discipline-status ${statusClass}">${statusText}</span>
-              </div>
-            `;
+                <div class="discipline-info">
+                  <strong>${escapeHtml(discName)}:</strong>
+                  <span class="discipline-status ${statusClass}">${statusText}</span>`;
+              
+              // Add called_at date if status is Apto and date exists
+              if (status === '1' && discCalledAt) {
+                const calledDate = new Date(discCalledAt).toLocaleDateString('pt-BR');
+                disciplineHtml += `<small>Chamado em: ${calledDate}</small>`;
+              }
+              
+              disciplineHtml += `</div>`;
             }
           }
         });
+        disciplineHtml += '</div>';
       }
 
-      if (!disciplineHtml) {
+      if (!disciplineHtml || disciplineHtml === '<div class="disciplines-list"></div>') {
         disciplineHtml = '<em>Sem disciplinas</em>';
       }
 
@@ -341,7 +374,6 @@ function truncate_text($text, $length = 50, $suffix = '...')
       <tr class="teacher-row" onclick="window.location.href='docente.php?id=${teacher.id}'">
         <td>${titleCase(teacher.name)}</td>
         <td>${teacher.email.toLowerCase()}</td>
-        <td>${calledAt}</td>
         <td>${dateF}</td>
         <td>${disciplineHtml}</td>
       </tr>
@@ -400,26 +432,26 @@ function truncate_text($text, $length = 50, $suffix = '...')
   function exportToPDF() {
     const statusElement = document.getElementById('export-status');
     const button = document.querySelector('button[onclick="exportToPDF()"]');
-    
+
     // Disable button and show loading state
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
     statusElement.textContent = 'Preparando exportação...';
     statusElement.className = '';
-    
+
     // Get current filter values
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
     const status = document.getElementById('status').value;
-    
+
     // Build URL with current filters
     const queryParams = new URLSearchParams();
     if (category && category !== '') queryParams.append('category', category);
     if (course && course !== '') queryParams.append('course', course);
     if (status && status !== '') queryParams.append('status', status);
-    
+
     const exportUrl = `../backend/api/export_docentes_pdf.php?${queryParams.toString()}`;
-    
+
     // Handle the download
     fetch(exportUrl)
       .then(response => {
@@ -438,11 +470,11 @@ function truncate_text($text, $length = 50, $suffix = '...')
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
+
         // Show success message
         statusElement.textContent = 'PDF exportado com sucesso!';
         statusElement.className = '';
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => {
           statusElement.textContent = '';
@@ -452,7 +484,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
         console.error('Erro na exportação:', error);
         statusElement.textContent = 'Erro ao exportar PDF. Tente novamente.';
         statusElement.className = 'export-error';
-        
+
         // Clear error message after 5 seconds
         setTimeout(() => {
           statusElement.textContent = '';
@@ -484,11 +516,11 @@ function truncate_text($text, $length = 50, $suffix = '...')
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
     const status = document.getElementById('status').value;
-    
-    const hasFilters = (category && category !== '') || 
-                      (course && course !== '') || 
-                      (status && status !== '');
-    
+
+    const hasFilters = (category && category !== '') ||
+      (course && course !== '') ||
+      (status && status !== '');
+
     const button = document.querySelector('button[onclick="exportToPDF()"]');
     if (button && !hasFilters) {
       button.disabled = true;
@@ -505,12 +537,12 @@ function truncate_text($text, $length = 50, $suffix = '...')
     fetchFilteredData();
     updateExportButtonState();
   });
-  
+
   document.getElementById('course').addEventListener('change', function() {
     fetchFilteredData();
     updateExportButtonState();
   });
-  
+
   document.getElementById('status').addEventListener('change', function() {
     fetchFilteredData();
     updateExportButtonState();

@@ -64,7 +64,7 @@ class TeacherPostGService {
         $result["neighborhood"],
       );
 
-      list($disciplines, $post_graduation) = $this->getTeacherDisciplines($teacher_id);
+      list($disciplines, $post_graduation) = $this->getTeacherPostGDisciplines($teacher_id);
       $educations = $this->getTeacherEducation($teacher_id);
       $activities = $this->getTeacherActivities($teacher_id);
       $lectures = $this->getTeacherLectures($teacher_id);
@@ -97,27 +97,29 @@ class TeacherPostGService {
 
 // Replace the entire getTeacherDisciplines method in backend/services/teacherpos.service.php
 
-function getTeacherDisciplines($teacher_id) {
+// In backend/services/teacherpos.service.php
+// Update the getTeacherPostGDisciplines method to include called_at:
+
+function getTeacherPostGDisciplines($teacher_id) {
   $sql = "
     SELECT
       d.id AS discipline_id,
       d.name AS discipline_name,
       ex.name AS eixo_name,
-      pg.name AS postg_name,
-      td.enabled AS discipline_enabled
-    FROM
+      dt.enabled AS discipline_status,
+      dt.called_at AS discipline_called_at
+    FROM 
       postg_disciplinas AS d
-    LEFT JOIN
+    LEFT JOIN 
       postg_eixo AS ex 
-        ON d.eixo_id = ex.id
-    LEFT JOIN
-      postgraduation AS pg
-        ON ex.postg_id = pg.id
-    INNER JOIN
-      postg_teacher_disciplines as td
-        ON td.discipline_id = d.id
-    WHERE
-      td.teacher_id = :teacher_id
+      ON ex.id = d.eixo_id
+    LEFT JOIN 
+      postg_teacher_disciplines AS dt 
+      ON dt.discipline_id = d.id AND dt.teacher_id = :teacher_id
+    WHERE 
+      EXISTS (SELECT 1 FROM postg_teacher_disciplines AS dt2 WHERE dt2.discipline_id = d.id AND dt2.teacher_id = :teacher_id)
+    GROUP BY d.id, d.name, ex.name, dt.enabled, dt.called_at
+    ORDER BY ex.name, d.name
   ";
 
   $stmt = $this->db->prepare($sql);
@@ -127,21 +129,19 @@ function getTeacherDisciplines($teacher_id) {
   $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   $disciplines = [];
-  $post_graduation = [];
 
   foreach ($results as $result) {
-    // Pass the enabled status to the constructor
-    $disciplines[] = new DisciplinePostg(
+    $disciplines[] = new Discipline(
       $result["discipline_id"],
       $result["discipline_name"],
-      $result["postg_name"],
+      null, // estacao_name not used in postg
       $result["eixo_name"],
-      $result["discipline_enabled"] // Add the enabled status
+      $result["discipline_status"],
+      $result["discipline_called_at"] // Add this field
     );
-    $post_graduation[] = $result['postg_name'];
   }
 
-  return array($disciplines, $post_graduation);
+  return $disciplines;
 }
 
   function getTeacherLectures($teacher_id) {

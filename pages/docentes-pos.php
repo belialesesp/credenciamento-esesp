@@ -2,16 +2,14 @@
 
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
+require_once '../backend/api/get_registers.php';
 require_once '../backend/api/get_all_courses.php';
 require_once '../backend/classes/database.class.php';
 
 $conection = new Database();
 $conn = $conection->connect();
 
-// CHANGED: Always get teachers from the filtering API, not from get_registers.php
-// This ensures consistent discipline status handling
-$teachers = []; // Will be populated by JavaScript, just like regular docentes.php
-
+$teachers = get_postg_docente($conn);
 $courses = get_all_postg_courses($conn);
 
 function truncate_text($text, $length = 50, $suffix = '...')
@@ -73,10 +71,81 @@ function truncate_text($text, $length = 50, $suffix = '...')
   .teacher-row:hover {
     background-color: #f5f5f5;
   }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+  }
+
+  .btn-success {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background-color: #218838;
+  }
+
+  .btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+  }
+
+  #export-status {
+    color: #28a745;
+    font-size: 14px;
+  }
+
+  .export-error {
+    color: #dc3545 !important;
+  }
+  
+  .disciplines-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .discipline-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .discipline-item:last-child {
+    border-bottom: none;
+  }
+
+  .discipline-name {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .discipline-item small {
+    font-size: 0.85em;
+    margin-left: 8px;
+    color: #666;
+  }
 </style>
 
 <div class="container">
-  <h1 class="main-title">Docentes / Assessoramento Técnico <br> Pós Graduação</h1>
+  <h1 class="main-title">Docentes - Pós-Graduação</h1>
   <div class="filter-container">
     <div class="filter-group">
       <label for="category">Filtrar por categoria</label>
@@ -84,7 +153,15 @@ function truncate_text($text, $length = 50, $suffix = '...')
         <option value=""></option>
         <option value="1">Docente</option>
         <option value="2">Docente Conteudista</option>
+        <option value="3">Docente Assistente</option>
+        <option value="4">Coordenador Técnico</option>
+        <option value="5">Conferencista / Palestrante</option>
+        <option value="6">Painelista / Debatedor</option>
+        <option value="7">Moderador</option>
+        <option value="8">Reunião Técnica</option>
         <option value="9">Assessoramento Técnico</option>
+        <option value="10">Revisão de Texto</option>
+        <option value="11">Entrevista</option>
       </select>
     </div>
     <div class="filter-group">
@@ -106,50 +183,94 @@ function truncate_text($text, $length = 50, $suffix = '...')
         <option value="1">Apto</option>
         <option value="0">Inapto</option>
         <option value="null">Aguardando</option>
-        <option value="no-disciplines">Sem disciplinas</option>
       </select>
     </div>
   </div>
   <div class="action-buttons" style="margin: 20px 0;">
-    <button type="button" class="btn btn-success" onclick="exportToPDFPos()">
+    <button type="button" class="btn btn-success" onclick="exportToPDF()">
       <i class="fas fa-file-pdf"></i> Exportar para PDF
     </button>
-    <span id="export-status-pos" style="margin-left: 10px; font-weight: bold;"></span>
+    <span id="export-status" style="margin-left: 10px; font-weight: bold;"></span>
   </div>
   <table class="table table-striped table-hover">
     <thead>
       <tr>
         <th>Nome</th>
         <th>Email</th>
-        <th>Chamado em</th>
         <th>Data de Inscrição</th>
         <th>Cursos e Status</th>
       </tr>
     </thead>
     <tbody>
-      <!-- Table will be populated by JavaScript -->
-      <tr>
-        <td colspan="5" style="text-align: center;">Carregando...</td>
-      </tr>
+      <?php foreach ($teachers as $teacher):
+        $created_at = $teacher['created_at'];
+        $date = new DateTime($created_at);
+        $dateF = $date->format('d/m/Y H:i');
+
+        // Parse discipline statuses
+        $disciplineStatuses = [];
+        if (!empty($teacher['discipline_statuses'])) {
+          $statusPairs = explode('||', $teacher['discipline_statuses']);
+          foreach ($statusPairs as $pair) {
+            if (!empty($pair)) {
+              $parts = explode(':', $pair);
+              if (count($parts) >= 4) {
+                list($discId, $discName, $status, $calledAt) = $parts;
+                $disciplineStatuses[] = [
+                  'id' => $discId,
+                  'name' => $discName,
+                  'status' => $status === 'null' ? null : (int)$status,
+                  'called_at' => $calledAt
+                ];
+              }
+            }
+          }
+        }
+      ?>
+        <tr class="teacher-row" onclick="window.location.href='docente-pos.php?id=<?= $teacher['id'] ?>'">
+          <td><?= titleCase($teacher['name']) ?></td>
+          <td><?= strtolower($teacher['email']) ?></td>
+          <td><?= $dateF ?></td>
+          <td>
+            <?php if (!empty($disciplineStatuses)): ?>
+              <div class="disciplines-list">
+                <?php foreach ($disciplineStatuses as $disc): ?>
+                  <div class="discipline-info">
+                    <strong><?= htmlspecialchars($disc['name']) ?>:</strong>
+                    <?php if ($disc['status'] === 1): ?>
+                      <span class="discipline-status status-approved">Apto</span>
+                      <?php if (!empty($disc['called_at'])): ?>
+                        <small>Chamado em: <?= date('d/m/Y', strtotime($disc['called_at'])) ?></small>
+                      <?php endif; ?>
+                    <?php elseif ($disc['status'] === 0): ?>
+                      <span class="discipline-status status-not-approved">Inapto</span>
+                    <?php else: ?>
+                      <span class="discipline-status status-pending">Aguardando</span>
+                    <?php endif; ?>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php else: ?>
+              <em>Sem disciplinas</em>
+            <?php endif; ?>
+          </td>
+        </tr>
+      <?php endforeach; ?>
     </tbody>
   </table>
 </div>
 
-
 <script>
-  // Load all teachers on page load (no filters applied)
+  // Load page with initial state
   document.addEventListener('DOMContentLoaded', function() {
-    fetchFilteredData(); // Load all teachers initially
     updateExportButtonState(); // Set initial export button state
   });
 
-  // Fetch filtered data based on selected filters
   function fetchFilteredData() {
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
     const status = document.getElementById('status').value;
 
-    // Debug logging
     console.log('=== Filter Debug ===');
     console.log('Category:', category);
     console.log('Course:', course);
@@ -165,7 +286,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
 
     // Show loading state
     const tbody = document.querySelector('table tbody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Carregando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Carregando...</td></tr>';
 
     fetch(url)
       .then(response => {
@@ -178,42 +299,158 @@ function truncate_text($text, $length = 50, $suffix = '...')
         if (data.length > 0) {
           console.log('First teacher:', data[0]);
         }
-        // FIX: Change updateTablePos to updateTable
         updateTable(data);
-        
+
         // Update export button state
-        updateExportButtonPos(data.length);
+        updateExportButton(data.length);
         updateExportButtonState(); // Update based on filters
       })
       .catch(error => {
         console.error('Erro:', error);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
       });
   }
 
-  function exportToPDFPos() {
-    const statusElement = document.getElementById('export-status-pos');
-    const button = document.querySelector('button[onclick="exportToPDFPos()"]');
-    
+  function updateTable(teachers) {
+    const tbody = document.querySelector('table tbody');
+    tbody.innerHTML = '';
+
+    if (teachers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum docente encontrado</td></tr>';
+      return;
+    }
+
+    teachers.forEach(teacher => {
+      const date = new Date(teacher.created_at);
+      const dateF = date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      // Parse discipline statuses
+      let disciplineHtml = '';
+      if (teacher.discipline_statuses) {
+        disciplineHtml = '<div class="disciplines-list">';
+        const statusPairs = teacher.discipline_statuses.split('||');
+        statusPairs.forEach(pair => {
+          if (pair && pair.trim()) {
+            const parts = pair.split(':');
+            if (parts.length >= 3) {
+              const discId = parts[0];
+              const discName = parts[1];
+              const status = parts[2];
+              const discCalledAt = parts[3] || '';
+
+              const statusText = getStatusText(status);
+              const statusClass = getStatusClass(status);
+
+              disciplineHtml += `
+                <div class="discipline-info">
+                  <strong>${escapeHtml(discName)}:</strong>
+                  <span class="discipline-status ${statusClass}">${statusText}</span>`;
+              
+              // Add called_at date if status is Apto and date exists
+              if (status === '1' && discCalledAt) {
+                const calledDate = new Date(discCalledAt).toLocaleDateString('pt-BR');
+                disciplineHtml += `<small>Chamado em: ${calledDate}</small>`;
+              }
+              
+              disciplineHtml += `</div>`;
+            }
+          }
+        });
+        disciplineHtml += '</div>';
+      }
+
+      if (!disciplineHtml || disciplineHtml === '<div class="disciplines-list"></div>') {
+        disciplineHtml = '<em>Sem disciplinas</em>';
+      }
+
+      const row = `
+      <tr class="teacher-row" onclick="window.location.href='docente-pos.php?id=${teacher.id}'">
+        <td>${titleCase(teacher.name)}</td>
+        <td>${teacher.email.toLowerCase()}</td>
+        <td>${dateF}</td>
+        <td>${disciplineHtml}</td>
+      </tr>
+    `;
+      tbody.innerHTML += row;
+    });
+  }
+
+  // Helper function to escape HTML
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Fixed status functions
+  function getStatusText(status) {
+    const statusStr = String(status).trim();
+
+    switch (statusStr) {
+      case '1':
+        return 'Apto';
+      case '0':
+        return 'Inapto';
+      case 'null':
+      case '':
+        return 'Aguardando';
+      default:
+        console.warn('Unknown status:', status);
+        return 'Aguardando';
+    }
+  }
+
+  function getStatusClass(status) {
+    const statusStr = String(status).trim();
+
+    switch (statusStr) {
+      case '1':
+        return 'status-approved';
+      case '0':
+        return 'status-not-approved';
+      case 'null':
+      case '':
+        return 'status-pending';
+      default:
+        return 'status-pending';
+    }
+  }
+
+  function titleCase(str) {
+    return str.toLowerCase().replace(/(?:^|\s)\w/g, function(letter) {
+      return letter.toUpperCase();
+    });
+  }
+
+  function exportToPDF() {
+    const statusElement = document.getElementById('export-status');
+    const button = document.querySelector('button[onclick="exportToPDF()"]');
+
     // Disable button and show loading state
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
     statusElement.textContent = 'Preparando exportação...';
     statusElement.className = '';
-    
+
     // Get current filter values
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
     const status = document.getElementById('status').value;
-    
+
     // Build URL with current filters
     const queryParams = new URLSearchParams();
     if (category && category !== '') queryParams.append('category', category);
     if (course && course !== '') queryParams.append('course', course);
     if (status && status !== '') queryParams.append('status', status);
-    
-    const exportUrl = `../backend/api/export_docentes_pos_pdf.php?${queryParams.toString()}`;
-    
+
+    const exportUrl = `../backend/api/export_docentes_postg_pdf.php?${queryParams.toString()}`;
+
     // Handle the download
     fetch(exportUrl)
       .then(response => {
@@ -232,11 +469,11 @@ function truncate_text($text, $length = 50, $suffix = '...')
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
+
         // Show success message
         statusElement.textContent = 'PDF exportado com sucesso!';
         statusElement.className = '';
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => {
           statusElement.textContent = '';
@@ -246,7 +483,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
         console.error('Erro na exportação:', error);
         statusElement.textContent = 'Erro ao exportar PDF. Tente novamente.';
         statusElement.className = 'export-error';
-        
+
         // Clear error message after 5 seconds
         setTimeout(() => {
           statusElement.textContent = '';
@@ -260,8 +497,8 @@ function truncate_text($text, $length = 50, $suffix = '...')
       });
   }
 
-  function updateExportButtonPos(dataCount) {
-    const button = document.querySelector('button[onclick="exportToPDFPos()"]');
+  function updateExportButton(dataCount) {
+    const button = document.querySelector('button[onclick="exportToPDF()"]');
     if (button) {
       if (dataCount === 0) {
         button.disabled = true;
@@ -278,132 +515,35 @@ function truncate_text($text, $length = 50, $suffix = '...')
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
     const status = document.getElementById('status').value;
-    
-    const hasFilters = (category && category !== '') || 
-                      (course && course !== '') || 
-                      (status && status !== '');
-    
-    const button = document.querySelector('button[onclick="exportToPDFPos()"]');
+
+    const hasFilters = (category && category !== '') ||
+      (course && course !== '') ||
+      (status && status !== '');
+
+    const button = document.querySelector('button[onclick="exportToPDF()"]');
     if (button && !hasFilters) {
       button.disabled = true;
       button.title = 'Aplique filtros para exportar';
       button.style.opacity = '0.6';
     } else if (button && hasFilters) {
       button.style.opacity = '1';
-      // Button will be enabled/disabled by updateExportButtonPos based on data count
+      // Button will be enabled/disabled by updateExportButton based on data count
     }
   }
 
-  // ADD event listeners at the end of the script section
+  // ADD event listeners
   document.getElementById('category').addEventListener('change', function() {
     fetchFilteredData();
     updateExportButtonState();
   });
-  
+
   document.getElementById('course').addEventListener('change', function() {
     fetchFilteredData();
     updateExportButtonState();
   });
-  
+
   document.getElementById('status').addEventListener('change', function() {
     fetchFilteredData();
     updateExportButtonState();
   });
-
-  // Update the table with filtered data
-  function updateTable(teachers) {
-    const tbody = document.querySelector('table tbody');
-    tbody.innerHTML = '';
-
-    if (teachers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum docente encontrado</td></tr>';
-      return;
-    }
-
-    teachers.forEach(teacher => {
-      const date = new Date(teacher.created_at);
-      const dateF = date.toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-
-      const calledAt = teacher.called_at && teacher.called_at !== '0000-00-00 00:00:00'
-        ? new Date(teacher.called_at).toLocaleDateString('pt-BR')
-        : '---';
-
-      // Parse discipline statuses
-      let disciplineStatuses = [];
-      if (teacher.discipline_statuses) {
-        const statusPairs = teacher.discipline_statuses.split('||');
-        statusPairs.forEach(pair => {
-          if (pair) {
-            const parts = pair.split(':');
-            if (parts.length >= 3) {
-              disciplineStatuses.push({
-                id: parts[0],
-                name: parts.slice(1, -1).join(':'), // Handle names with colons
-                status: parts[parts.length - 1] === 'null' ? null : parseInt(parts[parts.length - 1])
-              });
-            }
-          }
-        });
-      }
-
-      // Build discipline HTML
-      let disciplineHtml = '';
-      if (disciplineStatuses.length === 0) {
-        disciplineHtml = '<span class="text-muted">Sem disciplinas</span>';
-      } else {
-        disciplineStatuses.forEach(disc => {
-          const statusText = disc.status === 1 ? 'Apto' :
-            disc.status === 0 ? 'Inapto' :
-            'Aguardando';
-          const statusClass = disc.status === 1 ? 'status-approved' :
-            disc.status === 0 ? 'status-not-approved' :
-            'status-pending';
-
-          disciplineHtml += `
-            <div class="discipline-info">
-              <strong>${escapeHtml(disc.name)}:</strong>
-              <span class="discipline-status ${statusClass}">${statusText}</span>
-            </div>
-          `;
-        });
-      }
-
-      const row = `
-        <tr class="teacher-row" onclick="window.location.href='docente-pos.php?id=${teacher.id}'">
-          <td>${titleCase(teacher.name)}</td>
-          <td>${teacher.email.toLowerCase()}</td>
-          <td>${calledAt}</td>
-          <td>${dateF}</td>
-          <td>${disciplineHtml}</td>
-        </tr>
-      `;
-      tbody.innerHTML += row;
-    });
-  }
-
-  // Utility functions
-  function titleCase(str) {
-    return str.toLowerCase().split(' ').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
-  }
-
-  function escapeHtml(text) {
-    const map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m]);
-  }
 </script>
-
-<?php include '../components/footer.php'; ?>
