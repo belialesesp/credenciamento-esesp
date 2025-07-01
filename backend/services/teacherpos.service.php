@@ -95,8 +95,6 @@ class TeacherPostGService {
   }
 
 
-// Replace the entire getTeacherDisciplines method in backend/services/teacherpos.service.php
-
 // In backend/services/teacherpos.service.php
 // Update the getTeacherPostGDisciplines method to include called_at:
 
@@ -106,6 +104,7 @@ function getTeacherPostGDisciplines($teacher_id) {
       d.id AS discipline_id,
       d.name AS discipline_name,
       ex.name AS eixo_name,
+      pg.name AS postg_name,
       dt.enabled AS discipline_status,
       dt.called_at AS discipline_called_at
     FROM 
@@ -113,12 +112,15 @@ function getTeacherPostGDisciplines($teacher_id) {
     LEFT JOIN 
       postg_eixo AS ex 
       ON ex.id = d.eixo_id
+    LEFT JOIN
+      postgraduation AS pg
+      ON ex.postg_id = pg.id
     LEFT JOIN 
       postg_teacher_disciplines AS dt 
       ON dt.discipline_id = d.id AND dt.teacher_id = :teacher_id
     WHERE 
       EXISTS (SELECT 1 FROM postg_teacher_disciplines AS dt2 WHERE dt2.discipline_id = d.id AND dt2.teacher_id = :teacher_id)
-    GROUP BY d.id, d.name, ex.name, dt.enabled, dt.called_at
+    GROUP BY d.id, d.name, ex.name, pg.name, dt.enabled, dt.called_at
     ORDER BY ex.name, d.name
   ";
 
@@ -129,19 +131,21 @@ function getTeacherPostGDisciplines($teacher_id) {
   $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   $disciplines = [];
+  $post_graduation = [];
 
   foreach ($results as $result) {
-    $disciplines[] = new Discipline(
+    $disciplines[] = new DisciplinePostg(
       $result["discipline_id"],
       $result["discipline_name"],
-      null, // estacao_name not used in postg
+      $result["postg_name"],
       $result["eixo_name"],
       $result["discipline_status"],
-      $result["discipline_called_at"] // Add this field
+      $result["discipline_called_at"] // Add this parameter
     );
+    $post_graduation[] = $result['postg_name'];
   }
 
-  return $disciplines;
+  return array($disciplines, $post_graduation);
 }
 
   function getTeacherLectures($teacher_id) {

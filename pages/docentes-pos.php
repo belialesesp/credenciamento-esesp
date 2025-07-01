@@ -311,13 +311,28 @@ function truncate_text($text, $length = 50, $suffix = '...')
       });
   }
 
-  function updateTable(teachers) {
+
+function updateTable(teachers) {
     const tbody = document.querySelector('table tbody');
     tbody.innerHTML = '';
 
     if (teachers.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum docente encontrado</td></tr>';
       return;
+    }
+    
+    // DEBUG: Log the first teacher to see the data structure
+    if (teachers.length > 0) {
+        console.log('First teacher data:', teachers[0]);
+        if (teachers[0].discipline_statuses) {
+            console.log('Raw discipline_statuses:', teachers[0].discipline_statuses);
+            const testPairs = teachers[0].discipline_statuses.split('||');
+            if (testPairs.length > 0 && testPairs[0]) {
+                const testParts = testPairs[0].split(':');
+                console.log('First discipline parts:', testParts);
+                console.log('Parts count:', testParts.length);
+            }
+        }
     }
 
     teachers.forEach(teacher => {
@@ -338,11 +353,16 @@ function truncate_text($text, $length = 50, $suffix = '...')
         statusPairs.forEach(pair => {
           if (pair && pair.trim()) {
             const parts = pair.split(':');
+            console.log('Discipline parts:', parts); // DEBUG
+            
+            // Check if we have enough parts (at least 3, maybe 4 with called_at)
             if (parts.length >= 3) {
               const discId = parts[0];
               const discName = parts[1];
               const status = parts[2];
-              const discCalledAt = parts[3] || '';
+              const discCalledAt = parts.length > 3 ? parts[3] : '';
+              
+              console.log('Called at value:', discCalledAt); // DEBUG
 
               const statusText = getStatusText(status);
               const statusClass = getStatusClass(status);
@@ -353,9 +373,9 @@ function truncate_text($text, $length = 50, $suffix = '...')
                   <span class="discipline-status ${statusClass}">${statusText}</span>`;
               
               // Add called_at date if status is Apto and date exists
-              if (status === '1' && discCalledAt) {
+              if (status === '1' && discCalledAt && discCalledAt !== '') {
                 const calledDate = new Date(discCalledAt).toLocaleDateString('pt-BR');
-                disciplineHtml += `<small>Chamado em: ${calledDate}</small>`;
+                disciplineHtml += ` <small>Chamado em: ${calledDate}</small>`;
               }
               
               disciplineHtml += `</div>`;
@@ -379,7 +399,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
     `;
       tbody.innerHTML += row;
     });
-  }
+}
 
   // Helper function to escape HTML
   function escapeHtml(text) {
