@@ -19,7 +19,7 @@ try {
     if ($status === 'no-disciplines') {
         $sql = "
             SELECT DISTINCT
-                t.id, t.name, t.email, t.phone, t.cpf, t.called_at, t.created_at,
+                t.id, t.name, t.email, t.phone, t.cpf, COALESCE(DATE_FORMAT(td.called_at, '%d/%m/%Y'), '') as called_at, t.created_at,
                 '' as discipline_statuses
             FROM postg_teacher t
             LEFT JOIN postg_teacher_disciplines td ON t.id = td.teacher_id

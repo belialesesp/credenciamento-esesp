@@ -1,4 +1,6 @@
 <?php 
+require_once '../auth/check_docente_access.php';
+$teacher_id = protectDocentePage('teacher');
 
 echo '<link rel="stylesheet" href="../styles/user.css">';
 

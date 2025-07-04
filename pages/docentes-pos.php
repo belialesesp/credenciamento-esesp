@@ -1,4 +1,6 @@
 <?php
+require_once '../auth/check_docente_access.php';
+$teacher_id = protectDocentePage('postg_teacher');
 
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
@@ -9,7 +11,8 @@ require_once '../backend/classes/database.class.php';
 $conection = new Database();
 $conn = $conection->connect();
 
-$teachers = get_postg_docente($conn);
+// Don't load teachers here - let JavaScript handle it
+$teachers = [];
 $courses = get_all_postg_courses($conn);
 
 function truncate_text($text, $length = 50, $suffix = '...')
@@ -113,7 +116,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
   .export-error {
     color: #dc3545 !important;
   }
-  
+
   .disciplines-list {
     display: flex;
     flex-direction: column;
@@ -202,60 +205,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
       </tr>
     </thead>
     <tbody>
-      <?php foreach ($teachers as $teacher):
-        $created_at = $teacher['created_at'];
-        $date = new DateTime($created_at);
-        $dateF = $date->format('d/m/Y H:i');
-
-        // Parse discipline statuses
-        $disciplineStatuses = [];
-        if (!empty($teacher['discipline_statuses'])) {
-          $statusPairs = explode('||', $teacher['discipline_statuses']);
-          foreach ($statusPairs as $pair) {
-            if (!empty($pair)) {
-              $parts = explode(':', $pair);
-              if (count($parts) >= 4) {
-                list($discId, $discName, $status, $calledAt) = $parts;
-                $disciplineStatuses[] = [
-                  'id' => $discId,
-                  'name' => $discName,
-                  'status' => $status === 'null' ? null : (int)$status,
-                  'called_at' => $calledAt
-                ];
-              }
-            }
-          }
-        }
-      ?>
-        <tr class="teacher-row" onclick="window.location.href='docente-pos.php?id=<?= $teacher['id'] ?>'">
-          <td><?= titleCase($teacher['name']) ?></td>
-          <td><?= strtolower($teacher['email']) ?></td>
-          <td><?= $dateF ?></td>
-          <td>
-            <?php if (!empty($disciplineStatuses)): ?>
-              <div class="disciplines-list">
-                <?php foreach ($disciplineStatuses as $disc): ?>
-                  <div class="discipline-info">
-                    <strong><?= htmlspecialchars($disc['name']) ?>:</strong>
-                    <?php if ($disc['status'] === 1): ?>
-                      <span class="discipline-status status-approved">Apto</span>
-                      <?php if (!empty($disc['called_at'])): ?>
-                        <small>Chamado em: <?= date('d/m/Y', strtotime($disc['called_at'])) ?></small>
-                      <?php endif; ?>
-                    <?php elseif ($disc['status'] === 0): ?>
-                      <span class="discipline-status status-not-approved">Inapto</span>
-                    <?php else: ?>
-                      <span class="discipline-status status-pending">Aguardando</span>
-                    <?php endif; ?>
-                  </div>
-                <?php endforeach; ?>
-              </div>
-            <?php else: ?>
-              <em>Sem disciplinas</em>
-            <?php endif; ?>
-          </td>
-        </tr>
-      <?php endforeach; ?>
+      <!-- Table will be populated by JavaScript -->
     </tbody>
   </table>
 </div>
@@ -263,7 +213,8 @@ function truncate_text($text, $length = 50, $suffix = '...')
 <script>
   // Load page with initial state
   document.addEventListener('DOMContentLoaded', function() {
-    updateExportButtonState(); // Set initial export button state
+    updateExportButtonState();
+    fetchFilteredData(); // Load data on page load
   });
 
   function fetchFilteredData() {
@@ -311,28 +262,13 @@ function truncate_text($text, $length = 50, $suffix = '...')
       });
   }
 
-
-function updateTable(teachers) {
+  function updateTable(teachers) {
     const tbody = document.querySelector('table tbody');
     tbody.innerHTML = '';
 
     if (teachers.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum docente encontrado</td></tr>';
       return;
-    }
-    
-    // DEBUG: Log the first teacher to see the data structure
-    if (teachers.length > 0) {
-        console.log('First teacher data:', teachers[0]);
-        if (teachers[0].discipline_statuses) {
-            console.log('Raw discipline_statuses:', teachers[0].discipline_statuses);
-            const testPairs = teachers[0].discipline_statuses.split('||');
-            if (testPairs.length > 0 && testPairs[0]) {
-                const testParts = testPairs[0].split(':');
-                console.log('First discipline parts:', testParts);
-                console.log('Parts count:', testParts.length);
-            }
-        }
     }
 
     teachers.forEach(teacher => {
@@ -353,16 +289,11 @@ function updateTable(teachers) {
         statusPairs.forEach(pair => {
           if (pair && pair.trim()) {
             const parts = pair.split(':');
-            console.log('Discipline parts:', parts); // DEBUG
-            
-            // Check if we have enough parts (at least 3, maybe 4 with called_at)
             if (parts.length >= 3) {
               const discId = parts[0];
               const discName = parts[1];
               const status = parts[2];
               const discCalledAt = parts.length > 3 ? parts[3] : '';
-              
-              console.log('Called at value:', discCalledAt); // DEBUG
 
               const statusText = getStatusText(status);
               const statusClass = getStatusClass(status);
@@ -371,13 +302,12 @@ function updateTable(teachers) {
                 <div class="discipline-info">
                   <strong>${escapeHtml(discName)}:</strong>
                   <span class="discipline-status ${statusClass}">${statusText}</span>`;
-              
+
               // Add called_at date if status is Apto and date exists
               if (status === '1' && discCalledAt && discCalledAt !== '') {
-                const calledDate = new Date(discCalledAt).toLocaleDateString('pt-BR');
-                disciplineHtml += ` <small>Chamado em: ${calledDate}</small>`;
+                disciplineHtml += ` <small>Chamado em: ${discCalledAt}</small>`;
               }
-              
+
               disciplineHtml += `</div>`;
             }
           }
@@ -399,7 +329,7 @@ function updateTable(teachers) {
     `;
       tbody.innerHTML += row;
     });
-}
+  }
 
   // Helper function to escape HTML
   function escapeHtml(text) {

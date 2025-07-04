@@ -29,7 +29,7 @@ $sql = "
                 d.id, ':', 
                 d.name, ':', 
                 COALESCE(td.enabled, 'null'), ':',
-                COALESCE(td.called_at, '')
+                COALESCE(DATE_FORMAT(td.called_at, '%d/%m/%Y'), '')
             ) SEPARATOR '||'
         ) as discipline_statuses
     FROM postg_teacher t

@@ -15,7 +15,7 @@ $sql = "
     t.id,
     t.name,
     td.enabled,
-    td.called_at as discipline_called_at,
+    COALESCE(DATE_FORMAT(td.called_at, '%d/%m/%Y'), '') as discipline_called_at,
     d.name AS course,
     td.created_at,
     a.name AS category
