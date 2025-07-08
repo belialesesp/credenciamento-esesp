@@ -1,80 +1,160 @@
 <?php 
+// pages/tecnico.php - Complete version with authentication
+session_start();
+require_once '../backend/classes/database.class.php';
 
+// Check authentication
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit();
+}
+
+// Check if user can access this profile
+$requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$user_type = $_SESSION['user_type'] ?? '';
+$is_admin = ($user_type === 'admin');
+$is_own_profile = false;
+
+if (!$requested_id) {
+    // No ID provided
+    if (!$is_admin && $_SESSION['user_type'] === 'technician') {
+        // Redirect to their own profile
+        header('Location: ?id=' . $_SESSION['type_id']);
+        exit();
+    } else {
+        header('Location: home.php');
+        exit();
+    }
+}
+
+// Check access permissions
+if ($is_admin) {
+    // Admin can see all profiles
+    $technician_id = $requested_id;
+} elseif ($_SESSION['user_type'] === 'technician' && $_SESSION['type_id'] == $requested_id) {
+    // User viewing their own profile
+    $technician_id = $requested_id;
+    $is_own_profile = true;
+} else {
+    // Not authorized
+    header('Location: home.php');
+    exit();
+}
+
+// Include styles and header
 echo '<link rel="stylesheet" href="../styles/user.css">';
-
 include '../components/header.php';
 
 require_once '../pdf/assets/title_case.php';
-require_once '../backend/classes/database.class.php';
-require_once '../backend/services/technician.service.php';
 
+// Get technician data
+$conection = new Database();
+$conn = $conection->connect();
 
-if(isset($_GET["id"])) {
-  $technician_id = $_GET['id'];
-  $conection = new Database();
-  $conn = $conection->connect();
-  $technicianService = new TechnicianService($conn);
-  
-  $technician = $technicianService->getTechnician($technician_id);
+try {
+    // Get technician data
+    $sql = "SELECT t.*, a.* 
+            FROM technician t
+            LEFT JOIN address a ON t.address_id = a.id
+            WHERE t.id = :id";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([':id' => $technician_id]);
+    $technician = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$technician) {
+        throw new Exception("Técnico não encontrado");
+    }
+    
+    // Get documents
+    $docSql = "SELECT * FROM documents WHERE technician_id = :id";
+    $docStmt = $conn->prepare($docSql);
+    $docStmt->execute([':id' => $technician_id]);
+    $document = $docStmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Extract data
+    $name = $technician['name'];
+    $document_number = $technician['document_number'];
+    $document_emissor = $technician['document_emissor'];
+    $document_uf = $technician['document_uf'];
+    $phone = $technician['phone'];
+    $cpf = $technician['cpf'];
+    $email = $technician['email'];
+    $scholarship = $technician['scholarship'];
+    $special_needs = $technician['special_needs'];
+    $created_at = $technician['created_at'];
+    $enabled = $technician['enabled'];
+    
+    // Address
+    $address = $technician['address'] ?? '';
+    $city = $technician['city'] ?? '';
+    $state = $technician['state'] ?? '';
+    $zip = $technician['zip'] ?? '';
+    
+    // Document path
+    $file_path = $document['file_path'] ?? '';
+    
+    $statusText = match ($enabled) {
+        1 => 'Apto',
+        0 => 'Inapto',
+        default => 'Aguardando aprovação', 
+    };
 
-  $name = $technician->name;
-  $document_number = $technician->document_number;
-  $document_emissor = $technician->document_emissor;
-  $document_uf = $technician->document_uf;
-  $phone = $technician->phone;
-  $cpf = $technician->cpf;
-  $email = $technician->email;
-  $created_at = $technician->created_at;
-  $address = $technician->address;
-  $city = $technician->address->city;
-  $state = $technician->address->state;
-  $zip = $technician->address->zip;
-  $file_path = $technician->file_path;
-  $special_needs = $technician->special_needs;
-  $scholarship = $technician->scholarship;
+    $statusClass = match ($enabled) {
+        1 => 'status-approved',
+        0 => 'status-not-approved',
+        default => 'status-pending',
+    };
 
-  $enabled = match ($technician->enabled) {
-    1 => 'Apto',
-    0 => 'Inapto',
-    default => 'Aguardando aprovação', 
-  };
+    // Format date
+    $date = new DateTime($created_at);
+    $dateF = $date->format('d/m/Y H:i');
 
-  $statusClass = match ($technician->enabled) {
-    1 => 'status-approved',
-    0 => 'status-not-approved',
-    default => 'status-pending',
-  };
-
-  // Formatar data
-  $date = new DateTime($created_at);
-  $dateF = $date->format('d/m/Y H:i');
-
-  // Formatar filepath
-  $string = $file_path;
-  $position = strpos($string, "tecnicos");
-  $start = $position + strlen("tecnicos/");
-  $path = substr($string, $start);
-
+    // Format filepath
+    $path = '';
+    if ($file_path) {
+        $string = $file_path;
+        $position = strpos($string, "tecnicos");
+        if ($position !== false) {
+            $start = $position + strlen("tecnicos/");
+            $path = substr($string, $start);
+        }
+    }
+    
+} catch (Exception $e) {
+    echo '<div class="container">
+            <h1 class="main-title">Erro</h1>
+            <p>Erro ao carregar dados: ' . htmlspecialchars($e->getMessage()) . '</p>
+            <a href="tecnicos.php" class="btn btn-primary">Voltar para lista de técnicos</a>
+          </div>';
+    include '../components/footer.php';
+    exit();
 }
-
 ?>
 
 <div class="container container-user">
+  <?php if ($is_own_profile): ?>
+  <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
+    <span>Bem-vindo(a) ao seu perfil, <?= titleCase($name) ?>!</span>
+    <a href="../auth/logout.php" class="btn btn-danger btn-sm">Sair</a>
+  </div>
+  <?php endif; ?>
+  
+  <?php if ($is_admin): ?>
   <a href="tecnicos.php" class="back-link">Voltar</a>
+  <?php endif; ?>
+  
   <h1 class="main-title">Dados do Técnico</h1>
 
-  <p class="user-status <?= $statusClass ?>"><?= $enabled ?></p>
-
   <div class="info-section">
-    <h3 class="">Dados pessoais</h3>
+    <h3>Dados pessoais</h3>
     <div class="row">
       <div class="col-9">
         <p class="col-12"><strong>Nome</strong></p>
-        <p class="col-12"> <?= titleCase($name) ?></p>
+        <p class="col-12"><?= titleCase($name) ?></p>
       </div>
       <div class="col-3">
         <p class="col-12"><strong>Data de Inscrição</strong></p>
-        <p class="col-12"> <?= $dateF ?> </p>
+        <p class="col-12"><?= $dateF ?></p>
       </div>
     </div>
     <div class="row">
@@ -96,7 +176,7 @@ if(isset($_GET["id"])) {
       </div>
     </div>
     <div class="row">
-      <p class="col-12"><strong>CPF</strong> </p>
+      <p class="col-12"><strong>CPF</strong></p>
       <p class="col-12"><?= $cpf ?></p>
     </div>
     <div class="row">
@@ -104,36 +184,124 @@ if(isset($_GET["id"])) {
       <p class="col-12"><?= $email ?></p>
     </div>
     <div class="row">
+      <p class="col-12"><strong>Endereço</strong></p>
+      <p class="col-12"><?= titleCase($address) . ', ' . titleCase($city) . ' - ' . strtoupper($state) . ', CEP: ' . $zip ?></p>
+    </div>
+    <div class="row">
       <p class="col-12"><strong>Escolaridade</strong></p>
       <p class="col-12"><?= $scholarship ?></p>
     </div>
+    <?php if($special_needs != 'Não'): ?>
     <div class="row">
-      <p class="col-12"><strong>Endereço</strong></p>
-      <p class="col-12"><?= titleCase($address) . ', ' . titleCase($city) . ' - ' . strtoupper($state) ?></p>
-    </div>
-    <div class="row">
-      <p class="col-12"><strong>Necessidades Especiais?</strong></p>
+      <p class="col-12"><strong>Necessidades Especiais</strong></p>
       <p class="col-12"><?= $special_needs ?></p>
     </div>
+    <?php endif; ?>
   </div>
 
   <div class="info-section">
     <h3>Documentos</h3>
-    <a href="../backend/documentos/tecnicos/<?=$path?>" target="_blank">Download</a>
-    
+    <?php if (!empty($path)): ?>
+      <a href="../backend/documentos/tecnicos/<?=$path?>" target="_blank">Download</a>
+    <?php else: ?>
+      <p>Nenhum documento disponível.</p>
+    <?php endif; ?>
   </div>
 
-  <div class="btns-container">
-    <button class="ok-btn" onclick="updateTechnicianStatus(<?= $technician_id ?>, 1)" <?= $technician->enabled === 1 ? 'disabled' : '' ?> >Habilitar Técnico</button>
-    <button class="cancel-btn" onclick="updateTechnicianStatus(<?= $technician_id ?>, 0)" <?= $technician->enabled === 0 ? 'disabled' : '' ?> >Desabilitar Técnico</button>
+  <?php if ($is_own_profile): ?>
+  <!-- Password Change Section -->
+  <div class="info-section">
+    <h3>Alterar Senha</h3>
+    
+    <?php if(isset($_SESSION['password_message'])): ?>
+        <div class="alert alert-success">
+            <?= htmlspecialchars($_SESSION['password_message']) ?>
+        </div>
+        <?php unset($_SESSION['password_message']); ?>
+    <?php endif; ?>
+    
+    <?php if(isset($_SESSION['password_error'])): ?>
+        <div class="alert alert-danger">
+            <?= htmlspecialchars($_SESSION['password_error']) ?>
+        </div>
+        <?php unset($_SESSION['password_error']); ?>
+    <?php endif; ?>
+    
+    <?php if($_SESSION['first_login'] ?? false): ?>
+        <div class="alert alert-warning">
+            <strong>Primeiro acesso!</strong> Por segurança, recomendamos que você altere sua senha.
+        </div>
+    <?php endif; ?>
+    
+    <form method="post" action="../auth/process_change_password.php" class="needs-validation" novalidate>
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label for="current_password">Senha Atual</label>
+                <input type="password" class="form-control" id="current_password" 
+                       name="current_password" required>
+                <small class="form-text text-muted">
+                    Se é seu primeiro acesso, use seu CPF (apenas números)
+                </small>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="new_password">Nova Senha</label>
+                <input type="password" class="form-control" id="new_password" 
+                       name="new_password" required minlength="8">
+                <small class="form-text text-muted">
+                    Mínimo 8 caracteres, com letras maiúsculas, minúsculas, números e símbolos (@$!%*?&)
+                </small>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label for="confirm_password">Confirmar Nova Senha</label>
+                <input type="password" class="form-control" id="confirm_password" 
+                       name="confirm_password" required>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Alterar Senha</button>
+    </form>
   </div>
+  <?php endif; ?>
+
+  <?php if($is_admin): ?>
+  <div class="info-section">
+    <h3>Status do Técnico</h3>
+    <div class="row">
+      <p class="col-3"><strong>Status:</strong></p>
+      <p class="col-9 user-status <?= $statusClass ?>"><?= $statusText ?></p>
+    </div>
+    <div class="row">
+      <button class="btn ok-btn" onclick="updateTechnicianStatus(<?= $technician_id ?>, 1)"
+              <?= $enabled == 1 ? 'disabled' : '' ?>>Aprovar</button>
+      <button class="btn cancel-btn" onclick="updateTechnicianStatus(<?= $technician_id ?>, 0)"
+              <?= $enabled == 0 ? 'disabled' : '' ?>>Reprovar</button>
+    </div>
+  </div>
+  <?php endif; ?>
 
 </div>
 
+<?php 
+  include '../components/footer.php';
+?>
+
 <script>
+// Password validation
+document.getElementById('confirm_password')?.addEventListener('input', function() {
+    const newPassword = document.getElementById('new_password').value;
+    if (newPassword !== this.value) {
+        this.setCustomValidity('As senhas devem ser iguais');
+    } else {
+        this.setCustomValidity('');
+    }
+});
 
-  function updateTechnicianStatus(technicianId, status) {
-
+<?php if($is_admin): ?>
+function updateTechnicianStatus(technicianId, status) {
   if(confirm("Tem certeza que deseja alterar o status do técnico?")) {
     fetch('../backend/api/update_technician_status.php', {
       method: 'POST',
@@ -148,7 +316,6 @@ if(isset($_GET["id"])) {
     .then(response=> response.json())
     .then(data => {
       if(data.success) {
-        
         const statusElement = document.querySelector('.user-status');
         const enableButton = document.querySelector('.ok-btn');
         const disableButton = document.querySelector('.cancel-btn');
@@ -179,5 +346,5 @@ if(isset($_GET["id"])) {
     })
   }
 }
-
+<?php endif; ?>
 </script>

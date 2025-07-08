@@ -1,30 +1,54 @@
 <?php 
-
-echo '<link rel="stylesheet" href="../styles/user.css">';
-
-include '../components/header.php';
-
-require_once '../pdf/assets/title_case.php';
+// pages/docente-pos.php - Complete version with authentication
+session_start();
 require_once '../backend/classes/database.class.php';
-require_once '../backend/services/teacherpos.service.php';
 
-// Initialize variables to prevent undefined warnings
-$teacher = null;
-$teacher_id = null;
-
-// Check if ID is provided
-if(!isset($_GET["id"]) || empty($_GET["id"])) {
-    echo '<div class="container">
-            <h1 class="main-title">Erro</h1>
-            <p>ID do docente não fornecido.</p>
-            <a href="docentes-pos.php" class="btn btn-primary">Voltar para lista de docentes</a>
-          </div>';
-    include '../components/footer.php';
+// Check authentication
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
     exit();
 }
 
+// Check if user can access this profile
+$requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$user_type = $_SESSION['user_type'] ?? '';
+$is_admin = ($user_type === 'admin');
+$is_own_profile = false;
+
+if (!$requested_id) {
+    // No ID provided
+    if (!$is_admin && $_SESSION['user_type'] === 'postg_teacher') {
+        // Redirect to their own profile
+        header('Location: ?id=' . $_SESSION['type_id']);
+        exit();
+    } else {
+        header('Location: home.php');
+        exit();
+    }
+}
+
+// Check access permissions
+if ($is_admin) {
+    // Admin can see all profiles
+    $teacher_id = $requested_id;
+} elseif ($_SESSION['user_type'] === 'postg_teacher' && $_SESSION['type_id'] == $requested_id) {
+    // User viewing their own profile
+    $teacher_id = $requested_id;
+    $is_own_profile = true;
+} else {
+    // Not authorized
+    header('Location: home.php');
+    exit();
+}
+
+// Include styles and header
+echo '<link rel="stylesheet" href="../styles/user.css">';
+include '../components/header.php';
+
+require_once '../pdf/assets/title_case.php';
+require_once '../backend/services/teacherpos.service.php';
+
 // Get teacher data
-$teacher_id = intval($_GET['id']);
 $conection = new Database();
 $conn = $conection->connect();
 $teacherService = new TeacherPostGService($conn);
@@ -61,19 +85,15 @@ try {
     $disciplines = $teacher->disciplines;
     $activities = $teacher->activities;
     $special_needs = $teacher->special_needs;
+    $enabled = $teacher->enabled;
 
-    // Add debugging
-    error_log('Teacher ID: ' . $teacher_id);
-    error_log('Disciplines loaded: ' . json_encode($disciplines));
-    error_log('Number of disciplines: ' . count($disciplines));
-
-    $enabled = match ($teacher->enabled) {
+    $statusText = match ($enabled) {
         1 => 'Apto',
         0 => 'Inapto',
         default => 'Aguardando aprovação', 
     };
 
-    $statusClass = match ($teacher->enabled) {
+    $statusClass = match ($enabled) {
         1 => 'status-approved',
         0 => 'status-not-approved',
         default => 'status-pending',
@@ -103,11 +123,20 @@ try {
     include '../components/footer.php';
     exit();
 }
-
 ?>
 
 <div class="container container-user">
+  <?php if ($is_own_profile): ?>
+  <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
+    <span>Bem-vindo(a) ao seu perfil, <?= titleCase($name) ?>!</span>
+    <a href="../auth/logout.php" class="btn btn-danger btn-sm">Sair</a>
+  </div>
+  <?php endif; ?>
+  
+  <?php if ($is_admin): ?>
   <a href="docentes-pos.php" class="back-link">Voltar</a>
+  <?php endif; ?>
+  
   <h1 class="main-title">Dados do Docente - Pós-Graduação</h1>
 
   <div class="info-section">
@@ -150,63 +179,69 @@ try {
     </div>
     <div class="row">
       <p class="col-12"><strong>Endereço</strong></p>
-      <p class="col-12"><?= titleCase($address) . ', ' . titleCase($city) . ' - ' . strtoupper($state) ?></p>
+      <p class="col-12"><?= titleCase($address) . ', ' . titleCase($city) . ' - ' . strtoupper($state) . ', CEP: ' . $zip ?></p>
     </div>
+    <?php if($special_needs != 'Não'): ?>
     <div class="row">
-      <p class="col-12"><strong>Necessidades Especiais?</strong></p>
+      <p class="col-12"><strong>Necessidades Especiais</strong></p>
       <p class="col-12"><?= $special_needs ?></p>
     </div>
-  </div>
-
-  <div class="info-section">
-    <h3>Habilitação</h3>
-    <?php if (!empty($education_degree)): ?>
-      <?php foreach($education_degree as $degree): ?>
-        <div class="row">
-          <p class="col-12"><strong><?= $degree->degree ?></strong> - <?= $degree->name ?></p>
-          <p class="col-12"><?= $degree->institution ?></p>
-        </div>
-      <?php endforeach; ?>
-    <?php else: ?>
-      <p>Nenhuma habilitação cadastrada.</p>
     <?php endif; ?>
   </div>
 
   <div class="info-section">
-    <h3>Cursos</h3>
+    <h3>Formação</h3>
+    <?php if (!empty($education_degree)): ?>
+      <?php foreach($education_degree as $education): ?>
+      <p><?= $education->degree ?> - <?= $education->instituition ?></p>
+      <?php endforeach ?>
+    <?php else: ?>
+      <p>Nenhuma formação cadastrada.</p>
+    <?php endif; ?>
+  </div>
+
+  <div class="info-section">
+    <h3>Curso(s)</h3>
     <?php if (!empty($disciplines)): ?>
       <?php foreach($disciplines as $discipline): ?>
-      <div class="discipline-item">
-        <div class="discipline-header">
-          <div class="discipline-info">
-            <p>
-              <strong><?= htmlspecialchars($discipline->name) ?></strong>
-              <span class="discipline-status <?= $discipline->getStatusClass() ?>"><?= $discipline->getStatusText() ?></span>
-            </p>
-            <p><?= htmlspecialchars($discipline->post_graduation) ?></p>
-            <p>Eixo: <?= htmlspecialchars($discipline->eixo) ?></p>
-          </div>
-          <div class="discipline-actions">
-            <button 
-              class="btn-approve" 
-              onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->getId() ?>, 1)"
-              <?= $discipline->enabled === 1 ? 'disabled' : '' ?>>
-              Aprovar
-            </button>
-            <button 
-              class="btn-reject" 
-              onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->getId() ?>, 0)"
-              <?= $discipline->enabled === 0 ? 'disabled' : '' ?>>
-              Reprovar
-            </button>
-            <button 
-              class="btn-reset" 
-              onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->getId() ?>, null)"
-              <?= $discipline->enabled === null ? 'disabled' : '' ?>>
-              Resetar
-            </button>
-          </div>
+      <div class="row mb-2 align-items-center">
+        <div class="col-md-6">
+          <p class="mb-0"><?= $discipline['name'] ?></p>
         </div>
+        <div class="col-md-3">
+          <?php 
+          $discStatusText = match($discipline['enabled']) {
+            '1' => 'Apto',
+            '0' => 'Inapto',
+            default => 'Aguardando'
+          };
+          $discStatusClass = match($discipline['enabled']) {
+            '1' => 'text-success',
+            '0' => 'text-danger',
+            default => 'text-warning'
+          };
+          ?>
+          <span class="<?= $discStatusClass ?>"><strong><?= $discStatusText ?></strong></span>
+        </div>
+        <?php if($is_admin): ?>
+        <div class="col-md-3">
+          <button class="btn btn-sm btn-success" 
+                  onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline['id'] ?>, 1)"
+                  <?= $discipline['enabled'] == '1' ? 'disabled' : '' ?>>
+            Aprovar
+          </button>
+          <button class="btn btn-sm btn-danger" 
+                  onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline['id'] ?>, 0)"
+                  <?= $discipline['enabled'] == '0' ? 'disabled' : '' ?>>
+            Reprovar
+          </button>
+          <button class="btn btn-sm btn-secondary" 
+                  onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline['id'] ?>, null)"
+                  <?= $discipline['enabled'] === null ? 'disabled' : '' ?>>
+            Resetar
+          </button>
+        </div>
+        <?php endif; ?>
       </div>
       <?php endforeach ?>
     <?php else: ?>
@@ -234,6 +269,81 @@ try {
     <?php endif; ?>
   </div>
 
+  <?php if ($is_own_profile): ?>
+  <!-- Password Change Section -->
+  <div class="info-section">
+    <h3>Alterar Senha</h3>
+    
+    <?php if(isset($_SESSION['password_message'])): ?>
+        <div class="alert alert-success">
+            <?= htmlspecialchars($_SESSION['password_message']) ?>
+        </div>
+        <?php unset($_SESSION['password_message']); ?>
+    <?php endif; ?>
+    
+    <?php if(isset($_SESSION['password_error'])): ?>
+        <div class="alert alert-danger">
+            <?= htmlspecialchars($_SESSION['password_error']) ?>
+        </div>
+        <?php unset($_SESSION['password_error']); ?>
+    <?php endif; ?>
+    
+    <?php if($_SESSION['first_login'] ?? false): ?>
+        <div class="alert alert-warning">
+            <strong>Primeiro acesso!</strong> Por segurança, recomendamos que você altere sua senha.
+        </div>
+    <?php endif; ?>
+    
+    <form method="post" action="../auth/process_change_password.php" class="needs-validation" novalidate>
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label for="current_password">Senha Atual</label>
+                <input type="password" class="form-control" id="current_password" 
+                       name="current_password" required>
+                <small class="form-text text-muted">
+                    Se é seu primeiro acesso, use seu CPF (apenas números)
+                </small>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="new_password">Nova Senha</label>
+                <input type="password" class="form-control" id="new_password" 
+                       name="new_password" required minlength="8">
+                <small class="form-text text-muted">
+                    Mínimo 8 caracteres, com letras maiúsculas, minúsculas, números e símbolos (@$!%*?&)
+                </small>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label for="confirm_password">Confirmar Nova Senha</label>
+                <input type="password" class="form-control" id="confirm_password" 
+                       name="confirm_password" required>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Alterar Senha</button>
+    </form>
+  </div>
+  <?php endif; ?>
+
+  <?php if($is_admin): ?>
+  <div class="info-section">
+    <h3>Status do Docente</h3>
+    <div class="row">
+      <p class="col-3"><strong>Status:</strong></p>
+      <p class="col-9 user-status <?= $statusClass ?>"><?= $statusText ?></p>
+    </div>
+    <div class="row">
+      <button class="btn ok-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 1)"
+              <?= $enabled == 1 ? 'disabled' : '' ?>>Aprovar</button>
+      <button class="btn cancel-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 0)"
+              <?= $enabled == 0 ? 'disabled' : '' ?>>Reprovar</button>
+    </div>
+  </div>
+  <?php endif; ?>
+
 </div>
 
 <?php 
@@ -241,96 +351,102 @@ try {
 ?>
 
 <script>
-// Debug function - TEMPORARY
-function testUpdateAPI() {
-    console.log('Testing API call...');
-    
-    const testData = {
-        teacher_id: <?= $teacher_id ?>,
-        discipline_id: <?= !empty($disciplines) ? $disciplines[0]->getId() : 1 ?>, 
-        status: 1
-    };
-    
-    console.log('Sending data:', testData);
-    
-    fetch('../backend/api/update_postg_teacher_discipline_status.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(testData)
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        return response.text(); // Use text() first to see raw response
-    })
-    .then(text => {
-        console.log('Raw response:', text);
-        try {
-            const data = JSON.parse(text);
-            console.log('Parsed data:', data);
-        } catch (e) {
-            console.error('JSON parse error:', e);
-        }
-    })
-    .catch(error => {
-        console.error('Fetch error:', error);
-    });
-}
+// Password validation
+document.getElementById('confirm_password')?.addEventListener('input', function() {
+    const newPassword = document.getElementById('new_password').value;
+    if (newPassword !== this.value) {
+        this.setCustomValidity('As senhas devem ser iguais');
+    } else {
+        this.setCustomValidity('');
+    }
+});
 
-// Main function for updating discipline status
+<?php if($is_admin): ?>
 function updateDisciplineStatus(teacherId, disciplineId, status) {
-    console.log('updateDisciplineStatus called with:', {teacherId, disciplineId, status});
-    
-    // Show loading state
-    const buttons = document.querySelectorAll(`[onclick*="updateDisciplineStatus(${teacherId}, ${disciplineId}"]`);
-    buttons.forEach(btn => {
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
-    });
-
-    // Prepare JSON data
-    const data = {
-        teacher_id: parseInt(teacherId),
-        discipline_id: parseInt(disciplineId),
-        status: status === null ? 'null' : parseInt(status)
-    };
-    
-    console.log('Sending data:', data);
-
+  const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar o status d');
+  
+  if(confirm(`Tem certeza que deseja ${statusText}o docente para este curso?`)) {
     fetch('../backend/api/update_postg_teacher_discipline_status.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        teacher_id: teacherId,
+        discipline_id: disciplineId,
+        status: status === null ? 'null' : status
+      })
     })
-    .then(response => {
-        console.log('Response status:', response.status);
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('Response data:', data);
-        if (data.success) {
-            alert('Status atualizado com sucesso!');
-            window.location.reload();
-        } else {
-            alert('Erro ao atualizar status: ' + data.message);
-            // Re-enable buttons on error
-            buttons.forEach(btn => {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-            });
-        }
+      if(data.success) {
+        Toastify({
+          text: "Status do curso atualizado!",
+          className: "statusToast",
+          style: {
+            background: "#38b000",
+          },
+        }).showToast();
+        
+        // Reload the page to show updated status
+        setTimeout(() => {
+          location.reload();
+        }, 1000);
+      } else {
+        alert('Erro ao atualizar o status: ' + (data.message || 'Erro desconhecido'));
+      }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Erro ao atualizar status: ' + error.message);
-        // Re-enable buttons on error
-        buttons.forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-        });
+      console.error('Erro: ', error);
+      alert('Erro ao atualizar o status');
     });
+  }
 }
+
+function updateTeacherStatus(teacherId, status) {
+  if(confirm("Tem certeza que deseja alterar o status do docente?")) {
+    fetch('../backend/api/update_postg_teacher_status.php', {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        teacher_id: teacherId,
+        status: status
+      })
+    })
+    .then(response=> response.json())
+    .then(data => {
+      if(data.success) {
+        const statusElement = document.querySelector('.user-status');
+        const enableButton = document.querySelector('.ok-btn');
+        const disableButton = document.querySelector('.cancel-btn');
+        
+        const statusText = status === 1 ? 'Apto' : 'Inapto';
+
+        statusElement.textContent = statusText;
+        statusElement.className = 'user-status ' + (status === 1 ? 'status-approved' : 'status-not-approved');
+
+        enableButton.disabled = (status === 1);
+        disableButton.disabled = (status === 0);         
+
+        Toastify({
+          text: "Status do docente atualizado!",
+          className: "statusToast",
+          style: {
+            background: "#38b000",
+          },
+        }).showToast();
+
+      } else {
+        alert('Erro ao atualizar o status' + (data.message || 'Erro desconhecido'))
+      }
+    })
+    .catch(error => {
+      console.error('Erro: ', error);
+      alert('Erro ao atualizar o status');
+    })
+  }
+}
+<?php endif; ?>
 </script>
