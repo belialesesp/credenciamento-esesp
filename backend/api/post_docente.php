@@ -64,16 +64,69 @@ function post_address($conn) {
 
   if($query_execute) {
     $id = $conn->lastInsertId();
+// CREATE USER ACCOUNT HERE
+    create_user_account($conn, $id, $name, $email, $cpf, 'teacher');
 
-    post_docente($id, $conn);
+    post_activities($conn, $id);
+    post_education($conn, $id);
+    post_certificate($conn, $id);
+    post_discipline($conn, $id);
+    post_modules($conn, $id);
 
-    exit(0);
+    $_SESSION['form_submitted'] = true;
+
+    $response = [
+      'success' => true,
+      'redirect_url' =>  "https://credenciamento.esesp.es.gov.br/credenciamento/pages/sucesso.php?category=docente&id=$id"
+    ];
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+
   } else {
-    $_SESSION['message'] = 'Algo de errado aconteceu';
-    header('Location: ../../error.html');
-    exit(0);
+    $response = [
+      'success' => false,
+      'redirect_url' => 'https://credenciamento.esesp.es.gov.br/credenciamento/pages/error.html'
+    ];
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
   }
 
+}
+function create_user_account($conn, $teacher_id, $name, $email, $cpf, $user_type) {
+    try {
+        // Clean CPF
+        $cleanCpf = preg_replace('/[^0-9]/', '', $cpf);
+        
+        // Check if user already exists
+        $checkStmt = $conn->prepare("SELECT id FROM user WHERE cpf = :cpf AND user_type = :type");
+        $checkStmt->execute([':cpf' => $cleanCpf, ':type' => $user_type]);
+        
+        if (!$checkStmt->fetch()) {
+            // Create user with CPF as default password
+            $passwordHash = password_hash($cleanCpf, PASSWORD_DEFAULT);
+            
+            $insertStmt = $conn->prepare("
+                INSERT INTO user (name, email, cpf, password_hash, user_type, type_id, first_login) 
+                VALUES (:name, :email, :cpf, :password, :type, :type_id, TRUE)
+            ");
+            
+            $insertStmt->execute([
+                ':name' => $name,
+                ':email' => $email,
+                ':cpf' => $cleanCpf,
+                ':password' => $passwordHash,
+                ':type' => $user_type,
+                ':type_id' => $teacher_id
+            ]);
+            
+            return true;
+        }
+    } catch (PDOException $e) {
+        error_log("Error creating user account: " . $e->getMessage());
+        return false;
+    }
 }
 
 function post_docente($address_id, $conn) {

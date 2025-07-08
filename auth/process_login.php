@@ -1,5 +1,5 @@
 <?php
-// auth/process_login.php - REPLACE THE EXISTING FILE WITH THIS
+// auth/process_login.php
 session_start();
 require_once '../backend/classes/database.class.php';
 
@@ -26,7 +26,7 @@ function processUnifiedLogin($username, $password) {
                     FROM user 
                     WHERE email = :username";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(':username', $username); // Use original username for 'credenciamento'
+            $stmt->bindParam(':username', $username);
         } else {
             // CPF login (docentes, tecnicos, interpretes)
             $sql = "SELECT id, name, email, password_hash, user_type, type_id, first_login 
@@ -63,7 +63,6 @@ function processUnifiedLogin($username, $password) {
                     $response['redirect'] = '../pages/docente-pos.php?id=' . $user['type_id'];
                     break;
                 case 'technician':
-                    // Check if tecnico.php exists, otherwise go to home
                     if (file_exists('../pages/tecnico.php')) {
                         $response['redirect'] = '../pages/tecnico.php?id=' . $user['type_id'];
                     } else {
@@ -71,7 +70,6 @@ function processUnifiedLogin($username, $password) {
                     }
                     break;
                 case 'interpreter':
-                    // Check if interprete.php exists, otherwise go to home
                     if (file_exists('../pages/interprete.php')) {
                         $response['redirect'] = '../pages/interprete.php?id=' . $user['type_id'];
                     } else {
