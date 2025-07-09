@@ -1,9 +1,9 @@
 <?php
-// auth/process_login.php
+// auth/process_login.php - CPF Only Version
 session_start();
 require_once '../backend/classes/database.class.php';
 
-function processUnifiedLogin($username, $password) {
+function processUnifiedLogin($cpf, $password) {
     $response = [
         'success' => false,
         'message' => '',
@@ -14,26 +14,22 @@ function processUnifiedLogin($username, $password) {
         $connection = new Database();
         $conn = $connection->connect();
 
-        // Clean username (remove CPF formatting if present)
-        $cleanUsername = preg_replace('/[^0-9a-zA-Z@._-]/', '', $username);
+        // Clean CPF (remove formatting)
+        $cleanCpf = preg_replace('/[^0-9a-zA-Z]/', '', $cpf);
         
-        // Check if it's an email or CPF
-        $isEmail = filter_var($username, FILTER_VALIDATE_EMAIL);
-        
-        if ($isEmail || $username === 'credenciamento') {
-            // Email login (admin or special case)
+        // Special case for admin login
+        if ($cpf === 'credenciamento' || $cleanCpf === 'credenciamento') {
             $sql = "SELECT id, name, email, password_hash, user_type, type_id, first_login 
                     FROM user 
-                    WHERE email = :username";
+                    WHERE email = 'credenciamento'";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(':username', $username);
         } else {
-            // CPF login (docentes, tecnicos, interpretes)
+            // Regular CPF login
             $sql = "SELECT id, name, email, password_hash, user_type, type_id, first_login 
                     FROM user 
-                    WHERE cpf = :username";
+                    WHERE cpf = :cpf";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(':username', $cleanUsername);
+            $stmt->bindParam(':cpf', $cleanCpf);
         }
         
         $stmt->execute();
@@ -80,7 +76,7 @@ function processUnifiedLogin($username, $password) {
                     $response['redirect'] = '../pages/home.php';
             }
         } else {
-            $response['message'] = 'Usuário ou senha inválidos!';
+            $response['message'] = 'CPF ou senha inválidos!';
         }
     } catch (PDOException $e) {
         $response['message'] = 'Erro ao processar login: ' . $e->getMessage();
@@ -92,24 +88,19 @@ function processUnifiedLogin($username, $password) {
 
 // Process POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Support both old (email) and new (username) field names
-    $username = $_POST['username'] ?? $_POST['email'] ?? '';
+    // Get CPF and password
+    $cpf = $_POST['cpf'] ?? $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
     
-    if (empty($username) || empty($password)) {
+    if (empty($cpf) || empty($password)) {
         $_SESSION['login_error'] = 'Por favor, preencha todos os campos.';
         header('Location: ../pages/login.php');
         exit;
     }
     
-    $result = processUnifiedLogin($username, $password);
+    $result = processUnifiedLogin($cpf, $password);
     
     if ($result['success']) {
-        // Handle remember me
-        if (isset($_POST['remember']) && $_POST['remember']) {
-            setcookie('remember_username', $username, time() + (86400 * 30), '/');
-        }
-        
         header('Location: ' . $result['redirect']);
         exit;
     } else {

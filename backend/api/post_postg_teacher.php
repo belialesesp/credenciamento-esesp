@@ -75,40 +75,7 @@ function post_address($conn) {
   }
 
 }
-function create_user_account($conn, $teacher_id, $name, $email, $cpf, $user_type) {
-    try {
-        // Clean CPF
-        $cleanCpf = preg_replace('/[^0-9]/', '', $cpf);
-        
-        // Check if user already exists
-        $checkStmt = $conn->prepare("SELECT id FROM user WHERE cpf = :cpf AND user_type = :type");
-        $checkStmt->execute([':cpf' => $cleanCpf, ':type' => $user_type]);
-        
-        if (!$checkStmt->fetch()) {
-            // Create user with CPF as default password
-            $passwordHash = password_hash($cleanCpf, PASSWORD_DEFAULT);
-            
-            $insertStmt = $conn->prepare("
-                INSERT INTO user (name, email, cpf, password_hash, user_type, type_id, first_login) 
-                VALUES (:name, :email, :cpf, :password, :type, :type_id, TRUE)
-            ");
-            
-            $insertStmt->execute([
-                ':name' => $name,
-                ':email' => $email,
-                ':cpf' => $cleanCpf,
-                ':password' => $passwordHash,
-                ':type' => $user_type,
-                ':type_id' => $teacher_id
-            ]);
-            
-            return true;
-        }
-    } catch (PDOException $e) {
-        error_log("Error creating user account: " . $e->getMessage());
-        return false;
-    }
-}
+
 function post_postg_teacher($address_id, $conn) {
   $name = $_POST["name"];
   $cpf = $_POST["cpf"];
@@ -170,7 +137,7 @@ function post_postg_teacher($address_id, $conn) {
 
   if($query_execute) {
     $id = $conn->lastInsertId();
-
+    create_user_account($conn, $id, $name, $email, $cpf, 'postg_teacher');
     post_activities($conn, $id);
     post_education($conn, $id);
     post_certificate($conn, $id);
@@ -198,7 +165,40 @@ function post_postg_teacher($address_id, $conn) {
 
 
 }
-
+function create_user_account($conn, $teacher_id, $name, $email, $cpf, $user_type) {
+    try {
+        // Clean CPF
+        $cleanCpf = preg_replace('/[^0-9]/', '', $cpf);
+        
+        // Check if user already exists
+        $checkStmt = $conn->prepare("SELECT id FROM user WHERE cpf = :cpf AND user_type = :type");
+        $checkStmt->execute([':cpf' => $cleanCpf, ':type' => $user_type]);
+        
+        if (!$checkStmt->fetch()) {
+            // Create user with CPF as default password
+            $passwordHash = password_hash($cleanCpf, PASSWORD_DEFAULT);
+            
+            $insertStmt = $conn->prepare("
+                INSERT INTO user (name, email, cpf, password_hash, user_type, type_id, first_login) 
+                VALUES (:name, :email, :cpf, :password, :type, :type_id, TRUE)
+            ");
+            
+            $insertStmt->execute([
+                ':name' => $name,
+                ':email' => $email,
+                ':cpf' => $cleanCpf,
+                ':password' => $passwordHash,
+                ':type' => $user_type,
+                ':type_id' => $teacher_id
+            ]);
+            
+            return true;
+        }
+    } catch (PDOException $e) {
+        error_log("Error creating user account: " . $e->getMessage());
+        return false;
+    }
+}
 function post_activities($conn, $teacher_id) {
   if($_POST['position']) {
 

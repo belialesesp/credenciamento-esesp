@@ -1,5 +1,5 @@
 <?php
-// pages/login.php - MINIMAL CHANGES TO YOUR EXISTING FILE
+// pages/login.php - CPF Only Version
 
 require_once('../init.php');
 
@@ -30,11 +30,12 @@ require_once '../components/header.php';
 
   <form id="loginForm" method="post" action="../auth/process_login.php" class="needs-validation" enctype="multipart/form-data" novalidate>
   
-    <!-- CHANGED: type from "email" to "text", name from "email" to "username" -->
     <div class="did-floating-label-content col-12">
-      <input name="username" id="username" class="did-floating-input form-control" type="text" placeholder=" " value="<?= htmlspecialchars($_POST['username'] ?? '') ?>" required/>
-      <label for="username" class="did-floating-label">Email ou CPF*</label>
-      <div class="invalid-feedback">Informe seu email ou CPF</div>
+      <input name="cpf" id="cpf" class="did-floating-input form-control" type="text" 
+             placeholder=" " value="<?= htmlspecialchars($_POST['cpf'] ?? '') ?>" 
+             maxlength="20" required/>
+      <label for="cpf" class="did-floating-label">CPF*</label>
+      <div class="invalid-feedback">Informe seu CPF</div>
     </div>
     
     <div class="did-floating-label-content col-12">
@@ -43,50 +44,36 @@ require_once '../components/header.php';
       <div class="invalid-feedback">Informe uma senha</div>
     </div>
   
-    <input type="submit" class="btnF form-btn" name="send-form" value="Enviar"></input>
+    <input type="submit" class="btnF form-btn" name="send-form" value="Entrar"></input>
       
   </form>
   
   <div class="notes-container">
-    <!-- CHANGED: Updated text and link -->
-    <p class="obs">Primeira vez acessando? Use seu CPF como usuário e senha.</p>
-    <p class="obs"><a href="./forgot_password.php">Esqueci minha senha</a></p>
+    <p class="obs">Primeira vez acessando? Use seu CPF como senha inicial.</p>
+    <p class="obs"><small>Admin: use 'credenciamento' como CPF</small></p>
   </div>
 
 </div>
 
-<?php
-require_once '../components/footer.php';
-?>
+<?php require_once '../components/footer.php'; ?>
 
 <script>
-  // ADDED: CPF formatting
-  document.getElementById('username').addEventListener('input', function(e) {
+// CPF Mask with special case for admin
+document.getElementById('cpf').addEventListener('input', function(e) {
     let value = e.target.value;
-    // Only apply mask if all characters are numbers
-    if (/^\d+$/.test(value.replace(/[\.\-]/g, ''))) {
-      value = value.replace(/\D/g, '');
-      if (value.length <= 11) {
-        value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-      }
-      e.target.value = value;
+    
+    // Allow 'credenciamento' for admin login
+    if (value.toLowerCase().startsWith('credenciamento')) {
+        return;
     }
-  });
-
-  // EXISTING: Your validation code
-  (function() {
-    'use strict';
-    window.addEventListener('load', function() {
-      var forms = document.getElementsByClassName('needs-validation');
-      var validation = Array.prototype.filter.call(forms, function(form) {
-        form.addEventListener('submit', function(event) {
-          if (form.checkValidity() === false) {
-            event.preventDefault();
-            event.stopPropagation();
-          }
-          form.classList.add('was-validated');
-        }, false);
-      });
-    }, false);
-  })();
+    
+    // Regular CPF formatting
+    value = value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    e.target.value = value;
+});
 </script>

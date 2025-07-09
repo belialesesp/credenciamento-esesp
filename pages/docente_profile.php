@@ -140,7 +140,7 @@ try {
     <h3>Formação</h3>
     <?php if (!empty($education_degree)): ?>
       <?php foreach($education_degree as $education): ?>
-      <p><strong><?= $education->degree ?></strong> - <?= $education->instituition ?></p>
+      <p><strong><?= $education->degree ?></strong> - <?= $education->institution ?></p>
       <?php endforeach ?>
     <?php else: ?>
       <p>Nenhuma formação cadastrada.</p>

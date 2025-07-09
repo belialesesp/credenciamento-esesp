@@ -11,11 +11,9 @@ function post_form() {
 
     post_address($conn);
 
-
   }  else {
     header('Location: ../../index.html');
   }
-
 }
 
 function post_address($conn) {
@@ -64,69 +62,15 @@ function post_address($conn) {
 
   if($query_execute) {
     $id = $conn->lastInsertId();
-// CREATE USER ACCOUNT HERE
-    create_user_account($conn, $id, $name, $email, $cpf, 'teacher');
-
-    post_activities($conn, $id);
-    post_education($conn, $id);
-    post_certificate($conn, $id);
-    post_discipline($conn, $id);
-    post_modules($conn, $id);
-
-    $_SESSION['form_submitted'] = true;
-
-    $response = [
-      'success' => true,
-      'redirect_url' =>  "https://credenciamento.esesp.es.gov.br/credenciamento/pages/sucesso.php?category=docente&id=$id"
-    ];
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit();
+    
+    // Call post_docente with the address ID
+    post_docente($id, $conn);
 
   } else {
-    $response = [
-      'success' => false,
-      'redirect_url' => 'https://credenciamento.esesp.es.gov.br/credenciamento/pages/error.html'
-    ];
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit();
+    $_SESSION['message'] = 'Algo de errado aconteceu';
+    header('Location: ../../error.html');
+    exit(0);
   }
-
-}
-function create_user_account($conn, $teacher_id, $name, $email, $cpf, $user_type) {
-    try {
-        // Clean CPF
-        $cleanCpf = preg_replace('/[^0-9]/', '', $cpf);
-        
-        // Check if user already exists
-        $checkStmt = $conn->prepare("SELECT id FROM user WHERE cpf = :cpf AND user_type = :type");
-        $checkStmt->execute([':cpf' => $cleanCpf, ':type' => $user_type]);
-        
-        if (!$checkStmt->fetch()) {
-            // Create user with CPF as default password
-            $passwordHash = password_hash($cleanCpf, PASSWORD_DEFAULT);
-            
-            $insertStmt = $conn->prepare("
-                INSERT INTO user (name, email, cpf, password_hash, user_type, type_id, first_login) 
-                VALUES (:name, :email, :cpf, :password, :type, :type_id, TRUE)
-            ");
-            
-            $insertStmt->execute([
-                ':name' => $name,
-                ':email' => $email,
-                ':cpf' => $cleanCpf,
-                ':password' => $passwordHash,
-                ':type' => $user_type,
-                ':type_id' => $teacher_id
-            ]);
-            
-            return true;
-        }
-    } catch (PDOException $e) {
-        error_log("Error creating user account: " . $e->getMessage());
-        return false;
-    }
 }
 
 function post_docente($address_id, $conn) {
@@ -138,7 +82,6 @@ function post_docente($address_id, $conn) {
   $email = $_POST["email"];
   $phone = $_POST["phone"];
   $specialNeeds = strlen($_POST['specialNeedsDetails']) > 0 ? $_POST['specialNeedsDetails'] : 'Não';
-
 
   $terms = filter_input(INPUT_POST, "terms", FILTER_VALIDATE_BOOL);
   $terms2 = filter_input(INPUT_POST, "terms2", FILTER_VALIDATE_BOOL);
@@ -191,12 +134,14 @@ function post_docente($address_id, $conn) {
   if($query_execute) {
     $id = $conn->lastInsertId();
 
+    // CREATE USER ACCOUNT HERE - Now with correct variables in scope
+    create_user_account($conn, $id, $name, $email, $cpf, 'teacher');
+
     post_activities($conn, $id);
     post_education($conn, $id);
     post_certificate($conn, $id);
     post_discipline($conn, $id);
     post_modules($conn, $id);
-
 
     $_SESSION['form_submitted'] = true;
 
@@ -217,8 +162,44 @@ function post_docente($address_id, $conn) {
     echo json_encode($response);
     exit();
   }
+}
 
-
+function create_user_account($conn, $teacher_id, $name, $email, $cpf, $user_type) {
+    try {
+        // Clean CPF
+        $cleanCpf = preg_replace('/[^0-9]/', '', $cpf);
+        
+        // Check if user already exists
+        $checkStmt = $conn->prepare("SELECT id FROM user WHERE cpf = :cpf AND user_type = :type");
+        $checkStmt->execute([':cpf' => $cleanCpf, ':type' => $user_type]);
+        
+        if (!$checkStmt->fetch()) {
+            // Create user with CPF as default password
+            $passwordHash = password_hash($cleanCpf, PASSWORD_DEFAULT);
+            
+            $insertStmt = $conn->prepare("
+                INSERT INTO user (name, email, cpf, password_hash, user_type, type_id, first_login) 
+                VALUES (:name, :email, :cpf, :password, :type, :type_id, TRUE)
+            ");
+            
+            $insertStmt->execute([
+                ':name' => $name,
+                ':email' => $email,
+                ':cpf' => $cleanCpf,
+                ':password' => $passwordHash,
+                ':type' => $user_type,
+                ':type_id' => $teacher_id
+            ]);
+            
+            error_log("User account created for: " . $name . " (ID: " . $teacher_id . ")");
+            return true;
+        } else {
+            error_log("User account already exists for CPF: " . $cleanCpf);
+        }
+    } catch (PDOException $e) {
+        error_log("Error creating user account: " . $e->getMessage());
+        return false;
+    }
 }
 
 function post_activities($conn, $teacher_id) {
@@ -266,16 +247,13 @@ function post_education($conn, $teacher_id) {
           $courseName_key = "courseName_$index";
           $institution_key = "institution_$index";
 
-
           if (!isset($_POST[$degree_key])) {
               break;
           }
 
-
           $degree = $_POST[$degree_key];
           $courseName = $_POST[$courseName_key];
           $institution = $_POST[$institution_key];
-
 
           $sql = "
           INSERT INTO
@@ -308,7 +286,6 @@ function post_education($conn, $teacher_id) {
               exit(0);
           }
 
-
           $index++;
       }
 
@@ -327,7 +304,6 @@ function post_certificate($conn, $teacher_id) {
     $fileName = basename($_FILES['documents']['name']);
     $fileType = $_FILES['documents']['type'];
     $uploadDir = realpath(__DIR__ . '/../documentos/docentes/') . '/';
-
 
     // Validar o tipo do arquivo
     if ($fileType == 'application/pdf') {
@@ -375,7 +351,6 @@ function post_certificate($conn, $teacher_id) {
   } else {
     echo "Erro ao enviar o arquivo.";
   }
-
 }
 
 function post_discipline($conn, $teacher_id) {
@@ -419,13 +394,9 @@ function post_discipline($conn, $teacher_id) {
         exit(0);
       }
 
-
-
       $index++;
-
     }
   }
-
 }
 
 function post_modules($conn, $teacher_id) {
@@ -465,11 +436,7 @@ function post_modules($conn, $teacher_id) {
         exit(0);
       }
     }
-
   }
-
-
 }
 
 post_form();
-// var_dump($_POST);

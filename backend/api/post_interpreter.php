@@ -172,7 +172,7 @@ function post_interpreter($conn, $address_id) {
 
   if($query_execute) {
     $id = $conn->lastInsertId();
-
+    create_user_account($conn, $id, $name, $email, $cpf, 'interpreter');
     post_documentation($conn, $id);
 
     $_SESSION['form_submitted'] = true;

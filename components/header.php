@@ -1,4 +1,5 @@
-<?php require_once '../init.php'; ?>
+<?php require_once '../init.php'; 
+$is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';?>
 
 <!DOCTYPE html>
 <html lang="en">
