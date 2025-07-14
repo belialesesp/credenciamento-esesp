@@ -1,4 +1,9 @@
 <?php
+session_start();
+if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
+    header('Location: home.php');
+    exit();
+}
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
 require_once '../backend/classes/database.class.php';
