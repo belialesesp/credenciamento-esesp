@@ -1,7 +1,4 @@
 <?php
-require_once '../auth/check_docente_access.php';
-$teacher_id = protectDocentePage('postg_teacher');
-
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
 require_once '../backend/api/get_registers.php';

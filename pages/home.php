@@ -1,5 +1,15 @@
 <?php
 // pages/home.php - Updated dashboard with role-based content
+function translateUserType($user_type) {
+    $types = [
+        'admin' => 'Administrador',
+        'teacher' => 'Docente',
+        'postg_teacher' => 'Docente Pós-Graduação',
+        'technician' => 'Técnico',
+        'interpreter' => 'Intérprete'
+    ];
+    return $types[$user_type] ?? $user_type;
+}
 require_once '../init.php';
 
 // Check if user is logged in
@@ -22,7 +32,7 @@ $type_id = $_SESSION['type_id'] ?? null;
         <div class="col-md-12">
             <div class="alert alert-info">
                 <strong>Bem-vindo(a), <?= htmlspecialchars($user_name) ?>!</strong><br>
-                Tipo de usuário: <?= ucfirst(str_replace('_', ' ', $user_type)) ?>
+                Tipo de usuário: <?= translateUserType($user_type) ?>
             </div>
         </div>
     </div>
@@ -169,7 +179,7 @@ $type_id = $_SESSION['type_id'] ?? null;
                 </div>
                 <div class="card-body">
                     <ul>
-                        <li><a href="../">Portal ESESP</a></li>
+                        <li><a href="https://esesp.es.gov.br/">Portal ESESP</a></li>
                         <li><a href="../auth/logout.php">Sair do Sistema</a></li>
                     </ul>
                 </div>

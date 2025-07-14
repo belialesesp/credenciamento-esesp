@@ -207,16 +207,16 @@ try {
       <?php foreach($disciplines as $discipline): ?>
       <div class="row mb-2 align-items-center">
         <div class="col-md-6">
-          <p class="mb-0"><?= $discipline['name'] ?></p>
+          <p class="mb-0"><?= $discipline->name ?></p>
         </div>
         <div class="col-md-3">
           <?php 
-          $discStatusText = match($discipline['enabled']) {
+          $discStatusText = match($discipline->enabled) {
             '1' => 'Apto',
             '0' => 'Inapto',
             default => 'Aguardando'
           };
-          $discStatusClass = match($discipline['enabled']) {
+          $discStatusClass = match($discipline->enabled) {
             '1' => 'text-success',
             '0' => 'text-danger',
             default => 'text-warning'
@@ -228,17 +228,17 @@ try {
         <div class="col-md-3">
           <button class="btn btn-sm btn-success" 
                   onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline['id'] ?>, 1)"
-                  <?= $discipline['enabled'] == '1' ? 'disabled' : '' ?>>
+                  <?= $discipline->enabled == '1' ? 'disabled' : '' ?>>
             Aprovar
           </button>
           <button class="btn btn-sm btn-danger" 
                   onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline['id'] ?>, 0)"
-                  <?= $discipline['enabled'] == '0' ? 'disabled' : '' ?>>
+                  <?= $discipline->enabled == '0' ? 'disabled' : '' ?>>
             Reprovar
           </button>
           <button class="btn btn-sm btn-secondary" 
                   onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline['id'] ?>, null)"
-                  <?= $discipline['enabled'] === null ? 'disabled' : '' ?>>
+                  <?= $discipline->enabled === null ? 'disabled' : '' ?>>
             Resetar
           </button>
         </div>

@@ -96,10 +96,7 @@ $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
               <li>
                 <a class="btn-link" href="cadastros.php">Cadastrar</a> 
               </li>
-              <li>
-                <a class="btn-link" href="profile.php">Atualizar dados</a>
-              </li>
-              <li style="display: <?= $admin ? 'block' : 'none' ?>">Gerenciar cadastrados</li>
+              <li style="display: <?= $is_admin ? 'block' : 'none' ?>">Gerenciar cadastrados</li>
             </ul>
             <button class="btn header-btn" type="button" data-bs-toggle="modal" data-bs-target="#logoutModal">Sair</button>
           </nav>
