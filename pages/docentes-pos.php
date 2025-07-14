@@ -150,6 +150,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
 </style>
 
 <div class="container">
+  <a href="home.php" class="btn btn-info mt-5">← Voltar ao Início</a>
   <h1 class="main-title">Docentes - Pós-Graduação</h1>
   <div class="filter-container">
     <div class="filter-group">

@@ -284,64 +284,71 @@ try {
   </div>
 
   <?php if ($is_own_profile): ?>
-    <!-- Password Change Section -->
-    <div class="info-section">
-      <h3>Alterar Senha</h3>
-
-      <?php if (isset($_SESSION['password_message'])): ?>
+<div class="info-section">
+    <h3>Alterar Senha</h3>
+    
+    <?php if(isset($_SESSION['password_message'])): ?>
         <div class="alert alert-success">
-          <?= htmlspecialchars($_SESSION['password_message']) ?>
+            <?= htmlspecialchars($_SESSION['password_message']) ?>
         </div>
         <?php unset($_SESSION['password_message']); ?>
-      <?php endif; ?>
-
-      <?php if (isset($_SESSION['password_error'])): ?>
+    <?php endif; ?>
+    
+    <?php if(isset($_SESSION['password_error'])): ?>
         <div class="alert alert-danger">
-          <?= htmlspecialchars($_SESSION['password_error']) ?>
+            <?= htmlspecialchars($_SESSION['password_error']) ?>
         </div>
         <?php unset($_SESSION['password_error']); ?>
-      <?php endif; ?>
-
-      <?php if ($_SESSION['first_login'] ?? false): ?>
+    <?php endif; ?>
+    
+    <?php if($_SESSION['first_login'] ?? false): ?>
         <div class="alert alert-warning">
-          <strong>Primeiro acesso!</strong> Por segurança, recomendamos que você altere sua senha.
+            <strong>Primeiro acesso!</strong> Por segurança, recomendamos que você altere sua senha.
         </div>
-      <?php endif; ?>
-
-      <form method="post" action="../auth/process_change_password.php" class="needs-validation" novalidate>
+    <?php endif; ?>
+    
+    <form method="post" action="../auth/process_change_password.php" class="needs-validation" novalidate>
         <div class="row">
-          <div class="col-md-12 mb-3" style="position: relative;">
-            <label for="current_password">Senha Atual</label>
-            <input type="password" class="form-control" id="current_password" name="current_password" required>
-            <button type="button" onclick="togglePassword('current_password')"
-              style="position: absolute; right: 10px; top: 38px; background: none; border: none; cursor: pointer;">
-              <i class="fas fa-eye" id="current_password_icon"></i>
-            </button>
-            <small class="form-text text-muted">Se é seu primeiro acesso, use seu CPF (apenas números)</small>
-          </div>
+            <div class="col-md-12 mb-3 password-input-group">
+                <label for="current_password">Senha Atual</label>
+                <input type="password" class="form-control" id="current_password" 
+                       name="current_password" required>
+                <button type="button" class="password-toggle-btn" onclick="togglePassword('current_password')" tabindex="-1">
+                    <i class="fas fa-eye" id="current_password_icon"></i>
+                </button>
+                <small class="form-text text-muted">
+                    Se é seu primeiro acesso, use seu CPF (apenas números)
+                </small>
+            </div>
         </div>
-
+        
         <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="new_password">Nova Senha</label>
-            <input type="password" class="form-control" id="new_password"
-              name="new_password" required minlength="8">
-            <small class="form-text text-muted">
-              Mínimo 8 caracteres, com letras maiúsculas, minúsculas, números e símbolos (@$!%*?&)
-            </small>
-          </div>
-
-          <div class="col-md-6 mb-3">
-            <label for="confirm_password">Confirmar Nova Senha</label>
-            <input type="password" class="form-control" id="confirm_password"
-              name="confirm_password" required>
-          </div>
+            <div class="col-md-6 mb-3 password-input-group">
+                <label for="new_password">Nova Senha</label>
+                <input type="password" class="form-control" id="new_password" 
+                       name="new_password" required minlength="8">
+                <button type="button" class="password-toggle-btn" onclick="togglePassword('new_password')" tabindex="-1">
+                    <i class="fas fa-eye" id="new_password_icon"></i>
+                </button>
+                <small class="form-text text-muted">
+                    Mínimo 8 caracteres, com letras maiúsculas, minúsculas, números e símbolos (@$!%*?&)
+                </small>
+            </div>
+            
+            <div class="col-md-6 mb-3 password-input-group">
+                <label for="confirm_password">Confirmar Nova Senha</label>
+                <input type="password" class="form-control" id="confirm_password" 
+                       name="confirm_password" required>
+                <button type="button" class="password-toggle-btn" onclick="togglePassword('confirm_password')" tabindex="-1">
+                    <i class="fas fa-eye" id="confirm_password_icon"></i>
+                </button>
+            </div>
         </div>
-
+        
         <button type="submit" class="btn btn-primary">Alterar Senha</button>
-      </form>
-    </div>
-  <?php endif; ?>
+    </form>
+</div>
+<?php endif; ?>
 
   <?php if ($is_admin): ?>
     <div class="info-section">
@@ -366,30 +373,30 @@ include '../components/footer.php';
 ?>
 
 <script>
-  // Password validation
-  document.getElementById('confirm_password')?.addEventListener('input', function() {
-    const newPassword = document.getElementById('new_password').value;
-    if (newPassword !== this.value) {
-      this.setCustomValidity('As senhas devem ser iguais');
-    } else {
-      this.setCustomValidity('');
-    }
-  });
-
   function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
     const icon = document.getElementById(fieldId + '_icon');
-
+    
     if (field.type === 'password') {
-      field.type = 'text';
-      icon.classList.remove('fa-eye');
-      icon.classList.add('fa-eye-slash');
+        field.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
     } else {
-      field.type = 'password';
-      icon.classList.remove('fa-eye-slash');
-      icon.classList.add('fa-eye');
+        field.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
     }
-  }
+}
+
+// Password validation
+document.getElementById('confirm_password')?.addEventListener('input', function() {
+    const newPassword = document.getElementById('new_password').value;
+    if (newPassword !== this.value) {
+        this.setCustomValidity('As senhas devem ser iguais');
+    } else {
+        this.setCustomValidity('');
+    }
+});
 
 
   <?php if ($is_admin): ?>

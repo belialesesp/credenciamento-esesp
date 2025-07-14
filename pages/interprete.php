@@ -204,8 +204,7 @@ try {
   </div>
 
   <?php if ($is_own_profile): ?>
-  <!-- Password Change Section -->
-  <div class="info-section">
+<div class="info-section">
     <h3>Alterar Senha</h3>
     
     <?php if(isset($_SESSION['password_message'])): ?>
@@ -230,10 +229,13 @@ try {
     
     <form method="post" action="../auth/process_change_password.php" class="needs-validation" novalidate>
         <div class="row">
-            <div class="col-md-12 mb-3">
+            <div class="col-md-12 mb-3 password-input-group">
                 <label for="current_password">Senha Atual</label>
                 <input type="password" class="form-control" id="current_password" 
                        name="current_password" required>
+                <button type="button" class="password-toggle-btn" onclick="togglePassword('current_password')" tabindex="-1">
+                    <i class="fas fa-eye" id="current_password_icon"></i>
+                </button>
                 <small class="form-text text-muted">
                     Se é seu primeiro acesso, use seu CPF (apenas números)
                 </small>
@@ -241,42 +243,56 @@ try {
         </div>
         
         <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3 password-input-group">
                 <label for="new_password">Nova Senha</label>
                 <input type="password" class="form-control" id="new_password" 
                        name="new_password" required minlength="8">
+                <button type="button" class="password-toggle-btn" onclick="togglePassword('new_password')" tabindex="-1">
+                    <i class="fas fa-eye" id="new_password_icon"></i>
+                </button>
                 <small class="form-text text-muted">
                     Mínimo 8 caracteres, com letras maiúsculas, minúsculas, números e símbolos (@$!%*?&)
                 </small>
             </div>
             
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3 password-input-group">
                 <label for="confirm_password">Confirmar Nova Senha</label>
                 <input type="password" class="form-control" id="confirm_password" 
                        name="confirm_password" required>
+                <button type="button" class="password-toggle-btn" onclick="togglePassword('confirm_password')" tabindex="-1">
+                    <i class="fas fa-eye" id="confirm_password_icon"></i>
+                </button>
             </div>
         </div>
         
         <button type="submit" class="btn btn-primary">Alterar Senha</button>
     </form>
-  </div>
-  <?php endif; ?>
+</div>
+<?php endif; ?>
 
   <?php if($is_admin): ?>
-  <div class="info-section">
-    <h3>Status do Intérprete</h3>
+<div class="info-section">
+    <h3>Status do <?= $user_type === 'technician' ? 'Técnico' : 'Intérprete' ?></h3>
     <div class="row">
-      <p class="col-3"><strong>Status:</strong></p>
-      <p class="col-9 user-status <?= $statusClass ?>"><?= $statusText ?></p>
+        <p class="col-3"><strong>Status:</strong></p>
+        <p class="col-9 user-status <?= $statusClass ?>"><?= $statusText ?></p>
     </div>
     <div class="row">
-      <button class="btn ok-btn" onclick="updateInterpreterStatus(<?= $interpreter_id ?>, 1)"
-              <?= $enabled == 1 ? 'disabled' : '' ?>>Aprovar</button>
-      <button class="btn cancel-btn" onclick="updateInterpreterStatus(<?= $interpreter_id ?>, 0)"
-              <?= $enabled == 0 ? 'disabled' : '' ?>>Reprovar</button>
+        <div class="col-12">
+            <button class="btn btn-success ok-btn" 
+                    onclick="update<?= $user_type === 'technician' ? 'Technician' : 'Interpreter' ?>Status(<?= $type_id ?>, 1)"
+                    <?= $enabled == 1 ? 'disabled' : '' ?>>
+                Aprovar
+            </button>
+            <button class="btn btn-danger cancel-btn" 
+                    onclick="update<?= $user_type === 'technician' ? 'Technician' : 'Interpreter' ?>Status(<?= $type_id ?>, 0)"
+                    <?= $enabled == 0 ? 'disabled' : '' ?>>
+                Reprovar
+            </button>
+        </div>
     </div>
-  </div>
-  <?php endif; ?>
+</div>
+<?php endif; ?>
 
 </div>
 
@@ -285,6 +301,21 @@ try {
 ?>
 
 <script>
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '_icon');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
 // Password validation
 document.getElementById('confirm_password')?.addEventListener('input', function() {
     const newPassword = document.getElementById('new_password').value;

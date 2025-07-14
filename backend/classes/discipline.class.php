@@ -1,7 +1,7 @@
 <?php
 // backend/classes/discipline.class.php
 class Discipline {
-  private $id;
+  public $id;
   public $name;
   public $eixo;
   public $estacao;

@@ -1,3 +1,26 @@
+.password-input-group {
+    position: relative;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 38px;
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    z-index: 10;
+    padding: 5px;
+}
+
+.password-toggle-btn:hover {
+    color: #495057;
+}
+
+.password-toggle-btn:focus {
+    outline: none;
+}
 .main-title {
   margin-bottom: 5rem !important;
 }
@@ -105,4 +128,64 @@ h3 {
   padding: 15px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
+}
+.ok-btn, .cancel-btn {
+    margin: 5px;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.ok-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.ok-btn:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.ok-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.cancel-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.cancel-btn:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+.cancel-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.info-section .row {
+    margin-top: 10px;
+}
+
+.user-status {
+    font-weight: bold;
+    padding: 5px 0;
+}
+
+.status-approved {
+    color: #28a745;
+}
+
+.status-not-approved {
+    color: #dc3545;
+}
+
+.status-pending {
+    color: #ffc107;
 }

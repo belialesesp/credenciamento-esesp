@@ -123,6 +123,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
 </style>
 
 <div class="container">
+  <a href="home.php" class="btn btn-info mt-5">← Voltar ao Início</a>
   <h1 class="main-title">Técnicos</h1>
   
   <div class="filter-container">

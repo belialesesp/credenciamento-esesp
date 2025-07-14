@@ -15,7 +15,31 @@ unset($_SESSION['login_message']);
 
 require_once '../components/header.php';
 ?>
+<style>
+.did-floating-label-content {
+    position: relative;
+}
 
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 12px;
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    z-index: 10;
+    padding: 5px;
+}
+
+.password-toggle:hover {
+    color: #333;
+}
+
+.password-toggle i {
+    font-size: 1.1em;
+}
+</style>
 <div class="container register-container">
 
   <h1 class="main-title">Entrar</h1>
@@ -39,10 +63,13 @@ require_once '../components/header.php';
     </div>
     
     <div class="did-floating-label-content col-12">
-      <input name="password" id="password" class="did-floating-input form-control" type="password" placeholder=" " required/>
-      <label for="password" class="did-floating-label">Senha*</label>
-      <div class="invalid-feedback">Informe uma senha</div>
-    </div>
+    <input name="password" id="password" class="did-floating-input form-control" type="password" placeholder=" " required/>
+    <button type="button" class="password-toggle" onclick="togglePassword('password')" tabindex="-1">
+        <i class="fas fa-eye" id="password_icon"></i>
+    </button>
+    <label for="password" class="did-floating-label">Senha*</label>
+    <div class="invalid-feedback">Informe uma senha</div>
+</div>
   
     <input type="submit" class="btnF form-btn" name="send-form" value="Entrar"></input>
       
@@ -76,4 +103,18 @@ document.getElementById('cpf').addEventListener('input', function(e) {
     }
     e.target.value = value;
 });
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '_icon');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
 </script>
