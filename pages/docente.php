@@ -395,7 +395,7 @@ include '../components/footer.php';
   <?php if ($is_admin): ?>
 
     function updateDisciplineStatus(teacherId, disciplineId, status) {
-      const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar o status d');
+      const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar o status');
 
       if (confirm(`Tem certeza que deseja ${statusText}o docente para este curso?`)) {
         fetch('../backend/api/update_teacher_discipline_status.php', {
