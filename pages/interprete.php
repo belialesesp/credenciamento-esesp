@@ -270,29 +270,63 @@ try {
 </div>
 <?php endif; ?>
 
-  <?php if($is_admin): ?>
-<div class="info-section">
-    <h3>Status do <?= $user_type === 'technician' ? 'Técnico' : 'Intérprete' ?></h3>
-    <div class="row">
-        <p class="col-3"><strong>Status:</strong></p>
-        <p class="col-9 user-status <?= $statusClass ?>"><?= $statusText ?></p>
-    </div>
-    <div class="row">
-        <div class="col-12">
-            <button class="btn btn-success ok-btn" 
-                    onclick="update<?= $user_type === 'technician' ? 'Technician' : 'Interpreter' ?>Status(<?= $type_id ?>, 1)"
-                    <?= $enabled == 1 ? 'disabled' : '' ?>>
-                Aprovar
-            </button>
-            <button class="btn btn-danger cancel-btn" 
-                    onclick="update<?= $user_type === 'technician' ? 'Technician' : 'Interpreter' ?>Status(<?= $type_id ?>, 0)"
-                    <?= $enabled == 0 ? 'disabled' : '' ?>>
-                Reprovar
-            </button>
+  <?php if ($is_admin): ?>
+    <div class="info-section">
+      <h3>Status do Intérprete</h3>
+      <div class="row mb-3">
+        <div class="col-3">
+          <strong>Status:</strong>
+          <span class="user-status <?= $statusClass ?>"><?= $statusText ?></span>
         </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <button type="button"
+            class="btn btn-success mr-2"
+            onclick="updateInterpreterStatus(<?= $interpreter_id ?>, 1)"
+            <?= $enabled == 1 ? 'disabled' : '' ?>>
+            <i class="fas fa-check"></i> Aprovar
+          </button>
+          <button type="button"
+            class="btn btn-danger"
+            onclick="updateInterpreterStatus(<?= $interpreter_id ?>, 0)"
+            <?= $enabled == 0 ? 'disabled' : '' ?>>
+            <i class="fas fa-times"></i> Reprovar
+          </button>
+        </div>
+      </div>
     </div>
-</div>
-<?php endif; ?>
+    <style>
+      /* Add this CSS to fix the button display */
+      .info-section .btn {
+        margin-right: 10px;
+        margin-top: 5px;
+      }
+
+      .user-status {
+        font-weight: bold;
+        font-size: 1.1em;
+      }
+
+      .user-status.status-approved {
+        color: #28a745;
+      }
+
+      .user-status.status-not-approved {
+        color: #dc3545;
+      }
+
+      .user-status.status-pending {
+        color: #ffc107;
+      }
+
+      /* Ensure buttons are displayed inline */
+      .info-section .row .col-12 {
+        display: flex;
+        align-items: center;
+      }
+    </style>
+  <?php endif; ?>
 
 </div>
 

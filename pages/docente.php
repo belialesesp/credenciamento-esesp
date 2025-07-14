@@ -201,55 +201,70 @@ try {
   </div>
 
   <div class="info-section">
-    <h3>Curso(s)</h3>
-    <?php if (!empty($disciplines)): ?>
-      <?php foreach ($disciplines as $discipline): ?>
-        <div class="row mb-2 align-items-center">
-          <div class="col-md-6">
-            <p class="mb-0"><?= $discipline->name ?></p>
-          </div>
-          <div class="col-md-3">
-            <?php
-            $discStatusText = match ($discipline->enabled) {
-              1 => 'Apto',
-              0 => 'Inapto',
-              null => 'Aguardando',
-              default => 'Aguardando'
-            };
-            $discStatusClass = match ($discipline->enabled) {
-              1 => 'text-success',
-              0 => 'text-danger',
-              null => 'text-warning',
-              default => 'text-warning'
-            };
-            ?>
-            <span class="<?= $discStatusClass ?>"><strong><?= $discStatusText ?></strong></span>
-          </div>
-          <?php if ($is_admin): ?>
-            <div class="col-md-3">
-              <button class="btn btn-sm btn-success"
-                onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->id ?>, 1)"
-                <?= $discipline->enabled == 1 ? 'disabled' : '' ?>>
-                Aprovar
-              </button>
-              <button class="btn btn-sm btn-danger"
-                onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->id ?>, 0)"
-                <?= $discipline->enabled == 0 ? 'disabled' : '' ?>>
-                Reprovar
-              </button>
-              <button class="btn btn-sm btn-secondary"
-                onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $discipline->id ?>, null)"
-                <?= $discipline->enabled === null ? 'disabled' : '' ?>>
-                Resetar
-              </button>
-            </div>
-          <?php endif; ?>
-        </div>
-      <?php endforeach ?>
-    <?php else: ?>
-      <p>Nenhum curso cadastrado.</p>
-    <?php endif; ?>
-  </div>
+  <h3>Cursos</h3>
+  <?php if (!empty($disciplines)): ?>
+    <?php foreach($disciplines as $discipline): ?>
+    <?php 
+      // Handle both getter methods and public properties
+      $disc_id = method_exists($discipline, 'getId') ? $discipline->getId() : (property_exists($discipline, 'id') ? $discipline->id : 0);
+      $disc_name = method_exists($discipline, 'getName') ? $discipline->getName() : (property_exists($discipline, 'name') ? $discipline->name : 'Nome não disponível');
+      $disc_enabled = method_exists($discipline, 'getEnabled') ? $discipline->getEnabled() : (property_exists($discipline, 'enabled') ? $discipline->enabled : null);
+      $disc_eixo = method_exists($discipline, 'getEixo') ? $discipline->getEixo() : (property_exists($discipline, 'eixo') ? $discipline->eixo : null);
+      $disc_estacao = method_exists($discipline, 'getEstacao') ? $discipline->getEstacao() : (property_exists($discipline, 'estacao') ? $discipline->estacao : null);
+      
+      // Determine status
+      $statusText = match($disc_enabled) {
+        1 => 'Apto',
+        0 => 'Inapto',
+        null => 'Aguardando',
+        default => 'Aguardando'
+      };
+      $statusClass = match($disc_enabled) {
+        1 => 'status-approved',
+        0 => 'status-not-approved',
+        null => 'status-pending',
+        default => 'status-pending'
+      };
+    ?>
+    <div class="discipline-item">
+      <div class="discipline-header">
+        <?= htmlspecialchars($disc_name) ?>
+        <span class="ms-5 discipline-status <?= $statusClass ?>"><?= $statusText ?></span>
+      </div>
+      
+      <?php if($disc_eixo || $disc_estacao): ?>
+      <div class="discipline-details">
+        <?php if($disc_eixo): ?>Eixo: <?= htmlspecialchars($disc_eixo) ?><?php endif; ?>
+        <?php if($disc_eixo && $disc_estacao): ?><br><?php endif; ?>
+        <?php if($disc_estacao): ?>Estação: <?= htmlspecialchars($disc_estacao) ?><?php endif; ?>
+      </div>
+      <?php endif; ?>
+      
+      <?php if($is_admin): ?>
+      <div class="discipline-actions">
+        <button class="btn btn-success" 
+                onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $disc_id ?>, 1)"
+                <?= $disc_enabled === 1 ? 'disabled' : '' ?>>
+          Aprovar para este curso
+        </button>
+        <button class="btn btn-danger" 
+                onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $disc_id ?>, 0)"
+                <?= $disc_enabled === 0 ? 'disabled' : '' ?>>
+          Reprovar para este curso
+        </button>
+        <button class="btn btn-secondary" 
+                onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $disc_id ?>, null)"
+                <?= $disc_enabled === null ? 'disabled' : '' ?>>
+          Resetar status
+        </button>
+      </div>
+      <?php endif; ?>
+    </div>
+    <?php endforeach ?>
+  <?php else: ?>
+    <p>Nenhum curso cadastrado.</p>
+  <?php endif; ?>
+</div>
 
   <div class="info-section">
     <h3>Categoria</h3>
@@ -349,22 +364,6 @@ try {
     </form>
 </div>
 <?php endif; ?>
-
-  <?php if ($is_admin): ?>
-    <div class="info-section">
-      <h3>Status do Docente</h3>
-      <div class="row">
-        <p class="col-3"><strong>Status:</strong></p>
-        <p class="col-9 user-status <?= $statusClass ?>"><?= $statusText ?></p>
-      </div>
-      <div class="row">
-        <button class="btn ok-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 1)"
-          <?= $enabled == 1 ? 'disabled' : '' ?>>Aprovar</button>
-        <button class="btn cancel-btn" onclick="updateTeacherStatus(<?= $teacher_id ?>, 0)"
-          <?= $enabled == 0 ? 'disabled' : '' ?>>Reprovar</button>
-      </div>
-    </div>
-  <?php endif; ?>
 
 </div>
 
