@@ -77,7 +77,6 @@ require_once '../components/header.php';
   
   <div class="notes-container">
     <p class="obs">Primeira vez acessando? Use seu CPF como senha inicial.</p>
-    <p class="obs"><small>Admin: use 'credenciamento' como CPF</small></p>
   </div>
 
 </div>
