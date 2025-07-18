@@ -265,64 +265,66 @@ function truncate_text($text, $length = 50, $suffix = '...')
       });
   }
 
-  function updateTable(teachers) {
-    const tbody = document.querySelector('table tbody');
-    tbody.innerHTML = '';
+  // Replace the updateTable function in docentes-pos.php with this fixed version
 
-    if (teachers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum docente encontrado</td></tr>';
-      return;
+function updateTable(teachers) {
+  const tbody = document.querySelector('table tbody');
+  tbody.innerHTML = '';
+
+  if (teachers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum docente encontrado</td></tr>';
+    return;
+  }
+
+  teachers.forEach(teacher => {
+    const date = new Date(teacher.created_at);
+    const dateF = date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Parse discipline statuses with NEW delimiters (same as docentes.php)
+    let disciplineHtml = '';
+    if (teacher.discipline_statuses) {
+      disciplineHtml = '<div class="disciplines-list">';
+      const statusPairs = teacher.discipline_statuses.split('|~~|'); // Changed from '||'
+      statusPairs.forEach(pair => {
+        if (pair && pair.trim()) {
+          const parts = pair.split('|~|'); // Changed from ':'
+          if (parts.length >= 3) {
+            const discId = parts[0];
+            const discName = parts[1];
+            const status = parts[2];
+            const discCalledAt = parts[3] || ''; // Get called_at date
+
+            const statusText = getStatusText(status);
+            const statusClass = getStatusClass(status);
+
+            disciplineHtml += `
+              <div class="discipline-info">
+                <strong>${escapeHtml(discName)}:</strong>
+                <span class="discipline-status ${statusClass}">${statusText}</span>`;
+            
+            // Add called_at date if status is Apto and date exists
+            if (status === '1' && discCalledAt) {
+              disciplineHtml += ` <small>Chamado em: ${discCalledAt}</small>`;
+            }
+            
+            disciplineHtml += `</div>`;
+          }
+        }
+      });
+      disciplineHtml += '</div>';
     }
 
-    teachers.forEach(teacher => {
-      const date = new Date(teacher.created_at);
-      const dateF = date.toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+    if (!disciplineHtml || disciplineHtml === '<div class="disciplines-list"></div>') {
+      disciplineHtml = '<em>Sem disciplinas</em>';
+    }
 
-      // Parse discipline statuses
-      let disciplineHtml = '';
-      if (teacher.discipline_statuses) {
-        disciplineHtml = '<div class="disciplines-list">';
-        const statusPairs = teacher.discipline_statuses.split('||');
-        statusPairs.forEach(pair => {
-          if (pair && pair.trim()) {
-            const parts = pair.split(':');
-            if (parts.length >= 3) {
-              const discId = parts[0];
-              const discName = parts[1];
-              const status = parts[2];
-              const discCalledAt = parts.length > 3 ? parts[3] : '';
-
-              const statusText = getStatusText(status);
-              const statusClass = getStatusClass(status);
-
-              disciplineHtml += `
-                <div class="discipline-info">
-                  <strong>${escapeHtml(discName)}:</strong>
-                  <span class="discipline-status ${statusClass}">${statusText}</span>`;
-
-              // Add called_at date if status is Apto and date exists
-              if (status === '1' && discCalledAt && discCalledAt !== '') {
-                disciplineHtml += ` <small>Chamado em: ${discCalledAt}</small>`;
-              }
-
-              disciplineHtml += `</div>`;
-            }
-          }
-        });
-        disciplineHtml += '</div>';
-      }
-
-      if (!disciplineHtml || disciplineHtml === '<div class="disciplines-list"></div>') {
-        disciplineHtml = '<em>Sem disciplinas</em>';
-      }
-
-      const row = `
+    const row = `
       <tr class="teacher-row" onclick="window.location.href='docente-pos.php?id=${teacher.id}'">
         <td>${titleCase(teacher.name)}</td>
         <td>${teacher.email.toLowerCase()}</td>
@@ -330,9 +332,56 @@ function truncate_text($text, $length = 50, $suffix = '...')
         <td>${disciplineHtml}</td>
       </tr>
     `;
-      tbody.innerHTML += row;
-    });
+    tbody.innerHTML += row;
+  });
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Fixed status functions
+function getStatusText(status) {
+  const statusStr = String(status).trim();
+
+  switch (statusStr) {
+    case '1':
+      return 'Apto';
+    case '0':
+      return 'Inapto';
+    case 'null':
+    case '':
+      return 'Aguardando';
+    default:
+      console.warn('Unknown status:', status);
+      return 'Aguardando';
   }
+}
+
+function getStatusClass(status) {
+  const statusStr = String(status).trim();
+
+  switch (statusStr) {
+    case '1':
+      return 'status-approved';
+    case '0':
+      return 'status-not-approved';
+    case 'null':
+    case '':
+      return 'status-pending';
+    default:
+      return 'status-pending';
+  }
+}
+
+function titleCase(str) {
+  return str.toLowerCase().replace(/(?:^|\s)\w/g, function(letter) {
+    return letter.toUpperCase();
+  });
+}
 
   // Helper function to escape HTML
   function escapeHtml(text) {

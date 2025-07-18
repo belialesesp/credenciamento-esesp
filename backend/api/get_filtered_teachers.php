@@ -1,5 +1,5 @@
 <?php
-// backend/api/get_filtered_teachers.php - Updated to include teacher's called_at
+// backend/api/get_filtered_teachers.php - FIXED VERSION
 require_once '../classes/database.class.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -12,7 +12,42 @@ try {
     $conection = new Database();
     $conn = $conection->connect();
     
-    // Get teachers matching filters
+    // Handle 'sem disciplinas' (no-disciplines) filter separately
+    if ($status === 'no-disciplines') {
+        // Get teachers with NO disciplines at all
+        $sql = "SELECT t.* FROM teacher t
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM teacher_disciplines td 
+                    WHERE td.teacher_id = t.id
+                )";
+        
+        $params = [];
+        
+        // Apply category filter if present
+        if ($category !== '') {
+            $sql .= " AND EXISTS (
+                SELECT 1 FROM teacher_activities ta 
+                WHERE ta.teacher_id = t.id AND ta.activity_id = :category
+            )";
+            $params[':category'] = $category;
+        }
+        
+        $sql .= " ORDER BY t.created_at ASC";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+        $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Add empty discipline_statuses field for consistency
+        foreach ($teachers as &$teacher) {
+            $teacher['discipline_statuses'] = '';
+        }
+        
+        echo json_encode($teachers, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    
+    // Get teachers matching filters (for all other cases)
     $sql = "SELECT DISTINCT t.* FROM teacher t";
     $joins = [];
     $where = [];
@@ -24,22 +59,22 @@ try {
         $params[':category'] = $category;
     }
     
-    if ($status !== '' || $course !== '') {
-        $joins[] = "INNER JOIN teacher_disciplines td ON t.id = td.teacher_id";
-        
-        if ($course !== '') {
-            $where[] = "td.discipline_id = :course";
-            $params[':course'] = $course;
-        }
-        
-        // Use BINARY for exact comparison to avoid type coercion
-        if ($status === '1') {
-            $where[] = "BINARY td.enabled = '1'";
-        } else if ($status === '0') {
-            $where[] = "BINARY td.enabled = '0'";
-        } else if ($status === 'null') {
-            $where[] = "(td.enabled IS NULL OR td.enabled = '')";
-        }
+    // Always use LEFT JOIN for disciplines to include teachers without disciplines
+    $joins[] = "LEFT JOIN teacher_disciplines td ON t.id = td.teacher_id";
+    
+    if ($course !== '') {
+        $where[] = "td.discipline_id = :course";
+        $params[':course'] = $course;
+    }
+    
+    // Use BINARY for exact comparison to avoid type coercion issues
+    if ($status === '1') {
+        $where[] = "BINARY td.enabled = '1'";
+    } else if ($status === '0') {
+        $where[] = "BINARY td.enabled = '0'";
+    } else if ($status === 'null') {
+        // Use BINARY to ensure '0' doesn't match empty string
+        $where[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
     }
     
     $sql .= ' ' . implode(' ', $joins);
@@ -52,7 +87,7 @@ try {
     $stmt->execute($params);
     $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Process each teacher
+    // Process each teacher to get their disciplines
     $result = [];
     foreach ($teachers as $teacher) {
         $discSql = "
@@ -73,13 +108,13 @@ try {
             $discParams[':course'] = $course;
         }
         
-        // Use BINARY for exact comparison
+        // Apply status filter with BINARY for exact comparison
         if ($status === '1') {
             $discSql .= " AND BINARY td.enabled = '1'";
         } else if ($status === '0') {
             $discSql .= " AND BINARY td.enabled = '0'";
         } else if ($status === 'null') {
-            $discSql .= " AND (td.enabled IS NULL OR td.enabled = '')";
+            $discSql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
         }
         
         $discSql .= " ORDER BY d.name";
@@ -92,32 +127,34 @@ try {
             $disciplineStatuses = [];
             
             foreach ($disciplines as $disc) {
+                // Clean name to avoid delimiter conflicts
                 $cleanName = str_replace(['|~|', '|~~|'], ' ', $disc['name']);
                 
-                // Use strict type checking
+                // Determine status value with strict type checking
                 $enabledRaw = $disc['enabled'];
                 
                 if ($enabledRaw === null) {
                     $statusValue = 'null';
                 } elseif ($enabledRaw === '') {
                     $statusValue = 'null';  
-                } elseif ($enabledRaw == 0 && !is_null($enabledRaw)) {
+                } elseif ($enabledRaw === '0' || $enabledRaw === 0) {
                     $statusValue = '0';
-                } elseif ($enabledRaw == 1) {
+                } elseif ($enabledRaw === '1' || $enabledRaw === 1) {
                     $statusValue = '1';
                 } else {
                     $statusValue = 'null';
                 }
                 
-                // Include called_at in the discipline status string
-                $calledAt = $disc['called_at'] ?? '';
+                // Format called_at date
+                $calledAt = $disc['called_at'] ? date('d/m/Y', strtotime($disc['called_at'])) : '';
+                
                 $disciplineStatuses[] = $disc['id'] . '|~|' . $cleanName . '|~|' . $statusValue . '|~|' . $calledAt;
             }
             
             $teacher['discipline_statuses'] = implode('|~~|', $disciplineStatuses);
             $result[] = $teacher;
-        } else if ($status === '' || $status === 'no-disciplines') {
-            // Include teachers without disciplines if no status filter or "no-disciplines" filter
+        } else if ($status === '') {
+            // Include teachers without disciplines only when no status filter is applied
             $teacher['discipline_statuses'] = '';
             $result[] = $teacher;
         }
@@ -126,7 +163,7 @@ try {
     echo json_encode($result, JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
-    error_log("Error: " . $e->getMessage());
+    error_log("Error in get_filtered_teachers.php: " . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }

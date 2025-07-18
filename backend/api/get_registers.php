@@ -36,6 +36,8 @@ function get_docente($conn) {
   return $result;
 }
 
+// Replace the get_postg_docente function in backend/api/get_registers.php with this version:
+
 function get_postg_docente($conn) {
   $query = "
     SELECT DISTINCT
@@ -45,6 +47,7 @@ function get_postg_docente($conn) {
       t.phone,
       t.cpf,
       t.created_at,
+      t.called_at,
       t.document_number,
       t.document_emissor,
       t.document_uf,
@@ -52,11 +55,11 @@ function get_postg_docente($conn) {
       t.address_id,
       GROUP_CONCAT(
         CONCAT(
-          d.id, ':', 
-          d.name, ':', 
-          COALESCE(td.enabled, 'null'), ':',
+          d.id, '|~|', 
+          d.name, '|~|', 
+          COALESCE(td.enabled, 'null'), '|~|',
           COALESCE(DATE_FORMAT(td.called_at, '%d/%m/%Y'), '')
-        ) SEPARATOR '||'
+        ) SEPARATOR '|~~|'
       ) as discipline_statuses
     FROM postg_teacher t
     LEFT JOIN postg_teacher_disciplines td ON t.id = td.teacher_id
