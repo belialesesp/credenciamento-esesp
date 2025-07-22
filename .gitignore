@@ -1,0 +1,31 @@
+# Add these lines to your .gitignore file
+
+# Composer dependencies
+/vendor/
+composer.lock
+
+# Email configuration (contains sensitive credentials)
+/backend/config/email.config.php
+
+# Test files
+test-email.php
+
+# Environment files
+.env
+.env.local
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+error_log
+
+# Backup files
+*.backup
+*.bak
