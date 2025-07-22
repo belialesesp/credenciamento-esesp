@@ -1,6 +1,5 @@
 <?php
 // pages/docente.php - Complete version with authentication
- include '../components/password_change_form.php';
 session_start();
 require_once '../backend/classes/database.class.php';
 

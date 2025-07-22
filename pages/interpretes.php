@@ -157,7 +157,6 @@ function truncate_text($text, $length = 50, $suffix = '...')
       <tr>
         <th>Nome</th>
         <th>Email</th>
-        <th>Telefone</th>
         <th>Data de Inscrição</th>
         <th>Situação</th>
       </tr>
@@ -182,7 +181,6 @@ function truncate_text($text, $length = 50, $suffix = '...')
       <tr class="interpreter-row" onclick="window.location.href='interprete.php?id=<?= $interpreter['id']?>'">
         <td><?= titleCase($interpreter['name']) ?></td>
         <td><?= strtolower($interpreter['email']) ?></td>
-        <td><?= $interpreter['phone'] ?></td>
         <td><?= $dateF ?></td>
         <td><span class="<?= $statusClass ?>"><?= $enabled ?></span></td>
       </tr>
