@@ -1,25 +1,9 @@
 <?php
-// backend/classes/auth.class.php
+// backend/classes/auth.class.php - Updated with password management methods
 require_once 'database.class.php';
 
 class AuthHelper {
     private $conn;
-    
-    // Map of user types to database tables
-    private $userTables = [
-        'teacher' => 'teacher',
-        'postg_teacher' => 'postg_teacher',
-        'interpreter' => 'interpreter',
-        'technician' => 'technician'
-    ];
-    
-    // Map of user types to profile pages
-    private $profilePages = [
-        'teacher' => 'docente.php',
-        'postg_teacher' => 'docente-pos.php',
-        'interpreter' => 'interprete.php',
-        'technician' => 'tecnico.php'
-    ];
     
     public function __construct() {
         $database = new Database();
@@ -27,139 +11,162 @@ class AuthHelper {
     }
     
     /**
-     * Find user across all tables by CPF
-     * Returns array with user data and table type, or false if not found
+     * Authenticate user using CPF and password
+     * Now uses unified user table
      */
-    public function findUserByCPF($cpf) {
-        $cleanCpf = preg_replace('/\D/', '', $cpf);
+    public function authenticate($cpf, $password) {
+        // Clean CPF
+        $cleanCpf = preg_replace('/[^0-9a-zA-Z]/', '', $cpf);
         
-        foreach ($this->userTables as $type => $table) {
-            try {
-                $stmt = $this->conn->prepare("
-                    SELECT id, name, email, cpf, password_hash, first_login 
-                    FROM $table 
-                    WHERE REPLACE(REPLACE(cpf, '.', ''), '-', '') = :cpf 
-                    LIMIT 1
-                ");
-                
+        try {
+            // Special case for admin login
+            if ($cpf === 'credenciamento' || $cleanCpf === 'credenciamento') {
+                $sql = "SELECT * FROM user WHERE email = 'credenciamento'";
+                $stmt = $this->conn->prepare($sql);
+            } else {
+                // Regular CPF login
+                $sql = "SELECT * FROM user WHERE cpf = :cpf";
+                $stmt = $this->conn->prepare($sql);
                 $stmt->bindParam(':cpf', $cleanCpf);
-                $stmt->execute();
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($user) {
-                    return [
-                        'user' => $user,
-                        'type' => $type,
-                        'table' => $table
-                    ];
-                }
-            } catch (PDOException $e) {
-                error_log("Error searching in table $table: " . $e->getMessage());
             }
+            
+            $stmt->execute();
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($user && password_verify($password, $user['password_hash'])) {
+                // Get profile page based on user type
+                $profilePages = [
+                    'admin' => 'home.php',
+                    'teacher' => 'docente.php',
+                    'postg_teacher' => 'docente-pos.php',
+                    'interpreter' => 'interprete.php',
+                    'technician' => 'tecnico.php'
+                ];
+                
+                return [
+                    'user' => $user,
+                    'type' => $user['user_type'],
+                    'table' => 'user',
+                    'profile_page' => $profilePages[$user['user_type']] ?? 'home.php'
+                ];
+            }
+            
+            return false;
+            
+        } catch (PDOException $e) {
+            error_log("Authentication error: " . $e->getMessage());
+            return false;
         }
-        
-        return false;
+    }
+    
+    /**
+     * Update user password in unified table
+     */
+    public function updatePassword($userId, $newPassword) {
+        try {
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            
+            $stmt = $this->conn->prepare("
+                UPDATE user 
+                SET password_hash = :password_hash,
+                    first_login = FALSE
+                WHERE id = :user_id
+            ");
+            
+            return $stmt->execute([
+                ':password_hash' => $passwordHash,
+                ':user_id' => $userId
+            ]);
+            
+        } catch (PDOException $e) {
+            error_log("Update password error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if user needs to change password (first login)
+     */
+    public function needsPasswordChange($userId) {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT first_login 
+                FROM user 
+                WHERE id = :user_id
+            ");
+            $stmt->execute([':user_id' => $userId]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            return $result && $result['first_login'] == 1;
+            
+        } catch (PDOException $e) {
+            error_log("Check first login error: " . $e->getMessage());
+            return false;
+        }
     }
     
     /**
      * Find user by reset token
      */
-    public function findUserByResetToken($token, $userType = null) {
-        $tables = $userType && isset($this->userTables[$userType]) 
-            ? [$userType => $this->userTables[$userType]] 
-            : $this->userTables;
-        
-        foreach ($tables as $type => $table) {
-            try {
-                $stmt = $this->conn->prepare("
-                    SELECT id, name, email, cpf 
-                    FROM $table 
-                    WHERE password_reset_token = :token 
-                    AND password_reset_expires > NOW()
-                    LIMIT 1
-                ");
-                
-                $stmt->bindParam(':token', $token);
-                $stmt->execute();
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($user) {
-                    return [
-                        'user' => $user,
-                        'type' => $type,
-                        'table' => $table
-                    ];
-                }
-            } catch (PDOException $e) {
-                error_log("Error searching reset token in table $table: " . $e->getMessage());
-            }
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Authenticate user with CPF and password
-     */
-    public function authenticate($cpf, $password) {
-        $userData = $this->findUserByCPF($cpf);
-        
-        if (!$userData) {
+    public function findUserByResetToken($token) {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT * 
+                FROM user 
+                WHERE password_reset_token = :token 
+                AND password_reset_expires > NOW()
+                LIMIT 1
+            ");
+            $stmt->execute([':token' => $token]);
+            
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Find user by token error: " . $e->getMessage());
             return false;
         }
-        
-        $user = $userData['user'];
-        
-        // If no password hash exists, check if password equals CPF (first login)
-        if (empty($user['password_hash'])) {
-            $cleanCpf = preg_replace('/\D/', '', $cpf);
-            if ($password === $cleanCpf) {
-                // Set initial password
-                $this->updatePassword($userData['table'], $user['id'], $password);
-                $user['first_login'] = true;
-            } else {
-                return false;
-            }
-        } else {
-            // Verify password
-            if (!password_verify($password, $user['password_hash'])) {
-                return false;
-            }
-        }
-        
-        // Update last login
-        $this->updateLastLogin($userData['table'], $user['id']);
-        
-        return [
-            'user' => $user,
-            'type' => $userData['type'],
-            'table' => $userData['table'],
-            'profile_page' => $this->profilePages[$userData['type']]
-        ];
     }
     
     /**
-     * Update user password
+     * Set password reset token
      */
-    public function updatePassword($table, $userId, $newPassword) {
+    public function setPasswordResetToken($userId, $token, $expires) {
         try {
-            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
-            
             $stmt = $this->conn->prepare("
-                UPDATE $table 
-                SET password_hash = :password,
-                    first_login = FALSE,
-                    password_reset_token = NULL,
-                    password_reset_expires = NULL
-                WHERE id = :id
+                UPDATE user 
+                SET password_reset_token = :token,
+                    password_reset_expires = :expires
+                WHERE id = :user_id
             ");
             
-            $stmt->bindParam(':password', $passwordHash);
-            $stmt->bindParam(':id', $userId);
+            return $stmt->execute([
+                ':token' => $token,
+                ':expires' => $expires,
+                ':user_id' => $userId
+            ]);
             
-            return $stmt->execute();
         } catch (PDOException $e) {
-            error_log("Error updating password: " . $e->getMessage());
+            error_log("Set reset token error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Clear password reset token
+     */
+    public function clearPasswordResetToken($userId) {
+        try {
+            $stmt = $this->conn->prepare("
+                UPDATE user 
+                SET password_reset_token = NULL,
+                    password_reset_expires = NULL
+                WHERE id = :user_id
+            ");
+            
+            return $stmt->execute([':user_id' => $userId]);
+            
+        } catch (PDOException $e) {
+            error_log("Clear reset token error: " . $e->getMessage());
             return false;
         }
     }
@@ -167,82 +174,39 @@ class AuthHelper {
     /**
      * Update last login timestamp
      */
-    public function updateLastLogin($table, $userId) {
+    public function updateLastLogin($userId) {
         try {
             $stmt = $this->conn->prepare("
-                UPDATE $table 
+                UPDATE user 
                 SET last_login = NOW()
-                WHERE id = :id
+                WHERE id = :user_id
             ");
             
-            $stmt->bindParam(':id', $userId);
-            $stmt->execute();
+            return $stmt->execute([':user_id' => $userId]);
+            
         } catch (PDOException $e) {
-            error_log("Error updating last login: " . $e->getMessage());
+            error_log("Update last login error: " . $e->getMessage());
+            return false;
         }
     }
     
     /**
-     * Set password reset token
+     * Get user by ID from unified table
      */
-    public function setResetToken($table, $userId, $token, $expires) {
+    public function getUserById($userId) {
         try {
             $stmt = $this->conn->prepare("
-                UPDATE $table 
-                SET password_reset_token = :token,
-                    password_reset_expires = :expires
-                WHERE id = :id
+                SELECT id, name, email, cpf, user_type, type_id, first_login
+                FROM user 
+                WHERE id = :user_id
             ");
+            $stmt->execute([':user_id' => $userId]);
             
-            $stmt->bindParam(':token', $token);
-            $stmt->bindParam(':expires', $expires);
-            $stmt->bindParam(':id', $userId);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
             
-            return $stmt->execute();
         } catch (PDOException $e) {
-            error_log("Error setting reset token: " . $e->getMessage());
+            error_log("Get user by ID error: " . $e->getMessage());
             return false;
         }
-    }
-    
-    /**
-     * Check if password meets requirements
-     */
-    public static function validatePasswordStrength($password) {
-        if (strlen($password) < 8) {
-            return false;
-        }
-        
-        if (!preg_match('/[A-Z]/', $password)) {
-            return false;
-        }
-        
-        if (!preg_match('/[a-z]/', $password)) {
-            return false;
-        }
-        
-        if (!preg_match('/[0-9]/', $password)) {
-            return false;
-        }
-        
-        if (!preg_match('/[@$!%*?&]/', $password)) {
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
-     * Get user type display name in Portuguese
-     */
-    public static function getUserTypeDisplayName($type) {
-        $names = [
-            'teacher' => 'Docente',
-            'postg_teacher' => 'Docente Pós-Graduação',
-            'interpreter' => 'Intérprete',
-            'technician' => 'Técnico'
-        ];
-        
-        return $names[$type] ?? 'Usuário';
     }
 }

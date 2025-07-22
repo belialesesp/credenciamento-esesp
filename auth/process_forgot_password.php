@@ -1,9 +1,9 @@
 <?php
 // auth/process_forgot_password.php
-// This version searches through individual tables since there's no unified user table
+// Updated to work with unified user table
 session_start();
 require_once '../backend/classes/database.class.php';
-require_once '../backend/helpers/email.helper.php'; // Include the email helper
+require_once '../backend/helpers/email.helper.php';
 
 // Redirect if not POST request
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -32,40 +32,19 @@ try {
     $connection = new Database();
     $conn = $connection->connect();
     
-    // Search through all user tables
-    $tables = [
-        'teacher' => 'teacher',
-        'postg_teacher' => 'postg_teacher',
-        'interpreter' => 'interpreter',
-        'technician' => 'technician'
-    ];
+    // Search in the unified user table
+    $stmt = $conn->prepare("
+        SELECT id, name, email, cpf, user_type 
+        FROM user 
+        WHERE cpf = :cpf AND email = :email
+        LIMIT 1
+    ");
     
-    $user = null;
-    $foundTable = '';
-    $foundType = '';
+    $stmt->bindParam(':cpf', $cpf);
+    $stmt->bindParam(':email', $email);
+    $stmt->execute();
     
-    foreach ($tables as $type => $table) {
-        $stmt = $conn->prepare("
-            SELECT id, name, email, cpf 
-            FROM $table 
-            WHERE REPLACE(REPLACE(cpf, '.', ''), '-', '') = :cpf 
-            AND email = :email
-            LIMIT 1
-        ");
-        
-        $stmt->bindParam(':cpf', $cpf);
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
-        
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($result) {
-            $user = $result;
-            $foundTable = $table;
-            $foundType = $type;
-            break;
-        }
-    }
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$user) {
         // For security, don't reveal if user exists or not
@@ -78,9 +57,9 @@ try {
     $token = bin2hex(random_bytes(32));
     $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
     
-    // Update user with reset token in their specific table
+    // Update user with reset token in the unified user table
     $updateStmt = $conn->prepare("
-        UPDATE $foundTable 
+        UPDATE user 
         SET password_reset_token = :token, 
             password_reset_expires = :expires 
         WHERE id = :id
@@ -92,14 +71,14 @@ try {
     $updateStmt->execute();
     
     // Send email using the helper function
-    $resetLink = getResetLink($token, $foundType);
-    $emailSent = sendPasswordResetEmail($user['email'], $user['name'], $resetLink, $expires, $foundType);
+    $resetLink = getResetLink($token);
+    $emailSent = sendPasswordResetEmail($user['email'], $user['name'], $resetLink, $expires, $user['user_type']);
     
     if ($emailSent) {
         $_SESSION['forgot_success'] = 'Instruções para redefinir sua senha foram enviadas para seu email.';
         
         // Log the password reset request
-        error_log("Password reset requested for user ID: " . $user['id'] . " in table: $foundTable");
+        error_log("Password reset requested for user ID: " . $user['id'] . " (type: " . $user['user_type'] . ")");
     } else {
         $_SESSION['forgot_error'] = 'Erro ao enviar email. Por favor, tente novamente mais tarde.';
     }
@@ -113,12 +92,12 @@ header('Location: ../pages/forgot-password.php');
 exit;
 
 /**
- * Generate the password reset link with user type
+ * Generate the password reset link (no longer needs user type in URL)
  */
-function getResetLink($token, $userType) {
+function getResetLink($token) {
     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'];
     $basePath = dirname(dirname($_SERVER['REQUEST_URI']));
     
-    return $protocol . '://' . $host . $basePath . '/pages/reset-password.php?token=' . $token . '&type=' . $userType;
+    return $protocol . '://' . $host . $basePath . '/pages/reset-password.php?token=' . $token;
 }
