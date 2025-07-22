@@ -108,7 +108,15 @@ try {
   // Format date
   $date = new DateTime($created_at);
   $dateF = $date->format('d/m/Y H:i');
-
+  // Format called_at date
+  $called_at = $technician['called_at'] ?? null;
+  $calledDateF = '';
+  if ($called_at) {
+    $calledDate = new DateTime($called_at);
+    $calledDateF = $calledDate->format('d/m/Y H:i');
+  } else {
+    $calledDateF = 'Não chamado';
+  }
   // Format filepath
   $path = '';
   if ($file_path) {
@@ -154,6 +162,10 @@ try {
       <div class="col-3">
         <p class="col-12"><strong>Data de Inscrição</strong></p>
         <p class="col-12"><?= $dateF ?></p>
+      </div>
+      <div class="col-3">
+        <p class="col-12"><strong>Data de Chamamento</strong></p>
+        <p class="col-12"><?= $calledDateF ?></p>
       </div>
     </div>
     <div class="row">

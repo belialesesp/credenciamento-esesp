@@ -75,21 +75,17 @@ function get_postg_docente($conn) {
 }
 // These functions remain the same as they use their own enabled field
 function get_technicians($conn) {
-  $query = "SELECT * FROM technician ORDER BY created_at ASC";
-  $stmt = $conn->prepare($query);
-  $stmt->execute();
-
-  $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  return $result;
+    $sql = "SELECT id, name, email, created_at, enabled, called_at FROM technician ORDER BY name ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function get_interpreters($conn) {
-  $query = "SELECT * FROM interpreter ORDER BY created_at ASC";
-  $stmt = $conn->prepare($query);
-  $stmt->execute();
-
-  $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  return $result;
+    $sql = "SELECT id, name, email, created_at, enabled, called_at FROM interpreter ORDER BY name ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // Updated call functions to check discipline-specific status
@@ -175,51 +171,23 @@ function get_postdocentes_call($conn, $date) {
 
 // Interpreters and technicians keep their own enabled field
 function get_interpreter_call($conn, $date) {
-  $query = "
-  SELECT
-    i.id,
-    i.name,
-    i.created_at,
-    i.enabled
-  FROM 
-    interpreter AS i
-  WHERE
-    i.created_at < :date
-  AND
-    i.enabled = 1
-  ORDER BY i.created_at ASC
-  ";
-  $stmt = $conn->prepare($query);
-  $data = [
-    ':date' => $date
-  ];
-  $stmt->execute($data);
-
-  $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  return $result;  
+    $sql = "SELECT id, name, email, created_at, enabled, called_at 
+            FROM interpreter 
+            WHERE called_at <= :date OR called_at IS NULL
+            ORDER BY name ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':date', $date);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function get_technicians_call($conn, $date) {
-  $query = "
-  SELECT
-    t.id,
-    t.name,
-    t.created_at,
-    t.enabled
-  FROM 
-    technician AS t
-  WHERE
-    t.created_at < :date
-  AND
-    t.enabled = 1
-  ORDER BY t.created_at ASC
-  ";
-  $stmt = $conn->prepare($query);
-  $data = [
-    ':date' => $date
-  ];
-  $stmt->execute($data);
-
-  $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  return $result;  
+function get_technician_call($conn, $date) {
+    $sql = "SELECT id, name, email, created_at, enabled, called_at 
+            FROM technician 
+            WHERE called_at <= :date OR called_at IS NULL
+            ORDER BY name ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':date', $date);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }

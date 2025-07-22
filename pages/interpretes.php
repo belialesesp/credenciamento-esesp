@@ -158,34 +158,46 @@ function truncate_text($text, $length = 50, $suffix = '...')
         <th>Nome</th>
         <th>Email</th>
         <th>Data de Inscrição</th>
+        <th>Data de Chamamento</th>
         <th>Situação</th>
       </tr>
     </thead>
     <tbody id="interpretersTableBody">
-      <?php foreach ($interpreters as $interpreter): 
-        $enabled = match ($interpreter['enabled']) {
-          1 => 'Apto',
-          0 => 'Inapto',
-          default => 'Aguardando', 
-        };
-        $statusClass = match ($interpreter['enabled']) {
-          1 => 'status-approved',
-          0 => 'status-not-approved',
-          default => 'status-pending',
-        };
+  <?php foreach ($interpreters as $interpreter): 
+    $enabled = match ($interpreter['enabled']) {
+      1 => 'Apto',
+      0 => 'Inapto',
+      default => 'Aguardando', 
+    };
+    $statusClass = match ($interpreter['enabled']) {
+      1 => 'status-approved',
+      0 => 'status-not-approved',
+      default => 'status-pending',
+    };
 
-        $created_at = $interpreter['created_at'];
-        $date = new DateTime($created_at);
-        $dateF = $date->format('d/m/Y H:i');
-      ?>
-      <tr class="interpreter-row" onclick="window.location.href='interprete.php?id=<?= $interpreter['id']?>'">
-        <td><?= titleCase($interpreter['name']) ?></td>
-        <td><?= strtolower($interpreter['email']) ?></td>
-        <td><?= $dateF ?></td>
-        <td><span class="<?= $statusClass ?>"><?= $enabled ?></span></td>
-      </tr>
-      <?php endforeach; ?>
-    </tbody>
+    $created_at = $interpreter['created_at'];
+    $date = new DateTime($created_at);
+    $dateF = $date->format('d/m/Y H:i');
+    
+    // Format called_at date
+    $called_at = $interpreter['called_at'] ?? null;
+    $calledDateF = '';
+    if ($called_at) {
+      $calledDate = new DateTime($called_at);
+      $calledDateF = $calledDate->format('d/m/Y');
+    } else {
+      $calledDateF = '-';
+    }
+  ?>
+  <tr class="interpreter-row" onclick="window.location.href='interprete.php?id=<?= $interpreter['id']?>'">
+    <td><?= titleCase($interpreter['name']) ?></td>
+    <td><?= strtolower($interpreter['email']) ?></td>
+    <td><?= $dateF ?></td>
+    <td><?= $calledDateF ?></td>
+    <td><span class="<?= $statusClass ?>"><?= $enabled ?></span></td>
+  </tr>
+  <?php endforeach; ?>
+</tbody>
   </table>
 </div>
 

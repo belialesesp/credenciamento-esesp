@@ -83,12 +83,12 @@ try {
     
     // Define column widths
     $colWidths = [
-        'name' => 70,
-        'email' => 60,
-        'phone' => 40,
-        'date' => 40,
-        'status' => 30,
-        'scholarship' => 40
+        'name' => 60,
+        'email' => 50,
+        'date' => 35,
+        'called' => 35,
+        'status' => 25,
+        'scholarship' => 30
     ];
     
     // Header cells
@@ -96,6 +96,7 @@ try {
     $pdf->Cell($colWidths['email'], 8, 'Email', 1, 0, 'L', true);
     $pdf->Cell($colWidths['phone'], 8, 'Telefone', 1, 0, 'L', true);
     $pdf->Cell($colWidths['date'], 8, 'Data Inscrição', 1, 0, 'L', true);
+    $pdf->Cell($colWidths['called'], 8, 'Chamada', 1, 0, 'L', true);
     $pdf->Cell($colWidths['scholarship'], 8, 'Escolaridade', 1, 0, 'L', true);
     $pdf->Cell($colWidths['status'], 8, 'Status', 1, 1, 'C', true);
     
@@ -125,6 +126,7 @@ try {
         $pdf->Cell($colWidths['email'], 7, strtolower($email), 1, 0, 'L');
         $pdf->Cell($colWidths['phone'], 7, $interpreter['phone'], 1, 0, 'L');
         $pdf->Cell($colWidths['date'], 7, $dateF, 1, 0, 'C');
+        $pdf->Cell($colWidths['called'], 7, $calledF, 1, 0, 'C');
         $pdf->Cell($colWidths['scholarship'], 7, $scholarship, 1, 0, 'L');
         $pdf->Cell($colWidths['status'], 7, $statusText, 1, 1, 'C');
     }

@@ -24,6 +24,7 @@ class InterpreterService {
         i.cpf,
         i.scholarship,
         i.enabled,
+        t.called_at,
         i.address_id,
         i.created_at,
         a.street,

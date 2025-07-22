@@ -12,39 +12,40 @@ class TechnicianService {
   }
 
   function getTechnician($technician_id) {
-    $sql = "
-      SELECT
-        t.name,
-        t.email,
-        t.special_needs,
-        t.document_number,
-        t.document_emissor,
-        t.document_uf,
-        t.phone,
-        t.cpf,
-        t.scholarship,
-        t.address_id,
-        t.created_at,
-        t.enabled,
-        a.street,
-        a.city,
-        a.state,
-        a.zip_code,
-        a.complement,
-        a.address_number,
-        a.neighborhood,
-        d.path AS file_path
-      FROM
-        technician AS t
-      LEFT JOIN
-        address AS a
-        ON a.id = t.address_id
-      LEFT JOIN
-        documents AS d
-        ON d.technician_id = t.id
-      WHERE 
-        t.id = :technician_id   
-    ";
+  $sql = "
+    SELECT
+      t.name,
+      t.email,
+      t.special_needs,
+      t.document_number,
+      t.document_emissor,
+      t.document_uf,
+      t.phone,
+      t.cpf,
+      t.scholarship,
+      t.address_id,
+      t.created_at,
+      t.enabled,
+      t.called_at,
+      a.street,
+      a.city,
+      a.state,
+      a.zip_code,
+      a.complement,
+      a.address_number,
+      a.neighborhood,
+      d.path AS file_path
+    FROM
+      technician AS t
+    LEFT JOIN
+      address AS a
+      ON a.id = t.address_id
+    LEFT JOIN
+      documents AS d
+      ON d.technician_id = t.id
+    WHERE 
+      t.id = :technician_id   
+  ";
 
     $stmt = $this->db->prepare($sql);
     $stmt->bindParam(":technician_id", $technician_id, PDO::PARAM_INT);

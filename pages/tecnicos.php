@@ -149,34 +149,46 @@ function truncate_text($text, $length = 50, $suffix = '...')
         <th>Nome</th>
         <th>Email</th>
         <th>Data de Inscrição</th>
+        <th>Data de Chamamento</th>
         <th>Situação</th>
       </tr>
     </thead>
     <tbody id="techniciansTableBody">
-      <?php foreach ($technicians as $technician): 
-        $enabled = match ($technician['enabled']) {
-          1 => 'Apto',
-          0 => 'Inapto',
-          default => 'Aguardando', 
-        };
-        $statusClass = match ($technician['enabled']) {
-          1 => 'status-approved',
-          0 => 'status-not-approved',
-          default => 'status-pending',
-        };
+  <?php foreach ($technicians as $technician): 
+    $enabled = match ($technician['enabled']) {
+      1 => 'Apto',
+      0 => 'Inapto',
+      default => 'Aguardando', 
+    };
+    $statusClass = match ($technician['enabled']) {
+      1 => 'status-approved',
+      0 => 'status-not-approved',
+      default => 'status-pending',
+    };
 
-        $created_at = $technician['created_at'];
-        $date = new DateTime($created_at);
-        $dateF = $date->format('d/m/Y H:i');
-      ?>
-      <tr class="technician-row" onclick="window.location.href='tecnico.php?id=<?= $technician['id']?>'">
-        <td><?= titleCase($technician['name']) ?></td>
-        <td><?= strtolower($technician['email']) ?></td>
-        <td><?= $dateF ?></td>
-        <td><span class="<?= $statusClass ?>"><?= $enabled ?></span></td>
-      </tr>
-      <?php endforeach; ?>
-    </tbody>
+    $created_at = $technician['created_at'];
+    $date = new DateTime($created_at);
+    $dateF = $date->format('d/m/Y H:i');
+    
+    // Format called_at date
+    $called_at = $technician['called_at'] ?? null;
+    $calledDateF = '';
+    if ($called_at) {
+      $calledDate = new DateTime($called_at);
+      $calledDateF = $calledDate->format('d/m/Y');
+    } else {
+      $calledDateF = '-';
+    }
+  ?>
+  <tr class="technician-row" onclick="window.location.href='tecnico.php?id=<?= $technician['id']?>'">
+    <td><?= titleCase($technician['name']) ?></td>
+    <td><?= strtolower($technician['email']) ?></td>
+    <td><?= $dateF ?></td>
+    <td><?= $calledDateF ?></td>
+    <td><span class="<?= $statusClass ?>"><?= $enabled ?></span></td>
+  </tr>
+  <?php endforeach; ?>
+</tbody>
   </table>
 </div>
 
