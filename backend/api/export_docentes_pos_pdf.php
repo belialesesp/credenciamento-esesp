@@ -1,7 +1,6 @@
 <?php
 // =================================================================
-// backend/api/export_docentes_pos_pdf.php
-// FIXED VERSION FOR PHP 8.3
+// backend/api/export_docentes_pos_pdf.php - WITHOUT CPF/PHONE
 // =================================================================
 
 if (ob_get_level()) {
@@ -20,16 +19,15 @@ try {
     $conection = new Database();
     $conn = $conection->connect();
     
-    // Get filter parameters
     $category = $_GET['category'] ?? '';
     $course = $_GET['course'] ?? '';
     $status = $_GET['status'] ?? '';
     
-    // Handle no-disciplines case
+    // Same logic as docentes but for postg tables
     if ($status === 'no-disciplines') {
         $sql = "
             SELECT DISTINCT
-                t.id, t.name, t.email, t.phone, t.cpf, t.called_at, t.created_at
+                t.id, t.name, t.email, t.called_at, t.created_at
             FROM postg_teacher t
             LEFT JOIN postg_teacher_disciplines td ON t.id = td.teacher_id
         ";
@@ -50,8 +48,7 @@ try {
         $stmt->execute($params);
         $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } else {
-        // Get teachers with disciplines
-        $sql = "SELECT DISTINCT t.* FROM postg_teacher t";
+        $sql = "SELECT DISTINCT t.id, t.name, t.email, t.called_at, t.created_at FROM postg_teacher t";
         $joins = [];
         $where = [];
         $params = [];
@@ -105,34 +102,22 @@ try {
         }
     }
     
-    // Create PDF
     $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-    
     $pdf->SetCreator('Sistema de Docentes');
     $pdf->SetAuthor('Sistema de Docentes');
     $pdf->SetTitle('Lista de Docentes Pós-Graduação - ' . date('d/m/Y'));
-    
-    // Set header and footer
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(true);
     $pdf->setFooterData(array(0,64,0), array(0,64,128));
     $pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
-    
-    // Set margins
     $pdf->SetMargins(15, 15, 15);
     $pdf->SetFooterMargin(10);
-    
-    // Set auto page breaks
     $pdf->SetAutoPageBreak(TRUE, 15);
-    
-    // Add a page
     $pdf->AddPage();
     
-    // Title
     $pdf->SetFont('helvetica', 'B', 16);
     $pdf->Cell(0, 10, 'Lista de Docentes - Pós-Graduação', 0, 1, 'C');
     
-    // Filter info
     if ($category || $course || $status) {
         $pdf->SetFont('helvetica', '', 10);
         $pdf->Ln(5);
@@ -156,68 +141,56 @@ try {
     
     $pdf->Ln(5);
     
-    // Table header
+    // Table without phone column
     $pdf->SetFont('helvetica', 'B', 10);
     $pdf->SetFillColor(230, 230, 230);
     
-    // Header cells
     $pdf->Cell(60, 8, 'Nome', 1, 0, 'L', true);
-    $pdf->Cell(25, 8, 'Chamado', 1, 0, 'C', true);
-    $pdf->Cell(30, 8, 'Inscrição', 1, 0, 'C', true);
-    $pdf->Cell(65, 8, 'Disciplinas', 1, 1, 'L', true);
+    $pdf->Cell(50, 8, 'Email', 1, 0, 'L', true);
+    $pdf->Cell(20, 8, 'Chamado', 1, 0, 'C', true);
+    $pdf->Cell(25, 8, 'Inscrição', 1, 0, 'C', true);
+    $pdf->Cell(25, 8, 'Status', 1, 1, 'C', true);
     
-    // Table content
     $pdf->SetFont('helvetica', '', 9);
-    $pdf->SetFillColor(255, 255, 255);
     
     foreach ($teachers as $teacher) {
         $created_at = new DateTime($teacher['created_at']);
         $dateF = $created_at->format('d/m/Y');
         $called_at = $teacher['called_at'] ? (new DateTime($teacher['called_at']))->format('d/m/Y') : '-';
         
-        // Calculate row height based on disciplines
-        $disciplineLines = 1;
+        // Determine status
+        $statusText = 'N/A';
         if (isset($teacher['disciplines']) && count($teacher['disciplines']) > 0) {
-            $disciplineLines = count($teacher['disciplines']);
-        }
-        $rowHeight = max(8, $disciplineLines * 6);
-        
-        // Name cell
-        $pdf->Cell(60, $rowHeight, substr($teacher['name'], 0, 35), 1, 0, 'L');
-        
-        // Called date
-        $pdf->Cell(25, $rowHeight, $called_at, 1, 0, 'C');
-        
-        // Registration date
-        $pdf->Cell(30, $rowHeight, $dateF, 1, 0, 'C');
-        
-        // Disciplines
-        $x = $pdf->GetX();
-        $y = $pdf->GetY();
-        
-        if (isset($teacher['disciplines']) && count($teacher['disciplines']) > 0) {
-            $discText = '';
-            foreach ($teacher['disciplines'] as $discipline) {
-                $statusText = match (intval($discipline['enabled'])) {
-                    1 => 'Apto',
-                    0 => 'Inapto',
-                    default => 'Aguardando'
-                };
-                $discText .= substr($discipline['name'], 0, 30) . ' (' . $statusText . ")\n";
+            $hasApto = false;
+            $hasInapto = false;
+            $hasAguardando = false;
+            
+            foreach ($teacher['disciplines'] as $disc) {
+                if ($disc['enabled'] == 1) $hasApto = true;
+                elseif ($disc['enabled'] == 0) $hasInapto = true;
+                else $hasAguardando = true;
             }
-            $pdf->MultiCell(65, $rowHeight, trim($discText), 1, 'L', false, 1);
+            
+            if ($hasApto && !$hasInapto && !$hasAguardando) $statusText = 'Apto';
+            elseif ($hasInapto && !$hasApto && !$hasAguardando) $statusText = 'Inapto';
+            elseif ($hasAguardando && !$hasApto && !$hasInapto) $statusText = 'Aguardando';
+            else $statusText = 'Misto';
         } else {
-            $pdf->Cell(65, $rowHeight, 'Sem disciplinas', 1, 1, 'L');
+            $statusText = 'Sem disc.';
         }
+        
+        $pdf->Cell(60, 7, substr($teacher['name'], 0, 35), 1, 0, 'L');
+        $pdf->Cell(50, 7, substr($teacher['email'], 0, 30), 1, 0, 'L');
+        $pdf->Cell(20, 7, $called_at, 1, 0, 'C');
+        $pdf->Cell(25, 7, $dateF, 1, 0, 'C');
+        $pdf->Cell(25, 7, $statusText, 1, 1, 'C');
     }
     
-    // Summary
     $pdf->Ln(5);
     $pdf->SetFont('helvetica', '', 10);
     $pdf->Cell(0, 6, 'Total de docentes: ' . count($teachers), 0, 1, 'L');
     $pdf->Cell(0, 6, 'Data de geração: ' . date('d/m/Y H:i'), 0, 1, 'L');
     
-    // Output PDF
     $pdf->Output('docentes_pos_' . date('Y-m-d_H-i-s') . '.pdf', 'D');
     
 } catch (Exception $e) {

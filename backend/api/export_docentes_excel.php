@@ -1,6 +1,6 @@
 <?php
 // =================================================================
-// backend/api/export_to_excel.php - CSV Format for Excel
+// backend/api/export_to_excel.php - CSV WITHOUT CPF/PHONE
 // =================================================================
 
 require_once '../classes/database.class.php';
@@ -13,8 +13,8 @@ try {
     $course = $_GET['course'] ?? '';
     $status = $_GET['status'] ?? '';
     
-    // Build query
-    $sql = "SELECT DISTINCT t.* FROM teacher t";
+    // Build query without phone and cpf
+    $sql = "SELECT DISTINCT t.id, t.name, t.email, t.created_at, t.called_at FROM teacher t";
     $joins = [];
     $where = [];
     $params = [];
@@ -65,8 +65,8 @@ try {
     // Output
     $output = fopen('php://output', 'w');
     
-    // Headers
-    fputcsv($output, ['Nome', 'Email', 'Telefone', 'CPF', 'Data de Inscrição', 'Chamado em', 'Disciplinas'], ';');
+    // Headers without CPF and Telefone
+    fputcsv($output, ['Nome', 'Email', 'Data de Inscrição', 'Chamado em', 'Disciplinas'], ';');
     
     // Data
     foreach ($teachers as $teacher) {
@@ -92,8 +92,6 @@ try {
         fputcsv($output, [
             $teacher['name'],
             $teacher['email'],
-            $teacher['phone'],
-            $teacher['cpf'],
             date('d/m/Y H:i', strtotime($teacher['created_at'])),
             $teacher['called_at'] ? date('d/m/Y', strtotime($teacher['called_at'])) : '-',
             implode(' | ', $discList)
@@ -105,7 +103,7 @@ try {
 } catch (Exception $e) {
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => 'Export failed: ' . $e->getMessage()]);
 }
 exit;
 ?>
