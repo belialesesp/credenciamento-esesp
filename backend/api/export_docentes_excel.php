@@ -1,11 +1,11 @@
 <?php
-// =================================================================
-// backend/api/export_to_excel.php - CSV WITHOUT CPF/PHONE
-// =================================================================
-
+// backend/api/export_docentes_excel.php
 require_once '../classes/database.class.php';
 
 try {
+    // Clear any previous output
+    ob_clean();
+    
     $conection = new Database();
     $conn = $conection->connect();
     
@@ -13,7 +13,7 @@ try {
     $course = $_GET['course'] ?? '';
     $status = $_GET['status'] ?? '';
     
-    // Build query without phone and cpf
+    // Build query
     $sql = "SELECT DISTINCT t.id, t.name, t.email, t.created_at, t.called_at FROM teacher t";
     $joins = [];
     $where = [];
@@ -55,7 +55,7 @@ try {
     $stmt->execute($params);
     $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Set headers for Excel-compatible CSV
+    // Set headers for CSV (not XLSX)
     header('Content-Type: text/csv; charset=UTF-8');
     header('Content-Disposition: attachment; filename="docentes_' . date('Y-m-d') . '.csv"');
     
@@ -65,7 +65,7 @@ try {
     // Output
     $output = fopen('php://output', 'w');
     
-    // Headers without CPF and Telefone
+    // Headers
     fputcsv($output, ['Nome', 'Email', 'Data de Inscrição', 'Chamado em', 'Disciplinas'], ';');
     
     // Data
@@ -81,11 +81,15 @@ try {
         
         $discList = [];
         foreach ($disciplines as $disc) {
-            $status = match (intval($disc['enabled'])) {
-                1 => 'Apto',
-                0 => 'Inapto',
-                default => 'Aguardando'
-            };
+            // PHP 7 compatible version (no match expression)
+            $enabled = intval($disc['enabled']);
+            if ($enabled === 1) {
+                $status = 'Apto';
+            } elseif ($enabled === 0) {
+                $status = 'Inapto';
+            } else {
+                $status = 'Aguardando';
+            }
             $discList[] = $disc['name'] . ' (' . $status . ')';
         }
         
