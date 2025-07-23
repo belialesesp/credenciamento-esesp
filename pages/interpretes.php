@@ -188,12 +188,9 @@ function truncate_text($text, $length = 50, $suffix = '...')
         <th>Email</th>
         <th class="sortable" data-sort="created">
           Data de Inscrição
-          <span class="sort-indicator active" id="sort-created">↓</span>
+          <span class="sort-indicator" id="sort-created"></span>
         </th>
-        <th class="sortable" data-sort="called">
-          Data de Chamada
-          <span class="sort-indicator" id="sort-called"></span>
-        </th>
+        <th>Data de Chamada</th>
         <th>Situação</th>
       </tr>
     </thead>
@@ -208,7 +205,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
   let allInterpreters = <?= json_encode($interpreters) ?>;
   let currentInterpreters = [...allInterpreters];
   let currentSort = {
-    column: 'created',
+    column: 'called',
     direction: 'desc'
   };
 
@@ -225,10 +222,16 @@ function truncate_text($text, $length = 50, $suffix = '...')
     // Set up filter handler
     document.getElementById('status').addEventListener('change', filterInterpreters);
 
-    // Initial sort and render
+    // Initial sort and render with called_at as default
     sortInterpreters();
     renderTable(currentInterpreters);
     updateStats();
+    
+    // Show that we're sorted by called_at by default
+    const calledHeader = document.querySelector('th:nth-child(4)');
+    if (calledHeader) {
+      calledHeader.innerHTML = 'Data de Chamada <span style="font-size: 12px;">↓</span>';
+    }
   });
 
   // Sorting function
@@ -286,23 +289,24 @@ function truncate_text($text, $length = 50, $suffix = '...')
         compareResult = dateA - dateB;
         
       } else if (currentSort.column === 'called') {
-        // Handle null values - put them at the end when ascending, at the beginning when descending
+        // Handle null values - always put them at the end
         const dateA = a.called_at ? new Date(a.called_at) : null;
         const dateB = b.called_at ? new Date(b.called_at) : null;
         
         if (dateA === null && dateB === null) {
           compareResult = 0;
         } else if (dateA === null) {
-          compareResult = currentSort.direction === 'asc' ? 1 : -1;
+          return 1; // Always put nulls at the end
         } else if (dateB === null) {
-          compareResult = currentSort.direction === 'asc' ? -1 : 1;
+          return -1; // Always put nulls at the end
         } else {
-          compareResult = dateA - dateB;
+          // Both have dates - for desc order, newer dates should come first
+          compareResult = currentSort.direction === 'desc' ? dateB - dateA : dateA - dateB;
         }
       }
 
-      // Apply sort direction only if not already handled (like null values in called_at)
-      if (currentSort.column !== 'called' || (dateA !== null && dateB !== null)) {
+      // Apply sort direction only if not already handled
+      if (currentSort.column !== 'called') {
         return currentSort.direction === 'asc' ? compareResult : -compareResult;
       }
       
