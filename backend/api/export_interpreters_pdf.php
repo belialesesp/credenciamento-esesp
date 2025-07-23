@@ -1,24 +1,31 @@
 <?php
+// =================================================================
 // backend/api/export_interpreters_pdf.php
+// =================================================================
+
+if (ob_get_level()) {
+    ob_end_clean();
+}
+ob_start();
+
 require_once '../classes/database.class.php';
 require_once '../../vendor/autoload.php';
 
-// Use TCPDF for PDF generation
-use \TCPDF;
-
-// Get filter parameters
-$status = $_GET['status'] ?? '';
-
 try {
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    
     $conection = new Database();
     $conn = $conection->connect();
-    
-    // Build query with filters
-    $sql = "SELECT * FROM interpreter";
+
+    $status = $_GET['status'] ?? '';
+
+    $sql = "SELECT id, name, email, phone, created_at, enabled, called_at, scholarship 
+            FROM interpreter";
     $where = [];
     $params = [];
-    
-    // Apply status filter
+
     if ($status !== '') {
         if ($status === 'null') {
             $where[] = "(enabled IS NULL OR enabled = '')";
@@ -27,137 +34,90 @@ try {
             $params[':status'] = intval($status);
         }
     }
-    
-    // Add WHERE clause if there are conditions
+
     if (!empty($where)) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
     }
-    
-    // Order by creation date
-    $sql .= ' ORDER BY created_at ASC';
-    
-    // Execute query
+
+    $sql .= " ORDER BY 
+             CASE WHEN called_at IS NULL THEN 1 ELSE 0 END,
+             called_at DESC,
+             created_at DESC";
+
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
     $interpreters = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Create PDF
+
     $pdf = new TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
-    
-    // Set document information
     $pdf->SetCreator('ESESP');
     $pdf->SetAuthor('ESESP');
     $pdf->SetTitle('Lista de Intérpretes');
-    $pdf->SetSubject('Intérpretes de Libras Credenciados');
-    
-    // Remove default header/footer
     $pdf->setPrintHeader(false);
     $pdf->setPrintFooter(false);
-    
-    // Add a page
+    $pdf->SetMargins(10, 10, 10);
+    $pdf->SetAutoPageBreak(TRUE, 10);
     $pdf->AddPage();
-    
-    // Set font
-    $pdf->SetFont('helvetica', '', 10);
-    
-    // Title
+
     $pdf->SetFont('helvetica', 'B', 16);
     $pdf->Cell(0, 10, 'Lista de Intérpretes de Libras', 0, 1, 'C');
     $pdf->Ln(5);
-    
-    // Filter information
+
     if ($status !== '') {
         $pdf->SetFont('helvetica', '', 10);
-        $filterText = 'Filtros aplicados: ';
-        
-        $statusText = $status === '1' ? 'Apto' : ($status === '0' ? 'Inapto' : 'Aguardando');
-        $filterText .= "Status: $statusText";
-        
-        $pdf->Cell(0, 6, $filterText, 0, 1, 'L');
+        $statusText = match ($status) {
+            '1' => 'Apto',
+            '0' => 'Inapto',
+            default => 'Aguardando'
+        };
+        $pdf->Cell(0, 6, 'Filtro: Status = ' . $statusText, 0, 1, 'L');
         $pdf->Ln(3);
     }
-    
-    // Table header
-    $pdf->SetFont('helvetica', 'B', 10);
+
+    $pdf->SetFont('helvetica', 'B', 9);
     $pdf->SetFillColor(240, 240, 240);
-    
-    // Define column widths
-    $colWidths = [
-        'name' => 60,
-        'email' => 50,
-        'date' => 35,
-        'called' => 35,
-        'status' => 25,
-        'scholarship' => 30
-    ];
-    
-    // Header cells
-    $pdf->Cell($colWidths['name'], 8, 'Nome', 1, 0, 'L', true);
-    $pdf->Cell($colWidths['email'], 8, 'Email', 1, 0, 'L', true);
-    $pdf->Cell($colWidths['phone'], 8, 'Telefone', 1, 0, 'L', true);
-    $pdf->Cell($colWidths['date'], 8, 'Data Inscrição', 1, 0, 'L', true);
-    $pdf->Cell($colWidths['called'], 8, 'Chamada', 1, 0, 'L', true);
-    $pdf->Cell($colWidths['scholarship'], 8, 'Escolaridade', 1, 0, 'L', true);
-    $pdf->Cell($colWidths['status'], 8, 'Status', 1, 1, 'C', true);
-    
-    // Table content
-    $pdf->SetFont('helvetica', '', 9);
-    $pdf->SetFillColor(255, 255, 255);
-    
-    foreach ($interpreters as $interpreter) {
-        // Format date
-        $date = new DateTime($interpreter['created_at']);
-        $dateF = $date->format('d/m/Y');
+
+    $pdf->Cell(55, 8, 'Nome', 1, 0, 'L', true);
+    $pdf->Cell(45, 8, 'Email', 1, 0, 'L', true);
+    $pdf->Cell(30, 8, 'Telefone', 1, 0, 'L', true);
+    $pdf->Cell(30, 8, 'Inscrição', 1, 0, 'C', true);
+    $pdf->Cell(30, 8, 'Chamada', 1, 0, 'C', true);
+    $pdf->Cell(30, 8, 'Escolaridade', 1, 0, 'L', true);
+    $pdf->Cell(20, 8, 'Status', 1, 1, 'C', true);
+
+    $pdf->SetFont('helvetica', '', 8);
+
+    foreach ($interpreters as $interp) {
+        $dateF = date('d/m/Y', strtotime($interp['created_at']));
+        $calledF = $interp['called_at'] ? date('d/m/Y', strtotime($interp['called_at'])) : '-';
         
-        // Format status
-        $statusText = match ($interpreter['enabled']) {
+        $statusText = match (intval($interp['enabled'])) {
             1 => 'Apto',
             0 => 'Inapto',
             default => 'Aguardando'
         };
-        
-        // Truncate long text
-        $name = substr($interpreter['name'], 0, 35);
-        $email = substr($interpreter['email'], 0, 30);
-        $scholarship = isset($interpreter['scholarship']) ? substr($interpreter['scholarship'], 0, 20) : 'N/A';
-        
-        // Add row
-        $pdf->Cell($colWidths['name'], 7, $name, 1, 0, 'L');
-        $pdf->Cell($colWidths['email'], 7, strtolower($email), 1, 0, 'L');
-        $pdf->Cell($colWidths['phone'], 7, $interpreter['phone'], 1, 0, 'L');
-        $pdf->Cell($colWidths['date'], 7, $dateF, 1, 0, 'C');
-        $pdf->Cell($colWidths['called'], 7, $calledF, 1, 0, 'C');
-        $pdf->Cell($colWidths['scholarship'], 7, $scholarship, 1, 0, 'L');
-        $pdf->Cell($colWidths['status'], 7, $statusText, 1, 1, 'C');
+
+        $pdf->Cell(55, 7, substr($interp['name'], 0, 35), 1, 0, 'L');
+        $pdf->Cell(45, 7, substr(strtolower($interp['email']), 0, 30), 1, 0, 'L');
+        $pdf->Cell(30, 7, $interp['phone'], 1, 0, 'L');
+        $pdf->Cell(30, 7, $dateF, 1, 0, 'C');
+        $pdf->Cell(30, 7, $calledF, 1, 0, 'C');
+        $pdf->Cell(30, 7, substr($interp['scholarship'] ?? 'N/A', 0, 20), 1, 0, 'L');
+        $pdf->Cell(20, 7, $statusText, 1, 1, 'C');
     }
-    
-    // Add summary
+
     $pdf->Ln(5);
     $pdf->SetFont('helvetica', '', 10);
-    $pdf->Cell(0, 6, 'Total de intérpretes: ' . count($interpreters), 0, 1, 'L');
-    
-    // Count by status
-    $statusCounts = ['apto' => 0, 'inapto' => 0, 'aguardando' => 0];
-    foreach ($interpreters as $interpreter) {
-        if ($interpreter['enabled'] == 1) {
-            $statusCounts['apto']++;
-        } elseif ($interpreter['enabled'] == 0) {
-            $statusCounts['inapto']++;
-        } else {
-            $statusCounts['aguardando']++;
-        }
-    }
-    
-    $pdf->Cell(0, 6, 'Aptos: ' . $statusCounts['apto'] . ' | Inaptos: ' . $statusCounts['inapto'] . ' | Aguardando: ' . $statusCounts['aguardando'], 0, 1, 'L');
-    $pdf->Cell(0, 6, 'Data de geração: ' . date('d/m/Y H:i'), 0, 1, 'L');
-    
-    // Output PDF
+    $pdf->Cell(0, 6, 'Total: ' . count($interpreters) . ' intérpretes', 0, 1, 'L');
+
     $pdf->Output('interpretes_' . date('Y-m-d') . '.pdf', 'D');
     
 } catch (Exception $e) {
-    // Return error as JSON
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
 }
+exit;
 ?>
