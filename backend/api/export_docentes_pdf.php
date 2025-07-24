@@ -63,7 +63,7 @@ try {
     // Set document information
     $pdf->SetCreator('ESESP');
     $pdf->SetAuthor('ESESP');
-    $pdf->SetTitle('Docentes - Pós-Graduação');
+    $pdf->SetTitle('Docentes');
     
     // Remove default header/footer
     $pdf->setPrintHeader(false);
@@ -78,7 +78,7 @@ try {
     
     // Title
     $pdf->SetFont('helvetica', 'B', 16);
-    $pdf->Cell(0, 10, 'Docentes - Pós-Graduação', 0, 1, 'C');
+    $pdf->Cell(0, 10, 'Docentes', 0, 1, 'C');
     
     // Date
     $pdf->SetFont('helvetica', '', 10);
