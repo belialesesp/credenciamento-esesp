@@ -207,7 +207,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
     <button
         id="export-btn"
         class="btn btn-success"
-        onclick="exportToExcel()"
+        onclick="exportToExcelPos()"
         disabled>
         <i class="fas fa-file-excel"></i>
         Exportar para Excel
