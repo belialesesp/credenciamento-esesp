@@ -1,8 +1,8 @@
 <?php
 session_start();
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
-    header('Location: home.php');
-    exit();
+  header('Location: home.php');
+  exit();
 }
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
@@ -10,7 +10,7 @@ require_once '../backend/classes/database.class.php';
 require_once '../backend/api/get_registers.php';
 
 $conection = new Database();
-$conn = $conection->connect(); 
+$conn = $conection->connect();
 
 // Get initial data - will be replaced by AJAX
 $interpreters = get_interpreters($conn);
@@ -158,8 +158,12 @@ function truncate_text($text, $length = 50, $suffix = '...')
 <div class="container">
   <a href="home.php" class="btn btn-info mt-5">← Voltar ao Início</a>
   <h1 class="main-title">Intérpretes</h1>
-  
+
   <div class="filter-container">
+    <div class="filter-group">
+      <label for="name">Filtrar por nome</label>
+      <input type="text" name="name" id="name" placeholder="Digite o nome...">
+    </div>
     <div class="filter-group">
       <label for="status">Filtrar por status</label>
       <select name="status" id="status">
@@ -169,13 +173,13 @@ function truncate_text($text, $length = 50, $suffix = '...')
         <option value="null">Aguardando</option>
       </select>
     </div>
-    
+
     <button class="export-button" onclick="exportToPDF()">
       <i class="fas fa-file-pdf"></i> Exportar PDF
     </button>
     <span class="export-status" id="exportStatus"></span>
   </div>
-  
+
   <div class="filter-stats" id="filterStats"></div>
 
   <table class="table table-striped table-hover">
@@ -218,7 +222,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
         handleSort(sortColumn);
       });
     });
-
+    fetchFilteredData(); // Load data on page load
     // Set up filter handler
     document.getElementById('status').addEventListener('change', filterInterpreters);
 
@@ -226,7 +230,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
     sortInterpreters();
     renderTable(currentInterpreters);
     updateStats();
-    
+
     // Show that we're sorted by called_at by default
     const calledHeader = document.querySelector('th:nth-child(4)');
     if (calledHeader) {
@@ -276,23 +280,23 @@ function truncate_text($text, $length = 50, $suffix = '...')
         // Normalize names: trim whitespace and handle case properly
         const nameA = (a.name || '').trim();
         const nameB = (b.name || '').trim();
-        
+
         // Use localeCompare with proper options for Portuguese sorting
         compareResult = nameA.localeCompare(nameB, 'pt-BR', {
           numeric: true,
           sensitivity: 'accent' // Considers accents but ignores case
         });
-        
+
       } else if (currentSort.column === 'created') {
         const dateA = new Date(a.created_at);
         const dateB = new Date(b.created_at);
         compareResult = dateA - dateB;
-        
+
       } else if (currentSort.column === 'called') {
         // Handle null values - always put them at the end
         const dateA = a.called_at ? new Date(a.called_at) : null;
         const dateB = b.called_at ? new Date(b.called_at) : null;
-        
+
         if (dateA === null && dateB === null) {
           compareResult = 0;
         } else if (dateA === null) {
@@ -309,55 +313,64 @@ function truncate_text($text, $length = 50, $suffix = '...')
       if (currentSort.column !== 'called') {
         return currentSort.direction === 'asc' ? compareResult : -compareResult;
       }
-      
+
       return compareResult;
     });
   }
 
-  function filterInterpreters() {
-    const statusFilter = document.getElementById('status').value;
-    
-    if (statusFilter === '') {
-      currentInterpreters = [...allInterpreters];
-    } else if (statusFilter === 'null') {
-      currentInterpreters = allInterpreters.filter(i => i.enabled === null);
-    } else {
-      currentInterpreters = allInterpreters.filter(i => i.enabled == statusFilter);
-    }
-    
-    sortInterpreters();
-    renderTable(currentInterpreters);
-    updateStats();
+  function fetchFilteredData() {
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value; // Add this line
+
+    const queryParams = new URLSearchParams();
+    if (status) queryParams.append('status', status);
+    if (name) queryParams.append('name', name); // Add this line
+
+    fetch('../backend/api/get_filtered_interpreters.php?' + queryParams.toString())
+      .then(response => response.json())
+      .then(data => {
+        updateTable(data);
+      })
+      .catch(error => console.error('Error:', error));
   }
+
+  // Add event listener for the name input
+  document.getElementById('name').addEventListener('input', function() {
+    clearTimeout(window.nameFilterTimeout);
+    window.nameFilterTimeout = setTimeout(fetchFilteredData, 300);
+  });
 
   function renderTable(interpreters) {
     const tbody = document.getElementById('interpretersTableBody');
     tbody.innerHTML = '';
-    
+
     if (interpreters.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum intérprete encontrado</td></tr>';
       return;
     }
-    
+
     interpreters.forEach(interpreter => {
-      const enabled = interpreter.enabled == 1 ? 'Apto' : 
-                     interpreter.enabled == 0 ? 'Inapto' : 'Aguardando';
-      
-      const statusClass = interpreter.enabled == 1 ? 'status-approved' : 
-                         interpreter.enabled == 0 ? 'status-not-approved' : 'status-pending';
-      
+      const enabled = interpreter.enabled == 1 ? 'Apto' :
+        interpreter.enabled == 0 ? 'Inapto' : 'Aguardando';
+
+      const statusClass = interpreter.enabled == 1 ? 'status-approved' :
+        interpreter.enabled == 0 ? 'status-not-approved' : 'status-pending';
+
       // Format dates
       const createdDate = new Date(interpreter.created_at);
-      const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' + 
-                          createdDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-      
+      const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' +
+        createdDate.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
       // Format called_at date
       let calledDateF = '-';
       if (interpreter.called_at) {
         const calledDate = new Date(interpreter.called_at);
         calledDateF = calledDate.toLocaleDateString('pt-BR');
       }
-      
+
       const row = `
         <tr class="interpreter-row" onclick="window.location.href='interprete.php?id=${interpreter.id}'">
           <td>${titleCase(interpreter.name)}</td>
@@ -367,7 +380,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
           <td><span class="${statusClass}">${enabled}</span></td>
         </tr>
       `;
-      
+
       tbody.innerHTML += row;
     });
   }
@@ -376,10 +389,10 @@ function truncate_text($text, $length = 50, $suffix = '...')
     const statsDiv = document.getElementById('filterStats');
     const total = currentInterpreters.length;
     const statusFilter = document.getElementById('status').value;
-    
+
     if (statusFilter && total > 0) {
-      const statusText = statusFilter === '1' ? 'aptos' : 
-                        statusFilter === '0' ? 'inaptos' : 'aguardando aprovação';
+      const statusText = statusFilter === '1' ? 'aptos' :
+        statusFilter === '0' ? 'inaptos' : 'aguardando aprovação';
       statsDiv.textContent = `Mostrando ${total} intérprete${total !== 1 ? 's' : ''} ${statusText}`;
     } else if (total > 0) {
       statsDiv.textContent = `Total: ${total} intérprete${total !== 1 ? 's' : ''}`;
@@ -400,20 +413,20 @@ function truncate_text($text, $length = 50, $suffix = '...')
   function exportToPDF() {
     const button = document.querySelector('.export-button');
     const statusElement = document.getElementById('exportStatus');
-    
+
     // Disable button
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-    
+
     // Clear previous status
     statusElement.textContent = '';
     statusElement.className = 'export-status';
-    
+
     // Get current filter
     const statusFilter = document.getElementById('status').value;
     const queryParams = new URLSearchParams();
     if (statusFilter) queryParams.append('status', statusFilter);
-    
+
     fetch(`../backend/api/export_interpreters_pdf.php?${queryParams}`)
       .then(response => {
         if (!response.ok) {
@@ -431,15 +444,15 @@ function truncate_text($text, $length = 50, $suffix = '...')
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         // Show success message
         statusElement.textContent = 'PDF exportado com sucesso!';
         statusElement.className = 'export-status text-success';
-        
+
         // Reset button
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => {
           statusElement.textContent = '';
@@ -449,7 +462,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
         console.error('Erro na exportação:', error);
         statusElement.textContent = 'Erro ao exportar PDF. Tente novamente.';
         statusElement.className = 'export-status text-danger';
-        
+
         // Reset button
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';

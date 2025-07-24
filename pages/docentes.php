@@ -171,6 +171,10 @@ function truncate_text($text, $length = 50, $suffix = '...')
   <h1 class="main-title">Docentes</h1>
   <div class="filter-container">
     <div class="filter-group">
+      <label for="name">Filtrar por nome</label>
+      <input type="text" name="name" id="name" placeholder="Digite o nome...">
+    </div>
+    <div class="filter-group">
       <label for="category">Filtrar por categoria</label>
       <select name="category" id="category">
         <option value=""></option>
@@ -212,24 +216,24 @@ function truncate_text($text, $length = 50, $suffix = '...')
   </div>
   <div class="action-buttons">
     <button
-        id="export-btn"
-        class="btn btn-success"
-        onclick="exportToExcel()"
-        disabled>
-        <i class="fas fa-file-excel"></i>
-        Exportar para Excel
+      id="export-btn"
+      class="btn btn-success"
+      onclick="exportToExcel()"
+      disabled>
+      <i class="fas fa-file-excel"></i>
+      Exportar para Excel
     </button>
     <button
-        id="export-pdf-btn"
-        class="btn btn-primary"
-        onclick="exportToPDF()"
-        disabled
-        style="margin-left: 10px;">
-        <i class="fas fa-file-pdf"></i>
-        Exportar para PDF
+      id="export-pdf-btn"
+      class="btn btn-primary"
+      onclick="exportToPDF()"
+      disabled
+      style="margin-left: 10px;">
+      <i class="fas fa-file-pdf"></i>
+      Exportar para PDF
     </button>
     <span id="export-status" style="margin-left: 10px; font-weight: bold;"></span>
-</div>
+  </div>
   <table class="table table-striped table-hover">
     <thead>
       <tr>
@@ -315,13 +319,13 @@ function truncate_text($text, $length = 50, $suffix = '...')
         // Normalize names: trim whitespace and handle case properly
         const nameA = (a.name || '').trim();
         const nameB = (b.name || '').trim();
-        
+
         // Use localeCompare with proper options for Portuguese sorting
         compareResult = nameA.localeCompare(nameB, 'pt-BR', {
           numeric: true,
           sensitivity: 'accent' // Considers accents but ignores case
         });
-        
+
       } else if (currentSort.column === 'date') {
         const dateA = new Date(a.created_at);
         const dateB = new Date(b.created_at);
@@ -336,32 +340,27 @@ function truncate_text($text, $length = 50, $suffix = '...')
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
     const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value; // Add this line
 
     const queryParams = new URLSearchParams();
     if (category) queryParams.append('category', category);
     if (course) queryParams.append('course', course);
     if (status) queryParams.append('status', status);
+    if (name) queryParams.append('name', name); // Add this line
 
-    const url = `../backend/api/get_filtered_teachers.php?${queryParams.toString()}`;
+    fetch('../backend/api/get_filtered_teachers.php?' + queryParams.toString())
+        .then(response => response.json())
+        .then(data => {
+            updateTable(data);
+        })
+        .catch(error => console.error('Error:', error));
+}
 
-    // Show loading state
-    const tbody = document.querySelector('table tbody');
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Carregando...</td></tr>';
-
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        currentTeachers = data;
-        sortTeachers();
-        renderTable(currentTeachers);
-        updateExportButton(data.length);
-        updateExportButtonState();
-      })
-      .catch(error => {
-        console.error('Erro:', error);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Erro ao carregar dados</td></tr>';
-      });
-  }
+// Add event listener for the name input
+document.getElementById('name').addEventListener('input', function() {
+    clearTimeout(window.nameFilterTimeout);
+    window.nameFilterTimeout = setTimeout(fetchFilteredData, 300); // Debounce for 300ms
+});
 
   function renderTable(teachers) {
     const tbody = document.querySelector('table tbody');
@@ -403,7 +402,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
                 <div class="discipline-info">
                   <strong>${escapeHtml(discName)}:</strong>
                   <span class="discipline-status ${statusClass}">${statusText}</span>`;
-              
+
               // Add called_at date if status is Apto and date exists
               if (status === '1' && discCalledAt && discCalledAt !== '0000-00-00 00:00:00') {
                 try {
@@ -420,7 +419,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
                   console.error('Error parsing date:', discCalledAt, e);
                 }
               }
-              
+
               disciplineHtml += `</div>`;
             }
           }
@@ -495,20 +494,20 @@ function truncate_text($text, $length = 50, $suffix = '...')
   // Export functions
   function updateExportButton(count) {
     const exportBtn = document.getElementById('export-btn');
-    exportBtn.textContent = count > 0 ? 
-      `Exportar para Excel (${count} ${count === 1 ? 'docente' : 'docentes'})` : 
+    exportBtn.textContent = count > 0 ?
+      `Exportar para Excel (${count} ${count === 1 ? 'docente' : 'docentes'})` :
       'Exportar para Excel';
   }
 
   function updateExportButtonState() {
     const exportBtn = document.getElementById('export-btn');
     const exportPdfBtn = document.getElementById('export-pdf-btn');
-    const hasFilters = document.getElementById('category').value || 
-                      document.getElementById('course').value || 
-                      document.getElementById('status').value;
+    const hasFilters = document.getElementById('category').value ||
+      document.getElementById('course').value ||
+      document.getElementById('status').value;
     exportBtn.disabled = !hasFilters;
     exportPdfBtn.disabled = !hasFilters;
-}
+  }
 
   function exportToExcel() {
     const category = document.getElementById('category').value;
@@ -516,8 +515,8 @@ function truncate_text($text, $length = 50, $suffix = '...')
     const status = document.getElementById('status').value;
 
     if (!category && !course && !status) {
-        alert('Por favor, selecione pelo menos um filtro antes de exportar.');
-        return;
+      alert('Por favor, selecione pelo menos um filtro antes de exportar.');
+      return;
     }
 
     const queryParams = new URLSearchParams();
@@ -532,42 +531,43 @@ function truncate_text($text, $length = 50, $suffix = '...')
     exportStatus.classList.remove('export-error');
 
     fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erro ao gerar arquivo');
-            }
-            return response.blob();
-        })
-        .then(blob => {
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            // Changed to .csv extension
-            a.download = `docentes_${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(downloadUrl);
-            document.body.removeChild(a);
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro ao gerar arquivo');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        // Changed to .csv extension
+        a.download = `docentes_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
 
-            exportStatus.textContent = 'Download concluído!';
-            setTimeout(() => {
-                exportStatus.textContent = '';
-            }, 3000);
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            exportStatus.textContent = 'Erro ao gerar arquivo';
-            exportStatus.classList.add('export-error');
-        });
-}
-function exportToPDF() {
+        exportStatus.textContent = 'Download concluído!';
+        setTimeout(() => {
+          exportStatus.textContent = '';
+        }, 3000);
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        exportStatus.textContent = 'Erro ao gerar arquivo';
+        exportStatus.classList.add('export-error');
+      });
+  }
+
+  function exportToPDF() {
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
     const status = document.getElementById('status').value;
 
     if (!category && !course && !status) {
-        alert('Por favor, selecione pelo menos um filtro antes de exportar.');
-        return;
+      alert('Por favor, selecione pelo menos um filtro antes de exportar.');
+      return;
     }
 
     const queryParams = new URLSearchParams();
@@ -582,49 +582,48 @@ function exportToPDF() {
     // Disable button and show loading
     exportPdfBtn.disabled = true;
     exportPdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-    
+
     exportStatus.textContent = 'Gerando PDF...';
     exportStatus.classList.remove('export-error');
 
     fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Erro ao gerar PDF');
-            }
-            return response.blob();
-        })
-        .then(blob => {
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            a.download = `docentes_${new Date().toISOString().split('T')[0]}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(downloadUrl);
-            document.body.removeChild(a);
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro ao gerar PDF');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `docentes_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
 
-            exportStatus.textContent = 'PDF exportado com sucesso!';
-            exportStatus.className = 'text-success';
-            
-            // Reset button
-            exportPdfBtn.disabled = false;
-            exportPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar para PDF';
-            
-            setTimeout(() => {
-                exportStatus.textContent = '';
-            }, 3000);
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            exportStatus.textContent = 'Erro ao gerar PDF';
-            exportStatus.classList.add('export-error');
-            
-            // Reset button
-            exportPdfBtn.disabled = false;
-            exportPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar para PDF';
-        });
-}
+        exportStatus.textContent = 'PDF exportado com sucesso!';
+        exportStatus.className = 'text-success';
 
+        // Reset button
+        exportPdfBtn.disabled = false;
+        exportPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar para PDF';
+
+        setTimeout(() => {
+          exportStatus.textContent = '';
+        }, 3000);
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        exportStatus.textContent = 'Erro ao gerar PDF';
+        exportStatus.classList.add('export-error');
+
+        // Reset button
+        exportPdfBtn.disabled = false;
+        exportPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar para PDF';
+      });
+  }
 </script>
 
 <?php include '../components/footer.php'; ?>

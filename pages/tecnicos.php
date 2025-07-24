@@ -1,8 +1,8 @@
 <?php
 session_start();
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
-    header('Location: home.php');
-    exit();
+  header('Location: home.php');
+  exit();
 }
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
@@ -10,7 +10,7 @@ require_once '../backend/classes/database.class.php';
 require_once '../backend/api/get_registers.php';
 
 $conection = new Database();
-$conn = $conection->connect(); 
+$conn = $conection->connect();
 
 // Get initial data - will be replaced by AJAX
 $technicians = get_technicians($conn);
@@ -151,8 +151,12 @@ function truncate_text($text, $length = 50, $suffix = '...')
 <div class="container">
   <a href="home.php" class="btn btn-info mt-5">← Voltar ao Início</a>
   <h1 class="main-title">Técnicos</h1>
-  
+
   <div class="filter-container">
+    <div class="filter-group">
+      <label for="name">Filtrar por nome</label>
+      <input type="text" name="name" id="name" placeholder="Digite o nome...">
+    </div>
     <div class="filter-group">
       <label for="status">Filtrar por status</label>
       <select name="status" id="status">
@@ -162,7 +166,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
         <option value="null">Aguardando</option>
       </select>
     </div>
-    
+
     <button class="export-button" onclick="exportToPDF()">
       <i class="fas fa-file-pdf"></i> Exportar PDF
     </button>
@@ -209,6 +213,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
         handleSort(sortColumn);
       });
     });
+    fetchFilteredData(); // Load data on page load
 
     // Set up filter handler
     document.getElementById('status').addEventListener('change', filterTechnicians);
@@ -216,12 +221,13 @@ function truncate_text($text, $length = 50, $suffix = '...')
     // Initial sort and render with called_at as default
     sortTechnicians();
     renderTable(currentTechnicians);
-    
+
     // Show that we're sorted by called_at by default
     const calledHeader = document.querySelector('th:nth-child(4)');
     if (calledHeader) {
       calledHeader.innerHTML = 'Data de Chamada <span style="font-size: 12px;">↓</span>';
     }
+    
   });
 
   // Sorting function
@@ -266,23 +272,23 @@ function truncate_text($text, $length = 50, $suffix = '...')
         // Normalize names: trim whitespace and handle case properly
         const nameA = (a.name || '').trim();
         const nameB = (b.name || '').trim();
-        
+
         // Use localeCompare with proper options for Portuguese sorting
         compareResult = nameA.localeCompare(nameB, 'pt-BR', {
           numeric: true,
           sensitivity: 'accent' // Considers accents but ignores case
         });
-        
+
       } else if (currentSort.column === 'created') {
         const dateA = new Date(a.created_at);
         const dateB = new Date(b.created_at);
         compareResult = dateA - dateB;
-        
+
       } else if (currentSort.column === 'called') {
         // Handle null values - always put them at the end
         const dateA = a.called_at ? new Date(a.called_at) : null;
         const dateB = b.called_at ? new Date(b.called_at) : null;
-        
+
         if (dateA === null && dateB === null) {
           compareResult = 0;
         } else if (dateA === null) {
@@ -299,54 +305,64 @@ function truncate_text($text, $length = 50, $suffix = '...')
       if (currentSort.column !== 'called') {
         return currentSort.direction === 'asc' ? compareResult : -compareResult;
       }
-      
+
       return compareResult;
     });
   }
 
-  function filterTechnicians() {
-    const statusFilter = document.getElementById('status').value;
-    
-    if (statusFilter === '') {
-      currentTechnicians = [...allTechnicians];
-    } else if (statusFilter === 'null') {
-      currentTechnicians = allTechnicians.filter(t => t.enabled === null);
-    } else {
-      currentTechnicians = allTechnicians.filter(t => t.enabled == statusFilter);
-    }
-    
-    sortTechnicians();
-    renderTable(currentTechnicians);
-  }
+  function fetchFilteredData() {
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value; // Add this line
+
+    const queryParams = new URLSearchParams();
+    if (status) queryParams.append('status', status);
+    if (name) queryParams.append('name', name); // Add this line
+
+    fetch('../backend/api/get_filtered_technicians.php?' + queryParams.toString())
+        .then(response => response.json())
+        .then(data => {
+            updateTable(data);
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Add event listener for the name input
+document.getElementById('name').addEventListener('input', function() {
+    clearTimeout(window.nameFilterTimeout);
+    window.nameFilterTimeout = setTimeout(fetchFilteredData, 300);
+});
 
   function renderTable(technicians) {
     const tbody = document.getElementById('techniciansTableBody');
     tbody.innerHTML = '';
-    
+
     if (technicians.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum técnico encontrado</td></tr>';
       return;
     }
-    
+
     technicians.forEach(technician => {
-      const enabled = technician.enabled == 1 ? 'Apto' : 
-                     technician.enabled == 0 ? 'Inapto' : 'Aguardando';
-      
-      const statusClass = technician.enabled == 1 ? 'status-approved' : 
-                         technician.enabled == 0 ? 'status-not-approved' : 'status-pending';
-      
+      const enabled = technician.enabled == 1 ? 'Apto' :
+        technician.enabled == 0 ? 'Inapto' : 'Aguardando';
+
+      const statusClass = technician.enabled == 1 ? 'status-approved' :
+        technician.enabled == 0 ? 'status-not-approved' : 'status-pending';
+
       // Format dates
       const createdDate = new Date(technician.created_at);
-      const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' + 
-                          createdDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-      
+      const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' +
+        createdDate.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
       // Format called_at date
       let calledDateF = '-';
       if (technician.called_at) {
         const calledDate = new Date(technician.called_at);
         calledDateF = calledDate.toLocaleDateString('pt-BR');
       }
-      
+
       const row = `
         <tr class="technician-row" onclick="window.location.href='tecnico.php?id=${technician.id}'">
           <td>${titleCase(technician.name)}</td>
@@ -356,7 +372,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
           <td><span class="${statusClass}">${enabled}</span></td>
         </tr>
       `;
-      
+
       tbody.innerHTML += row;
     });
   }
@@ -373,20 +389,20 @@ function truncate_text($text, $length = 50, $suffix = '...')
   function exportToPDF() {
     const button = document.querySelector('.export-button');
     const statusElement = document.getElementById('exportStatus');
-    
+
     // Disable button
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-    
+
     // Clear previous status
     statusElement.textContent = '';
     statusElement.className = 'export-status';
-    
+
     // Get current filter
     const statusFilter = document.getElementById('status').value;
     const queryParams = new URLSearchParams();
     if (statusFilter) queryParams.append('status', statusFilter);
-    
+
     fetch(`../backend/api/export_technicians_pdf.php?${queryParams}`)
       .then(response => {
         if (!response.ok) {
@@ -404,15 +420,15 @@ function truncate_text($text, $length = 50, $suffix = '...')
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         // Show success message
         statusElement.textContent = 'PDF exportado com sucesso!';
         statusElement.className = 'export-status text-success';
-        
+
         // Reset button
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
-        
+
         // Clear success message after 3 seconds
         setTimeout(() => {
           statusElement.textContent = '';
@@ -422,7 +438,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
         console.error('Erro na exportação:', error);
         statusElement.textContent = 'Erro ao exportar PDF. Tente novamente.';
         statusElement.className = 'export-status text-danger';
-        
+
         // Reset button
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
