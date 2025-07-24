@@ -340,18 +340,40 @@ function truncate_text($text, $length = 50, $suffix = '...')
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
     const status = document.getElementById('status').value;
-    const name = document.getElementById('name').value; // Add this line
+    const name = document.getElementById('name').value; // Get name value
 
     const queryParams = new URLSearchParams();
     if (category) queryParams.append('category', category);
     if (course) queryParams.append('course', course);
-    if (status) queryParams.append('status', status);
-    if (name) queryParams.append('name', name); // Add this line
+    if (status && status !== 'no-disciplines') queryParams.append('status', status);
+    if (name) queryParams.append('name', name); // Add name to params
 
     fetch('../backend/api/get_filtered_teachers.php?' + queryParams.toString())
         .then(response => response.json())
         .then(data => {
-            updateTable(data);
+            // Handle special case for 'no-disciplines' filter
+            if (status === 'no-disciplines') {
+                data = data.filter(teacher => !teacher.discipline_statuses);
+            }
+            
+            // Store the data in currentTeachers
+            currentTeachers = data;
+            
+            // Sort according to current sort settings
+            sortTeachers();
+            
+            // Render the sorted data
+            renderTable(currentTeachers);
+            
+            // Update statistics if the function exists
+            if (typeof updateFilterStats === 'function') {
+                updateFilterStats(currentTeachers);
+            }
+            
+            // Update export button state if the function exists
+            if (typeof updateExportButtonState === 'function') {
+                updateExportButtonState();
+            }
         })
         .catch(error => console.error('Error:', error));
 }

@@ -1,54 +1,56 @@
 <?php
-// backend/api/get_filtered_interpreters.php
+// backend/api/get_filtered_interpreters.php - Example with name filter
 require_once '../classes/database.class.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-$name = $_GET['name'] ?? '';
+// Get filter parameters
 $status = $_GET['status'] ?? '';
+$name = $_GET['name'] ?? '';
 
 try {
     $conection = new Database();
     $conn = $conection->connect();
-
+    
     // Base query
-    $sql = "SELECT * FROM interpreter";
-    $where = [];
+    $sql = "SELECT * FROM interpreter WHERE 1=1";
+    $conditions = [];
     $params = [];
-
-    // Apply status filter
+    
+    // Add status filter
     if ($status !== '') {
         if ($status === 'null') {
-            $where[] = "(enabled IS NULL OR enabled = '')";
+            $conditions[] = "(enabled IS NULL OR enabled = '')";
         } else {
-            $where[] = "enabled = :status";
-            $params[':status'] = intval($status);
+            $conditions[] = "enabled = :status";
+            $params[':status'] = $status;
         }
     }
     
+    // Add name filter
     if ($name !== '') {
-        $where[] = "name LIKE :name";
+        $conditions[] = "name LIKE :name";
         $params[':name'] = '%' . $name . '%';
     }
-    // Add WHERE clause if there are conditions
-    if (!empty($where)) {
-        $sql .= ' WHERE ' . implode(' AND ', $where);
+    
+    // Build final query
+    if (!empty($conditions)) {
+        $sql .= " AND " . implode(" AND ", $conditions);
     }
-
-    // Order by creation date
-    $sql .= ' ORDER BY created_at ASC';
-
+    
+    $sql .= " ORDER BY name ASC";
+    
     // Execute query
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
     $interpreters = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    
     // Return JSON response
-    echo json_encode($interpreters);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode($interpreters, JSON_UNESCAPED_UNICODE);
+    
 } catch (Exception $e) {
+    error_log("Error in get_filtered_interpreters.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
+    echo json_encode(['error' => $e->getMessage()]);
 }
+?>

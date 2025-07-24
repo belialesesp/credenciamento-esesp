@@ -54,11 +54,6 @@ try {
     $where = [];
     $params = [];
 
-    if ($name !== '') {
-        $where[] = "t.name LIKE :name";
-        $params[':name'] = '%' . $name . '%';
-    }
-    
     if ($category !== '') {
         $joins[] = "INNER JOIN postg_teacher_activities ta ON t.id = ta.teacher_id";
         $where[] = "ta.activity_id = :category";
@@ -72,7 +67,10 @@ try {
         $where[] = "td.discipline_id = :course";
         $params[':course'] = $course;
     }
-
+    if ($name !== '') {
+        $where[] = "t.name LIKE :name";
+        $params[':name'] = '%' . $name . '%';
+    }
     // Use BINARY for exact comparison to avoid type coercion issues
     if ($status === '1') {
         $where[] = "BINARY td.enabled = '1'";

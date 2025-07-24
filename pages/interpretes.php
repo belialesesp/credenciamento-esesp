@@ -320,19 +320,45 @@ function truncate_text($text, $length = 50, $suffix = '...')
 
   function fetchFilteredData() {
     const status = document.getElementById('status').value;
-    const name = document.getElementById('name').value; // Add this line
+    const name = document.getElementById('name').value;
 
     const queryParams = new URLSearchParams();
     if (status) queryParams.append('status', status);
-    if (name) queryParams.append('name', name); // Add this line
+    if (name) queryParams.append('name', name);
 
     fetch('../backend/api/get_filtered_interpreters.php?' + queryParams.toString())
-      .then(response => response.json())
-      .then(data => {
-        updateTable(data);
-      })
-      .catch(error => console.error('Error:', error));
-  }
+        .then(response => response.json())
+        .then(data => {
+            // Store the data
+            allInterpreters = data;
+            currentInterpreters = [...data];
+            
+            // Apply any additional filters if needed
+            filterInterpreters();
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+// Also add the filterInterpreters function if it doesn't exist
+function filterInterpreters() {
+    const statusFilter = document.getElementById('status').value;
+    
+    if (!statusFilter) {
+        currentInterpreters = [...allInterpreters];
+    } else if (statusFilter === 'null') {
+        currentInterpreters = allInterpreters.filter(i => 
+            i.enabled === null || i.enabled === ''
+        );
+    } else {
+        currentInterpreters = allInterpreters.filter(i => 
+            String(i.enabled) === statusFilter
+        );
+    }
+    
+    sortInterpreters();
+    renderTable(currentInterpreters);
+    updateStats();
+}
 
   // Add event listener for the name input
   document.getElementById('name').addEventListener('input', function() {

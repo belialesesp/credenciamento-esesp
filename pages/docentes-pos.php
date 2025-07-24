@@ -332,17 +332,39 @@ function truncate_text($text, $length = 50, $suffix = '...')
   function fetchFilteredData() {
     const category = document.getElementById('category').value;
     const course = document.getElementById('course').value;
-    const name = document.getElementById('name').value; // Add this line
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value;
 
     const queryParams = new URLSearchParams();
     if (category) queryParams.append('category', category);
     if (course) queryParams.append('course', course);
-    if (name) queryParams.append('name', name); // Add this line
+    if (status && status !== 'no-disciplines') queryParams.append('status', status);
+    if (name) queryParams.append('name', name);
 
     fetch('../backend/api/get_filtered_teachers_postg.php?' + queryParams.toString())
         .then(response => response.json())
         .then(data => {
-            updateTable(data);
+            // Handle special case for 'no-disciplines' filter
+            if (status === 'no-disciplines') {
+                data = data.filter(teacher => !teacher.discipline_statuses);
+            }
+            
+            // Store the data
+            currentTeachers = data;
+            
+            // Sort according to current sort settings
+            sortTeachers();
+            
+            // Render the table
+            renderTable(currentTeachers);
+            
+            // Update statistics if function exists
+            if (typeof updateFilterStats === 'function') {
+                updateFilterStats(currentTeachers);
+            }
+            
+            // Update export button state
+            updateExportButtonState();
         })
         .catch(error => console.error('Error:', error));
 }

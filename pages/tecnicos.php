@@ -312,18 +312,43 @@ function truncate_text($text, $length = 50, $suffix = '...')
 
   function fetchFilteredData() {
     const status = document.getElementById('status').value;
-    const name = document.getElementById('name').value; // Add this line
+    const name = document.getElementById('name').value;
 
     const queryParams = new URLSearchParams();
     if (status) queryParams.append('status', status);
-    if (name) queryParams.append('name', name); // Add this line
+    if (name) queryParams.append('name', name);
 
     fetch('../backend/api/get_filtered_technicians.php?' + queryParams.toString())
         .then(response => response.json())
         .then(data => {
-            updateTable(data);
+            // Store the data
+            allTechnicians = data;
+            currentTechnicians = [...data];
+            
+            // Apply any additional filters if needed
+            filterTechnicians();
         })
         .catch(error => console.error('Error:', error));
+}
+
+// Also add the filterTechnicians function if it doesn't exist
+function filterTechnicians() {
+    const statusFilter = document.getElementById('status').value;
+    
+    if (!statusFilter) {
+        currentTechnicians = [...allTechnicians];
+    } else if (statusFilter === 'null') {
+        currentTechnicians = allTechnicians.filter(t => 
+            t.enabled === null || t.enabled === ''
+        );
+    } else {
+        currentTechnicians = allTechnicians.filter(t => 
+            String(t.enabled) === statusFilter
+        );
+    }
+    
+    sortTechnicians();
+    renderTable(currentTechnicians);
 }
 
 // Add event listener for the name input
