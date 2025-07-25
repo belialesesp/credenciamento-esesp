@@ -358,52 +358,55 @@ function truncate_text($text, $length = 50, $suffix = '...')
   });
 
   function renderTable(technicians) {
-    const tbody = document.getElementById('techniciansTableBody');
-    tbody.innerHTML = '';
+  const tbody = document.getElementById('techniciansTableBody');
+  tbody.innerHTML = '';
 
-    if (technicians.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum técnico encontrado</td></tr>';
-      return;
+  if (technicians.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum técnico encontrado</td></tr>';
+    return;
+  }
+
+  technicians.forEach(technician => {
+    const enabled = technician.enabled == 1 ? 'Apto' :
+      technician.enabled == 0 ? 'Inapto' : 'Aguardando';
+
+    const statusClass = technician.enabled == 1 ? 'status-approved' :
+      technician.enabled == 0 ? 'status-not-approved' : 'status-pending';
+
+    // Format dates
+    const createdDate = new Date(technician.created_at);
+    const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' +
+      createdDate.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+    // Format called_at date
+    let calledDateF = '-';
+    if (technician.called_at) {
+      const calledDate = new Date(technician.called_at);
+      calledDateF = calledDate.toLocaleDateString('pt-BR');
     }
 
-    technicians.forEach(technician => {
-      const enabled = technician.enabled == 1 ? 'Apto' :
-        technician.enabled == 0 ? 'Inapto' : 'Aguardando';
+    // Create row element
+    const row = document.createElement('tr');
+    row.className = 'technician-row';
+    row.style.cursor = 'pointer';
+    row.onclick = () => {
+      window.location.href = `tecnico.php?id=${technician.id}`;
+    };
 
-      const statusClass = technician.enabled == 1 ? 'status-approved' :
-        technician.enabled == 0 ? 'status-not-approved' : 'status-pending';
+    row.innerHTML = `
+      <td>${titleCase(technician.name)}</td>
+      <td>${technician.email.toLowerCase()}</td>
+      <td>${createdDateF}</td>
+      <td>${calledDateF}</td>
+      <td><span class="${statusClass}">${enabled}</span></td>
+    `;
 
-      // Format dates
-      const createdDate = new Date(technician.created_at);
-      const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' +
-        createdDate.toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-
-      // Format called_at date
-      let calledDateF = '-';
-      if (technician.called_at) {
-        const calledDate = new Date(technician.called_at);
-        calledDateF = calledDate.toLocaleDateString('pt-BR');
-      }
-
-      const row = `
-        <tr class="technician-row" onclick="window.location.href='tecnico.php?id=${technician.id}'">
-          <td>${titleCase(technician.name)}</td>
-          <td>${technician.email.toLowerCase()}</td>
-          <td>${createdDateF}</td>
-          <td>${calledDateF}</td>
-          <td><span class="${statusClass}">${enabled}</span></td>
-        </tr>
-      `;
-      row.style.cursor = 'pointer';
-      row.onclick = () => {
-        window.location.href = `tecnico.php?id=${technician.id}`;
-      };
-      tbody.innerHTML += row;
-    });
-  }
+    tbody.appendChild(row);
+  });
+}
 
   // Title case function
   function titleCase(str) {

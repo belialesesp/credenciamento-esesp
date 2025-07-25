@@ -367,53 +367,55 @@ function truncate_text($text, $length = 50, $suffix = '...')
   });
 
   function renderTable(interpreters) {
-    const tbody = document.getElementById('interpretersTableBody');
-    tbody.innerHTML = '';
+  const tbody = document.getElementById('interpretersTableBody');
+  tbody.innerHTML = '';
 
-    if (interpreters.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum intérprete encontrado</td></tr>';
-      return;
+  if (interpreters.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum intérprete encontrado</td></tr>';
+    return;
+  }
+
+  interpreters.forEach(interpreter => {
+    const enabled = interpreter.enabled == 1 ? 'Apto' :
+      interpreter.enabled == 0 ? 'Inapto' : 'Aguardando';
+
+    const statusClass = interpreter.enabled == 1 ? 'status-approved' :
+      interpreter.enabled == 0 ? 'status-not-approved' : 'status-pending';
+
+    // Format dates
+    const createdDate = new Date(interpreter.created_at);
+    const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' +
+      createdDate.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+    // Format called_at date
+    let calledDateF = '-';
+    if (interpreter.called_at) {
+      const calledDate = new Date(interpreter.called_at);
+      calledDateF = calledDate.toLocaleDateString('pt-BR');
     }
 
-    interpreters.forEach(interpreter => {
-      const enabled = interpreter.enabled == 1 ? 'Apto' :
-        interpreter.enabled == 0 ? 'Inapto' : 'Aguardando';
+    // Create row element
+    const row = document.createElement('tr');
+    row.className = 'interpreter-row';
+    row.style.cursor = 'pointer';
+    row.onclick = () => {
+      window.location.href = `interprete.php?id=${interpreter.id}`;
+    };
 
-      const statusClass = interpreter.enabled == 1 ? 'status-approved' :
-        interpreter.enabled == 0 ? 'status-not-approved' : 'status-pending';
+    row.innerHTML = `
+      <td>${titleCase(interpreter.name)}</td>
+      <td>${interpreter.email.toLowerCase()}</td>
+      <td>${createdDateF}</td>
+      <td>${calledDateF}</td>
+      <td><span class="${statusClass}">${enabled}</span></td>
+    `;
 
-      // Format dates
-      const createdDate = new Date(interpreter.created_at);
-      const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' +
-        createdDate.toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-
-      // Format called_at date
-      let calledDateF = '-';
-      if (interpreter.called_at) {
-        const calledDate = new Date(interpreter.called_at);
-        calledDateF = calledDate.toLocaleDateString('pt-BR');
-      }
-
-      const row = `
-        <tr class="interpreter-row" onclick="window.location.href='interprete.php?id=${interpreter.id}'">
-          <td>${titleCase(interpreter.name)}</td>
-          <td>${interpreter.email.toLowerCase()}</td>
-          <td>${createdDateF}</td>
-          <td>${calledDateF}</td>
-          <td><span class="${statusClass}">${enabled}</span></td>
-        </tr>
-      `;
-
-      tbody.innerHTML += row;
-      row.style.cursor = 'pointer';
-      row.onclick = () => {
-        window.location.href = `interprete.php?id=${interpreter.id}`;
-      };
-    });
-  }
+    tbody.appendChild(row);
+  });
+}
 
   function updateStats() {
     const statsDiv = document.getElementById('filterStats');

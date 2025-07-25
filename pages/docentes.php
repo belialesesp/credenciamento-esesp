@@ -49,6 +49,85 @@ $_SESSION['user-data'] = $teachers;
   .table-hover tbody tr:hover {
     background-color: #f5f5f5;
   }
+
+  /* Status badge styles */
+  .status-approved,
+  .status-badge.status-approved {
+    background-color: #d4edda;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  .status-not-approved,
+  .status-badge.status-not-approved {
+    background-color: #f8d7da;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  .status-pending,
+  .status-badge.status-pending {
+    background-color: #fff3cd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  .discipline-status {
+    margin-bottom: 5px;
+  }
+
+  .discipline-name {
+    margin-right: 10px;
+  }
+
+  .table {
+    table-layout: auto;
+  }
+
+  /* Nome */
+  .table th:nth-child(1),
+  .table td:nth-child(1) {
+    width: 25%;
+  }
+
+  /* Email */
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    width: auto;
+    max-width: 20%;
+  }
+
+  /* Telefone */
+  .table th:nth-child(3),
+  .table td:nth-child(3) {
+    width: 10rem;
+    min-width: 10rem;
+    white-space: nowrap;
+  }
+
+  /* Data de Inscrição */
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    width: 8rem;
+  }
+
+  /* Data de chamada (when visible) */
+  .table th:nth-child(5),
+  .table td:nth-child(5) {
+    width: 8rem;
+  }
+
+    /* Cursos */
+  .table th:last-child,
+  .table td:last-child {
+    width: 25%;
+  }
 </style>
 
 <div class="container">
@@ -153,7 +232,7 @@ $_SESSION['user-data'] = $teachers;
           return $phone;
         }
 
-        
+
 
         function parseStatusLabel($status)
         {
@@ -174,7 +253,7 @@ $_SESSION['user-data'] = $teachers;
           } elseif ($status === '1' || $status === 1) {
             return 'status-approved';
           } elseif ($status === '0' || $status === 0) {
-            return 'status-rejected';
+            return 'status-not-approved';
           }
           return 'status-pending';
         }
@@ -182,13 +261,13 @@ $_SESSION['user-data'] = $teachers;
         foreach ($teachers as $teacher):
           $created_at_formatted = formatDate($teacher['created_at']);
           $phone_formatted = formatPhone($teacher['phone']);
-          
+
         ?>
           <tr>
             <td><?= htmlspecialchars(titleCase($teacher['name'])) ?></td>
             <td><?= htmlspecialchars($teacher['email']) ?></td>
             <td><?= htmlspecialchars($phone_formatted) ?></td>
-            
+
             <td><?= $created_at_formatted ?></td>
             <td class="called-at-cell" style="display: none;"></td>
             <td>
@@ -432,7 +511,7 @@ $_SESSION['user-data'] = $teachers;
     } else if (status === '1' || status === 1) {
       return 'status-approved';
     } else if (status === '0' || status === 0) {
-      return 'status-rejected';
+      return 'status-not-approved';
     }
     return 'status-pending';
   }
@@ -493,6 +572,10 @@ $_SESSION['user-data'] = $teachers;
   function exportToPDF() {
     window.location.href = '../pdf/teachers_pdf.php';
   }
+  // Initialize the table with click handlers
+  document.addEventListener('DOMContentLoaded', function() {
+    updateTable();
+  });
 </script>
 
 <?php require_once '../components/footer.php'; ?>

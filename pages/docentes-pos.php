@@ -5,6 +5,9 @@ require_once '../backend/api/get_registers.php';
 require_once '../backend/api/get_all_courses.php';
 require_once '../backend/classes/database.class.php';
 
+// Add this after the other PHP code at the top
+$isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
+
 // Helper function to truncate text
 function truncate_text($text, $length = 50)
 {
@@ -61,6 +64,81 @@ $_SESSION['user-data'] = $teachers;
 
   .action-button:hover {
     background-color: #0056b3;
+  }
+  /* Status badge styles */
+  .status-approved, .status-badge.status-approved {
+    background-color: #d4edda;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  .status-not-approved, .status-badge.status-not-approved {
+    background-color: #f8d7da;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  .status-pending, .status-badge.status-pending {
+    background-color: #fff3cd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  .discipline-status {
+    margin-bottom: 5px;
+  }
+
+  .discipline-name {
+    margin-right: 10px;
+  }
+  
+  .table {
+    table-layout: auto;
+  }
+
+  /* Nome */
+  .table th:nth-child(1),
+  .table td:nth-child(1) {
+    width: 25%;
+  }
+
+  /* Email */
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    width: auto;
+    max-width: 20%;
+  }
+
+  /* Telefone */
+  .table th:nth-child(3),
+  .table td:nth-child(3) {
+    width: 10rem;
+    min-width: 10rem;
+    white-space: nowrap;
+  }
+
+  /* Data de Inscrição */
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    width: 8rem;
+  }
+
+  /* Data de chamada (when visible) */
+  .table th:nth-child(5),
+  .table td:nth-child(5) {
+    width: 8rem;
+  }
+
+    /* Cursos */
+  .table th:last-child,
+  .table td:last-child {
+    width: 25%;
   }
 </style>
 
@@ -198,7 +276,7 @@ $_SESSION['user-data'] = $teachers;
           } elseif ($status === '1' || $status === 1) {
             return 'status-approved';
           } elseif ($status === '0' || $status === 0) {
-            return 'status-rejected';
+            return 'status-not-approved';
           }
           return 'status-pending';
         }
@@ -253,6 +331,7 @@ $_SESSION['user-data'] = $teachers;
     direction: 'asc'
   };
   let isFilteredByCourse = false;
+  const isAdmin = <?php echo json_encode($isAdmin); ?>;
 
   function updateTable() {
     const tbody = document.getElementById('teachers-table-body');
@@ -461,7 +540,7 @@ $_SESSION['user-data'] = $teachers;
     } else if (status === '1' || status === 1) {
       return 'status-approved';
     } else if (status === '0' || status === 0) {
-      return 'status-rejected';
+      return 'status-not-approved';
     }
     return 'status-pending';
   }
@@ -561,6 +640,10 @@ $_SESSION['user-data'] = $teachers;
   function exportToPDF() {
     window.location.href = '../pdf/postg_teachers_pdf.php';
   }
+  // Initialize the table with click handlers
+  document.addEventListener('DOMContentLoaded', function() {
+    updateTable();
+  });
 </script>
 
 <?php require_once '../components/footer.php'; ?>
