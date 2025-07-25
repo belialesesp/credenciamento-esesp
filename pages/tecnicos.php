@@ -227,7 +227,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
     if (calledHeader) {
       calledHeader.innerHTML = 'Data de Chamada <span style="font-size: 12px;">↓</span>';
     }
-    
+
   });
 
   // Sorting function
@@ -319,43 +319,43 @@ function truncate_text($text, $length = 50, $suffix = '...')
     if (name) queryParams.append('name', name);
 
     fetch('../backend/api/get_filtered_technicians.php?' + queryParams.toString())
-        .then(response => response.json())
-        .then(data => {
-            // Store the data
-            allTechnicians = data;
-            currentTechnicians = [...data];
-            
-            // Apply any additional filters if needed
-            filterTechnicians();
-        })
-        .catch(error => console.error('Error:', error));
-}
+      .then(response => response.json())
+      .then(data => {
+        // Store the data
+        allTechnicians = data;
+        currentTechnicians = [...data];
 
-// Also add the filterTechnicians function if it doesn't exist
-function filterTechnicians() {
+        // Apply any additional filters if needed
+        filterTechnicians();
+      })
+      .catch(error => console.error('Error:', error));
+  }
+
+  // Also add the filterTechnicians function if it doesn't exist
+  function filterTechnicians() {
     const statusFilter = document.getElementById('status').value;
-    
+
     if (!statusFilter) {
-        currentTechnicians = [...allTechnicians];
+      currentTechnicians = [...allTechnicians];
     } else if (statusFilter === 'null') {
-        currentTechnicians = allTechnicians.filter(t => 
-            t.enabled === null || t.enabled === ''
-        );
+      currentTechnicians = allTechnicians.filter(t =>
+        t.enabled === null || t.enabled === ''
+      );
     } else {
-        currentTechnicians = allTechnicians.filter(t => 
-            String(t.enabled) === statusFilter
-        );
+      currentTechnicians = allTechnicians.filter(t =>
+        String(t.enabled) === statusFilter
+      );
     }
-    
+
     sortTechnicians();
     renderTable(currentTechnicians);
-}
+  }
 
-// Add event listener for the name input
-document.getElementById('name').addEventListener('input', function() {
+  // Add event listener for the name input
+  document.getElementById('name').addEventListener('input', function() {
     clearTimeout(window.nameFilterTimeout);
     window.nameFilterTimeout = setTimeout(fetchFilteredData, 300);
-});
+  });
 
   function renderTable(technicians) {
     const tbody = document.getElementById('techniciansTableBody');
@@ -397,7 +397,10 @@ document.getElementById('name').addEventListener('input', function() {
           <td><span class="${statusClass}">${enabled}</span></td>
         </tr>
       `;
-
+      row.style.cursor = 'pointer';
+      row.onclick = () => {
+        window.location.href = `tecnico.php?id=${technician.id}`;
+      };
       tbody.innerHTML += row;
     });
   }

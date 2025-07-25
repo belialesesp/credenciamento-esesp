@@ -327,38 +327,38 @@ function truncate_text($text, $length = 50, $suffix = '...')
     if (name) queryParams.append('name', name);
 
     fetch('../backend/api/get_filtered_interpreters.php?' + queryParams.toString())
-        .then(response => response.json())
-        .then(data => {
-            // Store the data
-            allInterpreters = data;
-            currentInterpreters = [...data];
-            
-            // Apply any additional filters if needed
-            filterInterpreters();
-        })
-        .catch(error => console.error('Error:', error));
-}
+      .then(response => response.json())
+      .then(data => {
+        // Store the data
+        allInterpreters = data;
+        currentInterpreters = [...data];
 
-// Also add the filterInterpreters function if it doesn't exist
-function filterInterpreters() {
+        // Apply any additional filters if needed
+        filterInterpreters();
+      })
+      .catch(error => console.error('Error:', error));
+  }
+
+  // Also add the filterInterpreters function if it doesn't exist
+  function filterInterpreters() {
     const statusFilter = document.getElementById('status').value;
-    
+
     if (!statusFilter) {
-        currentInterpreters = [...allInterpreters];
+      currentInterpreters = [...allInterpreters];
     } else if (statusFilter === 'null') {
-        currentInterpreters = allInterpreters.filter(i => 
-            i.enabled === null || i.enabled === ''
-        );
+      currentInterpreters = allInterpreters.filter(i =>
+        i.enabled === null || i.enabled === ''
+      );
     } else {
-        currentInterpreters = allInterpreters.filter(i => 
-            String(i.enabled) === statusFilter
-        );
+      currentInterpreters = allInterpreters.filter(i =>
+        String(i.enabled) === statusFilter
+      );
     }
-    
+
     sortInterpreters();
     renderTable(currentInterpreters);
     updateStats();
-}
+  }
 
   // Add event listener for the name input
   document.getElementById('name').addEventListener('input', function() {
@@ -408,6 +408,10 @@ function filterInterpreters() {
       `;
 
       tbody.innerHTML += row;
+      row.style.cursor = 'pointer';
+      row.onclick = () => {
+        window.location.href = `interprete.php?id=${interpreter.id}`;
+      };
     });
   }
 
