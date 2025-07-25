@@ -1,149 +1,30 @@
 <?php
-session_start();
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
-  header('Location: home.php');
-  exit();
-}
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
 require_once '../backend/api/get_registers.php';
 require_once '../backend/api/get_all_courses.php';
 require_once '../backend/classes/database.class.php';
 
+// Helper function to truncate text
+function truncate_text($text, $length = 50) {
+  if (strlen($text) > $length) {
+    return substr($text, 0, $length) . '...';
+  }
+  return $text;
+}
+
 $conection = new Database();
 $conn = $conection->connect();
 
-// Don't load teachers here - let JavaScript handle it
-$teachers = [];
+$teachers = get_postg_docente($conn);
 $courses = get_all_postg_courses($conn);
 
-function truncate_text($text, $length = 50, $suffix = '...')
-{
-  $text = trim(preg_replace('/\s+/', ' ', $text));
-  if (strlen($text) <= $length) {
-    return $text;
-  }
-  $truncated = substr($text, 0, $length);
-  $lastSpace = strrpos($truncated, ' ');
-  if ($lastSpace !== false) {
-    $truncated = substr($truncated, 0, $lastSpace);
-  }
-  return $truncated . $suffix;
-}
+$_SESSION['user-data'] = $teachers;
 ?>
 
 <style>
-  .discipline-status {
-    display: inline-block;
-    padding: 2px 8px;
-    margin: 2px;
-    border-radius: 4px;
-    font-size: 12px;
-    background-color: #f0f0f0;
-  }
-
-  .discipline-status.status-approved {
-    background-color: #d4edda;
-    color: #155724;
-  }
-
-  .discipline-status.status-not-approved {
-    background-color: #f8d7da;
-    color: #721c24;
-  }
-
-  .discipline-status.status-pending {
-    background-color: #fff3cd;
-    color: #856404;
-  }
-
-  .discipline-info {
-    margin-bottom: 8px;
-  }
-
-  .teacher-row {
-    cursor: pointer;
-  }
-
-  .teacher-row:hover {
-    background-color: #f5f5f5;
-  }
-
-  .action-buttons {
-    display: flex;
-    align-items: center;
-    margin: 20px 0;
-  }
-
-  .btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    transition: background-color 0.3s;
-  }
-
-  .btn-success {
-    background-color: #28a745;
-    color: white;
-  }
-
-  .btn-success:hover {
-    background-color: #218838;
-  }
-
-  .btn:disabled {
-    background-color: #6c757d;
-    cursor: not-allowed;
-  }
-
-  #export-status {
-    color: #28a745;
-    font-size: 14px;
-  }
-
-  .export-error {
-    color: #dc3545 !important;
-  }
-
-  .disciplines-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .discipline-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 0;
-    border-bottom: 1px solid #eee;
-  }
-
-  .discipline-item:last-child {
-    border-bottom: none;
-  }
-
-  .discipline-name {
-    flex: 1;
-    font-weight: 500;
-  }
-
-  .discipline-item small {
-    font-size: 0.85em;
-    margin-left: 8px;
-    color: #666;
-  }
-
-  /* Sorting styles */
   .sortable {
     cursor: pointer;
-    user-select: none;
     position: relative;
     padding-right: 20px;
   }
@@ -164,6 +45,21 @@ function truncate_text($text, $length = 50, $suffix = '...')
   .sort-indicator.active {
     color: #333;
     font-weight: bold;
+  }
+  
+  .action-button {
+    margin-left: 10px;
+    padding: 4px 10px;
+    font-size: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .action-button:hover {
+    background-color: #0056b3;
   }
 </style>
 
@@ -211,7 +107,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
     <button
       id="export-btn"
       class="btn btn-success"
-      onclick="exportToExcelPos()"
+      onclick="exportToExcel()"
       disabled>
       <i class="fas fa-file-excel"></i>
       Exportar para Excel
@@ -225,80 +121,355 @@ function truncate_text($text, $length = 50, $suffix = '...')
       <i class="fas fa-file-pdf"></i>
       Exportar para PDF
     </button>
-    <span id="export-status" style="margin-left: 10px; font-weight: bold;"></span>
   </div>
-  <table class="table table-striped table-hover">
-    <thead>
-      <tr>
-        <th class="sortable" data-sort="name">
-          Nome
-          <span class="sort-indicator" id="sort-name"></span>
-        </th>
-        <th>Email</th>
-        <th class="sortable" data-sort="date">
-          Data de Inscrição
-          <span class="sort-indicator active" id="sort-date">↑</span>
-        </th>
-        <th>Cursos e Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Table will be populated by JavaScript -->
-    </tbody>
-  </table>
+  <div id="table-container" class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="sortable" onclick="sortTable('name')">
+            Nome
+            <span class="sort-indicator" data-column="name"></span>
+          </th>
+          <th>Email</th>
+          <th>Telefone</th>
+          <th class="sortable" onclick="sortTable('date')">
+            Data de Inscrição
+            <span class="sort-indicator" data-column="date"></span>
+          </th>
+          <th id="called-at-header" style="display: none;">Data de chamada</th>
+          <th>Cursos e Status</th>
+        </tr>
+      </thead>
+      <tbody id="teachers-table-body">
+        <?php
+        function formatDate($dateString) {
+          if (!$dateString) return '';
+          $date = new DateTime($dateString);
+          return $date->format('d/m/Y');
+        }
+
+        function formatPhone($phone) {
+          $phone = preg_replace('/\D/', '', $phone);
+          if (strlen($phone) === 11) {
+            return sprintf('(%s) %s-%s',
+              substr($phone, 0, 2),
+              substr($phone, 2, 5),
+              substr($phone, 7)
+            );
+          }
+          return $phone;
+        }
+
+        function formatCPF($cpf) {
+          $cpf = preg_replace('/\D/', '', $cpf);
+          if (strlen($cpf) === 11) {
+            return sprintf('%s.%s.%s-%s',
+              substr($cpf, 0, 3),
+              substr($cpf, 3, 3),
+              substr($cpf, 6, 3),
+              substr($cpf, 9)
+            );
+          }
+          return $cpf;
+        }
+
+        function parseStatusLabel($status) {
+          if ($status === null || $status === 'null' || $status === '') {
+            return 'Aguardando';
+          } elseif ($status === '1' || $status === 1) {
+            return 'Apto';
+          } elseif ($status === '0' || $status === 0) {
+            return 'Inapto';
+          }
+          return 'Aguardando';
+        }
+
+        function getStatusClass($status) {
+          if ($status === null || $status === 'null' || $status === '') {
+            return 'status-pending';
+          } elseif ($status === '1' || $status === 1) {
+            return 'status-approved';
+          } elseif ($status === '0' || $status === 0) {
+            return 'status-rejected';
+          }
+          return 'status-pending';
+        }
+
+        foreach ($teachers as $teacher):
+          $created_at_formatted = formatDate($teacher['created_at']);
+          $phone_formatted = formatPhone($teacher['phone']);
+        ?>
+          <tr>
+            <td><?= htmlspecialchars(titleCase($teacher['name'])) ?></td>
+            <td><?= htmlspecialchars($teacher['email']) ?></td>
+            <td><?= htmlspecialchars($phone_formatted) ?></td>
+            <td><?= $created_at_formatted ?></td>
+            <td class="called-at-cell" style="display: none;"></td>
+            <td>
+              <?php if (!empty($teacher['discipline_statuses'])): ?>
+                <?php
+                $disciplineGroups = explode('|~~|', $teacher['discipline_statuses']);
+                foreach ($disciplineGroups as $group):
+                  $parts = explode('|~|', $group);
+                  if (count($parts) >= 3) {
+                    $disciplineId = $parts[0];
+                    $disciplineName = $parts[1];
+                    $status = isset($parts[2]) ? $parts[2] : null;
+                    $statusLabel = parseStatusLabel($status);
+                    $statusClass = getStatusClass($status);
+                ?>
+                  <div class="discipline-status">
+                    <span class="discipline-name"><?= htmlspecialchars($disciplineName) ?></span>
+                    <span class="status-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
+                  </div>
+                <?php
+                  }
+                endforeach;
+                ?>
+              <?php else: ?>
+                <span class="text-muted">Sem disciplinas</span>
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
-  // Global variables for sorting
-  let currentTeachers = [];
-  let currentSort = {
-    column: 'date',
-    direction: 'asc'
-  };
+  let allTeachers = <?php echo json_encode($teachers); ?>;
+  let currentTeachers = [...allTeachers];
+  let currentSort = { column: null, direction: 'asc' };
+  let isFilteredByCourse = false;
 
-  // Load page with initial state
-  document.addEventListener('DOMContentLoaded', function() {
-    // Set up sort click handlers
-    document.querySelectorAll('.sortable').forEach(th => {
-      th.addEventListener('click', () => {
-        const sortColumn = th.getAttribute('data-sort');
-        handleSort(sortColumn);
+  function updateTable() {
+    const tbody = document.getElementById('teachers-table-body');
+    tbody.innerHTML = '';
+
+    // Show/hide called_at column based on course filter
+    const calledAtHeader = document.getElementById('called-at-header');
+    if (isFilteredByCourse) {
+      calledAtHeader.style.display = '';
+    } else {
+      calledAtHeader.style.display = 'none';
+    }
+
+    // Sort by called_at when filtered by course (unless user clicked a different sort)
+    if (isFilteredByCourse && currentSort.column !== 'name' && currentSort.column !== 'date') {
+      currentTeachers.sort((a, b) => {
+        // Extract called_at from discipline data
+        let dateA = null;
+        let dateB = null;
+        
+        if (a.discipline_statuses) {
+          const disciplinesA = a.discipline_statuses.split('|~~|');
+          for (const disc of disciplinesA) {
+            const parts = disc.split('|~|');
+            if (parts.length >= 4 && parts[3]) {
+              const dateParts = parts[3].split('/');
+              if (dateParts.length === 3) {
+                const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                if (!dateA || date < dateA) dateA = date;
+              }
+            }
+          }
+        }
+        
+        if (b.discipline_statuses) {
+          const disciplinesB = b.discipline_statuses.split('|~~|');
+          for (const disc of disciplinesB) {
+            const parts = disc.split('|~|');
+            if (parts.length >= 4 && parts[3]) {
+              const dateParts = parts[3].split('/');
+              if (dateParts.length === 3) {
+                const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                if (!dateB || date < dateB) dateB = date;
+              }
+            }
+          }
+        }
+        
+        if (!dateA) dateA = '9999-12-31';
+        if (!dateB) dateB = '9999-12-31';
+        
+        return dateA.localeCompare(dateB);
       });
+    }
+
+    let isFirstInList = true;
+    
+    currentTeachers.forEach((teacher) => {
+      const row = document.createElement('tr');
+      
+      // Name cell
+      const nameCell = document.createElement('td');
+      nameCell.textContent = teacher.name || '';
+      
+      // Add button only to the first item when filtered by course
+      if (isFilteredByCourse && isFirstInList) {
+        const actionButton = document.createElement('button');
+        actionButton.className = 'action-button';
+        actionButton.textContent = 'Ação';
+        actionButton.onclick = () => {
+          console.log('Action button clicked for:', teacher.name);
+          // Functionality to be added later
+        };
+        nameCell.appendChild(actionButton);
+        isFirstInList = false;
+      }
+      
+      row.appendChild(nameCell);
+      
+      // Email
+      const emailCell = document.createElement('td');
+      emailCell.textContent = teacher.email || '';
+      row.appendChild(emailCell);
+      
+      // Phone
+      const phoneCell = document.createElement('td');
+      phoneCell.textContent = formatPhone(teacher.phone || '');
+      row.appendChild(phoneCell);
+      
+      // Created at
+      const createdCell = document.createElement('td');
+      createdCell.textContent = formatDate(teacher.created_at);
+      row.appendChild(createdCell);
+      
+      // Called at (only when filtered by course)
+      const calledCell = document.createElement('td');
+      calledCell.className = 'called-at-cell';
+      
+      if (isFilteredByCourse && teacher.discipline_statuses) {
+        // Extract called_at from filtered discipline
+        const disciplines = teacher.discipline_statuses.split('|~~|');
+        let earliestDate = null;
+        
+        disciplines.forEach(disc => {
+          const parts = disc.split('|~|');
+          if (parts.length >= 4 && parts[3]) {
+            if (!earliestDate || parts[3] < earliestDate) {
+              earliestDate = parts[3];
+            }
+          }
+        });
+        
+        calledCell.textContent = earliestDate || '';
+        calledCell.style.display = '';
+      } else {
+        calledCell.style.display = 'none';
+      }
+      
+      row.appendChild(calledCell);
+      
+      // Disciplines
+      const disciplinesCell = document.createElement('td');
+      if (teacher.discipline_statuses) {
+        const disciplineGroups = teacher.discipline_statuses.split('|~~|');
+        disciplineGroups.forEach(group => {
+          const parts = group.split('|~|');
+          if (parts.length >= 3) {
+            const disciplineId = parts[0];
+            const disciplineName = parts[1];
+            const status = parts[2] || 'null';
+            
+            const div = document.createElement('div');
+            div.className = 'discipline-status';
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'discipline-name';
+            nameSpan.textContent = disciplineName;
+            
+            const statusSpan = document.createElement('span');
+            statusSpan.className = `status-badge ${getStatusClass(status)}`;
+            statusSpan.textContent = parseStatusLabel(status);
+            
+            div.appendChild(nameSpan);
+            div.appendChild(statusSpan);
+            disciplinesCell.appendChild(div);
+          }
+        });
+      } else {
+        disciplinesCell.innerHTML = '<span class="text-muted">Sem disciplinas</span>';
+      }
+      row.appendChild(disciplinesCell);
+      
+      tbody.appendChild(row);
     });
+    
+    // Update export button states
+    const hasData = currentTeachers.length > 0;
+    document.getElementById('export-btn').disabled = !hasData;
+    document.getElementById('export-pdf-btn').disabled = !hasData;
+  }
 
-    updateExportButtonState();
-    fetchFilteredData(); // Load data on page load
-  });
+  function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  }
 
-  // Sorting function
-  function handleSort(column) {
-    // If clicking the same column, toggle direction
+  function formatPhone(phone) {
+    if (!phone) return '';
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 11) {
+      return `(${cleaned.slice(0,2)}) ${cleaned.slice(2,7)}-${cleaned.slice(7)}`;
+    }
+    return phone;
+  }
+
+  function formatCPF(cpf) {
+    if (!cpf) return '';
+    const cleaned = cpf.replace(/\D/g, '');
+    if (cleaned.length === 11) {
+      return `${cleaned.slice(0,3)}.${cleaned.slice(3,6)}.${cleaned.slice(6,9)}-${cleaned.slice(9)}`;
+    }
+    return cpf;
+  }
+
+  function parseStatusLabel(status) {
+    if (status === null || status === 'null' || status === '') {
+      return 'Aguardando';
+    } else if (status === '1' || status === 1) {
+      return 'Apto';
+    } else if (status === '0' || status === 0) {
+      return 'Inapto';
+    }
+    return 'Aguardando';
+  }
+
+  function getStatusClass(status) {
+    if (status === null || status === 'null' || status === '') {
+      return 'status-pending';
+    } else if (status === '1' || status === 1) {
+      return 'status-approved';
+    } else if (status === '0' || status === 0) {
+      return 'status-rejected';
+    }
+    return 'status-pending';
+  }
+
+  function sortTable(column) {
     if (currentSort.column === column) {
       currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
     } else {
-      // New column, default to ascending
       currentSort.column = column;
       currentSort.direction = 'asc';
     }
 
-    // Update sort indicators
     updateSortIndicators();
-
-    // Sort and re-render
     sortTeachers();
-    renderTable(currentTeachers);
+    updateTable();
   }
 
   function updateSortIndicators() {
-    // Clear all indicators
     document.querySelectorAll('.sort-indicator').forEach(indicator => {
       indicator.textContent = '';
       indicator.classList.remove('active');
     });
 
-    // Set active indicator
-    const activeIndicator = document.getElementById(`sort-${currentSort.column}`);
-    if (activeIndicator) {
+    if (currentSort.column) {
+      const activeIndicator = document.querySelector(`.sort-indicator[data-column="${currentSort.column}"]`);
       activeIndicator.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
       activeIndicator.classList.add('active');
     }
@@ -309,14 +480,12 @@ function truncate_text($text, $length = 50, $suffix = '...')
       let compareResult = 0;
 
       if (currentSort.column === 'name') {
-        // Normalize names: trim whitespace and handle case properly
         const nameA = (a.name || '').trim();
         const nameB = (b.name || '').trim();
 
-        // Use localeCompare with proper options for Portuguese sorting
         compareResult = nameA.localeCompare(nameB, 'pt-BR', {
           numeric: true,
-          sensitivity: 'accent' // Considers accents but ignores case
+          sensitivity: 'accent'
         });
 
       } else if (currentSort.column === 'date') {
@@ -335,308 +504,44 @@ function truncate_text($text, $length = 50, $suffix = '...')
     const status = document.getElementById('status').value;
     const name = document.getElementById('name').value;
 
+    // Check if filtering by course
+    isFilteredByCourse = course !== '';
+
     const queryParams = new URLSearchParams();
     if (category) queryParams.append('category', category);
     if (course) queryParams.append('course', course);
     if (status && status !== 'no-disciplines') queryParams.append('status', status);
     if (name) queryParams.append('name', name);
 
-    fetch('../backend/api/get_filtered_teachers_postg.php?' + queryParams.toString())
-        .then(response => response.json())
-        .then(data => {
-            // Handle special case for 'no-disciplines' filter
-            if (status === 'no-disciplines') {
-                data = data.filter(teacher => !teacher.discipline_statuses);
-            }
-            
-            // Store the data
-            currentTeachers = data;
-            
-            // Sort according to current sort settings
-            sortTeachers();
-            
-            // Render the table
-            renderTable(currentTeachers);
-            
-            // Update statistics if function exists
-            if (typeof updateFilterStats === 'function') {
-                updateFilterStats(currentTeachers);
-            }
-            
-            // Update export button state
-            updateExportButtonState();
-        })
-        .catch(error => console.error('Error:', error));
-}
-
-// Add event listener for the name input
-document.getElementById('name').addEventListener('input', function() {
-    clearTimeout(window.nameFilterTimeout);
-    window.nameFilterTimeout = setTimeout(fetchFilteredData, 300);
-});
-
-  function renderTable(teachers) {
-    const tbody = document.querySelector('table tbody');
-    tbody.innerHTML = '';
-
-    if (teachers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum docente encontrado</td></tr>';
-      return;
-    }
-
-    teachers.forEach(teacher => {
-      const date = new Date(teacher.created_at);
-      const dateF = date.toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+    fetch('../backend/api/get_filtered_teachers_postg.php?' + queryParams)
+      .then(response => response.json())
+      .then(data => {
+        currentTeachers = data;
+        updateTable();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        currentTeachers = [];
+        updateTable();
       });
-
-      // Parse discipline statuses with NEW delimiters (same as docentes.php)
-      let disciplineHtml = '';
-      if (teacher.discipline_statuses) {
-        disciplineHtml = '<div class="disciplines-list">';
-        const statusPairs = teacher.discipline_statuses.split('|~~|');
-        statusPairs.forEach(pair => {
-          if (pair && pair.trim()) {
-            const parts = pair.split('|~|');
-            if (parts.length >= 3) {
-              const discId = parts[0];
-              const discName = parts[1];
-              const status = parts[2];
-              const discCalledAt = parts[3] || '';
-
-              const statusText = getStatusText(status);
-              const statusClass = getStatusClass(status);
-
-              disciplineHtml += `
-                <div class="discipline-info">
-                  <strong>${escapeHtml(discName)}:</strong>
-                  <span class="discipline-status ${statusClass}">${statusText}</span>`;
-
-              // Add called_at date if status is Apto and date exists
-              if (status === '1' && discCalledAt && discCalledAt !== '0000-00-00 00:00:00') {
-                try {
-                  const calledDate = new Date(discCalledAt);
-                  if (!isNaN(calledDate.getTime())) {
-                    const formattedDate = calledDate.toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                    });
-                    disciplineHtml += `<small style="margin-left: 10px; color: #666;">Chamado em: ${formattedDate}</small>`;
-                  }
-                } catch (e) {
-                  console.error('Error parsing date:', discCalledAt, e);
-                }
-              }
-
-              disciplineHtml += `</div>`;
-            }
-          }
-        });
-        disciplineHtml += '</div>';
-      }
-
-      if (!disciplineHtml || disciplineHtml === '<div class="disciplines-list"></div>') {
-        disciplineHtml = '<em>Sem disciplinas</em>';
-      }
-
-      const row = `
-        <tr class="teacher-row" onclick="window.location.href='docente-pos.php?id=${teacher.id}'">
-          <td>${titleCase(teacher.name)}</td>
-          <td>${teacher.email.toLowerCase()}</td>
-          <td>${dateF}</td>
-          <td>${disciplineHtml}</td>
-        </tr>
-      `;
-      tbody.innerHTML += row;
-    });
   }
 
-  // Keep existing helper functions unchanged
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  function getStatusText(status) {
-    const statusStr = String(status).trim();
-    switch (statusStr) {
-      case '1':
-        return 'Apto';
-      case '0':
-        return 'Inapto';
-      case 'null':
-      case '':
-        return 'Aguardando';
-      default:
-        return 'Aguardando';
-    }
-  }
-
-  function getStatusClass(status) {
-    const statusStr = String(status).trim();
-    switch (statusStr) {
-      case '1':
-        return 'status-approved';
-      case '0':
-        return 'status-not-approved';
-      case 'null':
-      case '':
-        return 'status-pending';
-      default:
-        return 'status-pending';
-    }
-  }
-
-  function titleCase(str) {
-    return str.toLowerCase().replace(/(?:^|\s)\w/g, function(letter) {
-      return letter.toUpperCase();
-    });
-  }
-
-  // Event listeners for filters
+  // Add event listeners
   document.getElementById('category').addEventListener('change', fetchFilteredData);
   document.getElementById('course').addEventListener('change', fetchFilteredData);
   document.getElementById('status').addEventListener('change', fetchFilteredData);
+  document.getElementById('name').addEventListener('input', fetchFilteredData);
 
   // Export functions
-  function updateExportButton(count) {
-    const exportBtn = document.getElementById('export-btn');
-    exportBtn.textContent = count > 0 ?
-      `Exportar para Excel (${count} ${count === 1 ? 'docente' : 'docentes'})` :
-      'Exportar para Excel';
-  }
-
-  function updateExportButtonState() {
-    const exportBtn = document.getElementById('export-btn');
-    const exportPdfBtn = document.getElementById('export-pdf-btn');
-    const hasFilters = document.getElementById('category').value ||
-      document.getElementById('course').value ||
-      document.getElementById('status').value;
-    exportBtn.disabled = !hasFilters;
-    exportPdfBtn.disabled = !hasFilters;
-  }
-
-  function exportToExcelPos() {
-    const category = document.getElementById('category').value;
-    const course = document.getElementById('course').value;
-    const status = document.getElementById('status').value;
-
-    if (!category && !course && !status) {
-      alert('Por favor, selecione pelo menos um filtro antes de exportar.');
-      return;
-    }
-
-    const queryParams = new URLSearchParams();
-    if (category) queryParams.append('category', category);
-    if (course) queryParams.append('course', course);
-    if (status) queryParams.append('status', status);
-
-    const url = `../backend/api/export_docentes_pos_excel.php?${queryParams.toString()}`;
-    const exportStatus = document.getElementById('export-status');
-
-    exportStatus.textContent = 'Gerando arquivo...';
-    exportStatus.classList.remove('export-error');
-
-    fetch(url)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Erro ao gerar arquivo');
-        }
-        return response.blob();
-      })
-      .then(blob => {
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        // Changed to .csv extension
-        a.download = `docentes_pos_${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        document.body.removeChild(a);
-
-        exportStatus.textContent = 'Download concluído!';
-        setTimeout(() => {
-          exportStatus.textContent = '';
-        }, 3000);
-      })
-      .catch(error => {
-        console.error('Erro:', error);
-        exportStatus.textContent = 'Erro ao gerar arquivo';
-        exportStatus.classList.add('export-error');
-      });
+  function exportToExcel() {
+    const table = document.querySelector('.table');
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Docentes Pós-Graduação" });
+    XLSX.writeFile(wb, 'docentes_pos_graduacao.xlsx');
   }
 
   function exportToPDF() {
-    const category = document.getElementById('category').value;
-    const course = document.getElementById('course').value;
-    const status = document.getElementById('status').value;
-
-    if (!category && !course && !status) {
-      alert('Por favor, selecione pelo menos um filtro antes de exportar.');
-      return;
-    }
-
-    const queryParams = new URLSearchParams();
-    if (category) queryParams.append('category', category);
-    if (course) queryParams.append('course', course);
-    if (status) queryParams.append('status', status);
-
-    const url = `../backend/api/export_docentes_pos_pdf.php?${queryParams.toString()}`;
-    const exportStatus = document.getElementById('export-status');
-    const exportPdfBtn = document.getElementById('export-pdf-btn');
-
-    // Disable button and show loading
-    exportPdfBtn.disabled = true;
-    exportPdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-
-    exportStatus.textContent = 'Gerando PDF...';
-    exportStatus.classList.remove('export-error');
-
-    fetch(url)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Erro ao gerar PDF');
-        }
-        return response.blob();
-      })
-      .then(blob => {
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = `docentes_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        document.body.removeChild(a);
-
-        exportStatus.textContent = 'PDF exportado com sucesso!';
-        exportStatus.className = 'text-success';
-
-        // Reset button
-        exportPdfBtn.disabled = false;
-        exportPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar para PDF';
-
-        setTimeout(() => {
-          exportStatus.textContent = '';
-        }, 3000);
-      })
-      .catch(error => {
-        console.error('Erro:', error);
-        exportStatus.textContent = 'Erro ao gerar PDF';
-        exportStatus.classList.add('export-error');
-
-        // Reset button
-        exportPdfBtn.disabled = false;
-        exportPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar para PDF';
-      });
+    window.location.href = '../pdf/postg_teachers_pdf.php';
   }
 </script>
 
-<?php include '../components/footer.php'; ?>
+<?php require_once '../components/footer.php'; ?>

@@ -8,21 +8,23 @@ function get_docente($conn) {
       t.name,
       t.email,
       t.phone,
-      t.cpf,
       t.created_at,
       t.document_number,
       t.document_emissor,
       t.document_uf,
       t.special_needs,
       t.address_id,
-      GROUP_CONCAT(
-        CONCAT(
-          d.id, '|~|', 
-          d.name, '|~|', 
-          COALESCE(td.enabled, 'null'), '|~|',
-          COALESCE(td.called_at, '')
-        ) SEPARATOR '|~~|'
-      ) as discipline_statuses
+      CASE 
+        WHEN d.id IS NULL THEN NULL
+        ELSE GROUP_CONCAT(
+          CONCAT(
+            d.id, '|~|', 
+            d.name, '|~|', 
+            COALESCE(td.enabled, 'null'), '|~|',
+            COALESCE(DATE_FORMAT(td.called_at, '%d/%m/%Y'), '')
+          ) SEPARATOR '|~~|'
+        )
+      END as discipline_statuses
     FROM teacher t
     LEFT JOIN teacher_disciplines td ON t.id = td.teacher_id
     LEFT JOIN disciplinas d ON td.discipline_id = d.id
@@ -36,8 +38,6 @@ function get_docente($conn) {
   return $result;
 }
 
-// Replace the get_postg_docente function in backend/api/get_registers.php with this version:
-
 function get_postg_docente($conn) {
   $query = "
     SELECT DISTINCT
@@ -45,22 +45,23 @@ function get_postg_docente($conn) {
       t.name,
       t.email,
       t.phone,
-      t.cpf,
       t.created_at,
-      t.called_at,
       t.document_number,
       t.document_emissor,
       t.document_uf,
       t.special_needs,
       t.address_id,
-      GROUP_CONCAT(
-        CONCAT(
-          d.id, '|~|', 
-          d.name, '|~|', 
-          COALESCE(td.enabled, 'null'), '|~|',
-          COALESCE(DATE_FORMAT(td.called_at, '%d/%m/%Y'), '')
-        ) SEPARATOR '|~~|'
-      ) as discipline_statuses
+      CASE 
+        WHEN d.id IS NULL THEN NULL
+        ELSE GROUP_CONCAT(
+          CONCAT(
+            d.id, '|~|', 
+            d.name, '|~|', 
+            COALESCE(td.enabled, 'null'), '|~|',
+            COALESCE(DATE_FORMAT(td.called_at, '%d/%m/%Y'), '')
+          ) SEPARATOR '|~~|'
+        )
+      END as discipline_statuses
     FROM postg_teacher t
     LEFT JOIN postg_teacher_disciplines td ON t.id = td.teacher_id
     LEFT JOIN postg_disciplinas d ON td.discipline_id = d.id
@@ -73,6 +74,7 @@ function get_postg_docente($conn) {
   $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
   return $result;
 }
+
 // These functions remain the same as they use their own enabled field
 function get_technicians($conn) {
     $sql = "SELECT id, name, email, created_at, enabled, called_at FROM technician ORDER BY name ASC";
@@ -95,6 +97,7 @@ function get_docentes_call($conn, $date) {
     t.id,
     t.name,
     td.enabled,
+    td.called_at,
     d.name AS course,
     d.id AS course_id,
     td.created_at,
@@ -135,8 +138,8 @@ function get_postdocentes_call($conn, $date) {
     t.id,
     t.name,
     td.enabled,
+    td.called_at,
     d.name AS course,
-    d.id AS course_id,
     td.created_at,
     a.name AS category
   FROM 
@@ -169,25 +172,4 @@ function get_postdocentes_call($conn, $date) {
   return $result;  
 }
 
-// Interpreters and technicians keep their own enabled field
-function get_interpreter_call($conn, $date) {
-    $sql = "SELECT id, name, email, created_at, enabled, called_at 
-            FROM interpreter 
-            WHERE called_at <= :date OR called_at IS NULL
-            ORDER BY name ASC";
-    $stmt = $conn->prepare($sql);
-    $stmt->bindParam(':date', $date);
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-function get_technician_call($conn, $date) {
-    $sql = "SELECT id, name, email, created_at, enabled, called_at 
-            FROM technician 
-            WHERE called_at <= :date OR called_at IS NULL
-            ORDER BY name ASC";
-    $stmt = $conn->prepare($sql);
-    $stmt->bindParam(':date', $date);
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+?>

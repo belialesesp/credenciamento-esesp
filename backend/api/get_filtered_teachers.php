@@ -1,5 +1,5 @@
 <?php
-// backend/api/get_filtered_teachers.php - FIXED VERSION
+// backend/api/get_filtered_teachers.php - FIXED VERSION WITHOUT CPF
 require_once '../classes/database.class.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -15,8 +15,11 @@ try {
 
     // Handle 'sem disciplinas' (no-disciplines) filter separately
     if ($status === 'no-disciplines') {
-        // Get teachers with NO disciplines at all
-        $sql = "SELECT t.* FROM teacher t
+        // Get teachers with NO disciplines at all - REMOVED t.cpf
+        $sql = "SELECT t.id, t.name, t.email, t.phone, t.created_at, 
+                t.document_number, t.document_emissor, t.document_uf, 
+                t.special_needs, t.address_id 
+                FROM teacher t
                 WHERE NOT EXISTS (
                     SELECT 1 FROM teacher_disciplines td 
                     WHERE td.teacher_id = t.id
@@ -48,8 +51,11 @@ try {
         exit;
     }
 
-    // Get teachers matching filters (for all other cases)
-    $sql = "SELECT DISTINCT t.* FROM teacher t";
+    // Get teachers matching filters (for all other cases) - REMOVED t.cpf
+    $sql = "SELECT DISTINCT t.id, t.name, t.email, t.phone, t.created_at,
+            t.document_number, t.document_emissor, t.document_uf, 
+            t.special_needs, t.address_id 
+            FROM teacher t";
     $joins = [];
     $where = [];
     $params = [];
