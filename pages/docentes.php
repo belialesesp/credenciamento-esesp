@@ -294,7 +294,7 @@ $_SESSION['user-data'] = $teachers;
       if (isAdmin) {
         row.style.cursor = 'pointer';
         row.onclick = () => {
-          window.location.href = `teacher-profile.php?id=${teacher.id}`;
+          window.location.href = `docente.php?id=${teacher.id}`;
         };
       }
 

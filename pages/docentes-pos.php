@@ -6,7 +6,8 @@ require_once '../backend/api/get_all_courses.php';
 require_once '../backend/classes/database.class.php';
 
 // Helper function to truncate text
-function truncate_text($text, $length = 50) {
+function truncate_text($text, $length = 50)
+{
   if (strlen($text) > $length) {
     return substr($text, 0, $length) . '...';
   }
@@ -46,7 +47,7 @@ $_SESSION['user-data'] = $teachers;
     color: #333;
     font-weight: bold;
   }
-  
+
   .action-button {
     margin-left: 10px;
     padding: 4px 10px;
@@ -57,7 +58,7 @@ $_SESSION['user-data'] = $teachers;
     border-radius: 4px;
     cursor: pointer;
   }
-  
+
   .action-button:hover {
     background-color: #0056b3;
   }
@@ -142,16 +143,19 @@ $_SESSION['user-data'] = $teachers;
       </thead>
       <tbody id="teachers-table-body">
         <?php
-        function formatDate($dateString) {
+        function formatDate($dateString)
+        {
           if (!$dateString) return '';
           $date = new DateTime($dateString);
           return $date->format('d/m/Y');
         }
 
-        function formatPhone($phone) {
+        function formatPhone($phone)
+        {
           $phone = preg_replace('/\D/', '', $phone);
           if (strlen($phone) === 11) {
-            return sprintf('(%s) %s-%s',
+            return sprintf(
+              '(%s) %s-%s',
               substr($phone, 0, 2),
               substr($phone, 2, 5),
               substr($phone, 7)
@@ -160,10 +164,12 @@ $_SESSION['user-data'] = $teachers;
           return $phone;
         }
 
-        function formatCPF($cpf) {
+        function formatCPF($cpf)
+        {
           $cpf = preg_replace('/\D/', '', $cpf);
           if (strlen($cpf) === 11) {
-            return sprintf('%s.%s.%s-%s',
+            return sprintf(
+              '%s.%s.%s-%s',
               substr($cpf, 0, 3),
               substr($cpf, 3, 3),
               substr($cpf, 6, 3),
@@ -173,7 +179,8 @@ $_SESSION['user-data'] = $teachers;
           return $cpf;
         }
 
-        function parseStatusLabel($status) {
+        function parseStatusLabel($status)
+        {
           if ($status === null || $status === 'null' || $status === '') {
             return 'Aguardando';
           } elseif ($status === '1' || $status === 1) {
@@ -184,7 +191,8 @@ $_SESSION['user-data'] = $teachers;
           return 'Aguardando';
         }
 
-        function getStatusClass($status) {
+        function getStatusClass($status)
+        {
           if ($status === null || $status === 'null' || $status === '') {
             return 'status-pending';
           } elseif ($status === '1' || $status === 1) {
@@ -218,10 +226,10 @@ $_SESSION['user-data'] = $teachers;
                     $statusLabel = parseStatusLabel($status);
                     $statusClass = getStatusClass($status);
                 ?>
-                  <div class="discipline-status">
-                    <span class="discipline-name"><?= htmlspecialchars($disciplineName) ?></span>
-                    <span class="status-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
-                  </div>
+                    <div class="discipline-status">
+                      <span class="discipline-name"><?= htmlspecialchars($disciplineName) ?></span>
+                      <span class="status-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
+                    </div>
                 <?php
                   }
                 endforeach;
@@ -240,7 +248,10 @@ $_SESSION['user-data'] = $teachers;
 <script>
   let allTeachers = <?php echo json_encode($teachers); ?>;
   let currentTeachers = [...allTeachers];
-  let currentSort = { column: null, direction: 'asc' };
+  let currentSort = {
+    column: null,
+    direction: 'asc'
+  };
   let isFilteredByCourse = false;
 
   function updateTable() {
@@ -261,7 +272,7 @@ $_SESSION['user-data'] = $teachers;
         // Extract called_at from discipline data
         let dateA = null;
         let dateB = null;
-        
+
         if (a.discipline_statuses) {
           const disciplinesA = a.discipline_statuses.split('|~~|');
           for (const disc of disciplinesA) {
@@ -275,7 +286,7 @@ $_SESSION['user-data'] = $teachers;
             }
           }
         }
-        
+
         if (b.discipline_statuses) {
           const disciplinesB = b.discipline_statuses.split('|~~|');
           for (const disc of disciplinesB) {
@@ -289,23 +300,29 @@ $_SESSION['user-data'] = $teachers;
             }
           }
         }
-        
+
         if (!dateA) dateA = '9999-12-31';
         if (!dateB) dateB = '9999-12-31';
-        
+
         return dateA.localeCompare(dateB);
       });
     }
 
     let isFirstInList = true;
-    
+
     currentTeachers.forEach((teacher) => {
       const row = document.createElement('tr');
-      
+      // Make row clickable if admin
+      if (isAdmin) {
+        row.style.cursor = 'pointer';
+        row.onclick = () => {
+          window.location.href = `docente-pos.php?id=${teacher.id}`;
+        };
+      }
       // Name cell
       const nameCell = document.createElement('td');
       nameCell.textContent = teacher.name || '';
-      
+
       // Add button only to the first item when filtered by course
       if (isFilteredByCourse && isFirstInList) {
         const actionButton = document.createElement('button');
@@ -318,33 +335,33 @@ $_SESSION['user-data'] = $teachers;
         nameCell.appendChild(actionButton);
         isFirstInList = false;
       }
-      
+
       row.appendChild(nameCell);
-      
+
       // Email
       const emailCell = document.createElement('td');
       emailCell.textContent = teacher.email || '';
       row.appendChild(emailCell);
-      
+
       // Phone
       const phoneCell = document.createElement('td');
       phoneCell.textContent = formatPhone(teacher.phone || '');
       row.appendChild(phoneCell);
-      
+
       // Created at
       const createdCell = document.createElement('td');
       createdCell.textContent = formatDate(teacher.created_at);
       row.appendChild(createdCell);
-      
+
       // Called at (only when filtered by course)
       const calledCell = document.createElement('td');
       calledCell.className = 'called-at-cell';
-      
+
       if (isFilteredByCourse && teacher.discipline_statuses) {
         // Extract called_at from filtered discipline
         const disciplines = teacher.discipline_statuses.split('|~~|');
         let earliestDate = null;
-        
+
         disciplines.forEach(disc => {
           const parts = disc.split('|~|');
           if (parts.length >= 4 && parts[3]) {
@@ -353,15 +370,15 @@ $_SESSION['user-data'] = $teachers;
             }
           }
         });
-        
+
         calledCell.textContent = earliestDate || '';
         calledCell.style.display = '';
       } else {
         calledCell.style.display = 'none';
       }
-      
+
       row.appendChild(calledCell);
-      
+
       // Disciplines
       const disciplinesCell = document.createElement('td');
       if (teacher.discipline_statuses) {
@@ -372,18 +389,18 @@ $_SESSION['user-data'] = $teachers;
             const disciplineId = parts[0];
             const disciplineName = parts[1];
             const status = parts[2] || 'null';
-            
+
             const div = document.createElement('div');
             div.className = 'discipline-status';
-            
+
             const nameSpan = document.createElement('span');
             nameSpan.className = 'discipline-name';
             nameSpan.textContent = disciplineName;
-            
+
             const statusSpan = document.createElement('span');
             statusSpan.className = `status-badge ${getStatusClass(status)}`;
             statusSpan.textContent = parseStatusLabel(status);
-            
+
             div.appendChild(nameSpan);
             div.appendChild(statusSpan);
             disciplinesCell.appendChild(div);
@@ -393,10 +410,10 @@ $_SESSION['user-data'] = $teachers;
         disciplinesCell.innerHTML = '<span class="text-muted">Sem disciplinas</span>';
       }
       row.appendChild(disciplinesCell);
-      
+
       tbody.appendChild(row);
     });
-    
+
     // Update export button states
     const hasData = currentTeachers.length > 0;
     document.getElementById('export-btn').disabled = !hasData;
@@ -535,7 +552,9 @@ $_SESSION['user-data'] = $teachers;
   // Export functions
   function exportToExcel() {
     const table = document.querySelector('.table');
-    const wb = XLSX.utils.table_to_book(table, { sheet: "Docentes Pós-Graduação" });
+    const wb = XLSX.utils.table_to_book(table, {
+      sheet: "Docentes Pós-Graduação"
+    });
     XLSX.writeFile(wb, 'docentes_pos_graduacao.xlsx');
   }
 
