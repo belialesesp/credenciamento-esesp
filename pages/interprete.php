@@ -374,49 +374,50 @@ include '../components/footer.php';
   <?php if ($is_admin): ?>
 
     function updateInterpreterStatus(interpreterId, status) {
-      if (confirm("Tem certeza que deseja alterar o status do intérprete?")) {
-        fetch('../backend/api/update_interpreter_status.php', {
-            method: 'POST',
-            headers: {
-              'Content-type': 'application/json'
+  if (confirm("Tem certeza que deseja alterar o status do intérprete?")) {
+    fetch('../backend/api/update_interpreter_status.php', {
+        method: 'POST',
+        headers: {
+          'Content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          interpreter_id: interpreterId,
+          status: status
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const statusElement = document.querySelector('.user-status');
+          // Fix: Use more specific button selectors within the info-section
+          const enableButton = document.querySelector('.info-section .btn-success');
+          const disableButton = document.querySelector('.info-section .btn-danger');
+
+          const statusText = status === 1 ? 'Apto' : 'Inapto';
+
+          statusElement.textContent = statusText;
+          statusElement.className = 'user-status ' + (status === 1 ? 'status-approved' : 'status-not-approved');
+
+          enableButton.disabled = (status === 1);
+          disableButton.disabled = (status === 0);
+
+          Toastify({
+            text: "Status do intérprete atualizado!",
+            className: "statusToast",
+            style: {
+              background: "#38b000",
             },
-            body: JSON.stringify({
-              interpreter_id: interpreterId,
-              status: status
-            })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              const statusElement = document.querySelector('.user-status');
-              const enableButton = document.querySelector('.ok-btn');
-              const disableButton = document.querySelector('.cancel-btn');
+          }).showToast();
 
-              const statusText = status === 1 ? 'Apto' : 'Inapto';
-
-              statusElement.textContent = statusText;
-              statusElement.className = 'user-status ' + (status === 1 ? 'status-approved' : 'status-not-approved');
-
-              enableButton.disabled = (status === 1);
-              disableButton.disabled = (status === 0);
-
-              Toastify({
-                text: "Status do intérprete atualizado!",
-                className: "statusToast",
-                style: {
-                  background: "#38b000",
-                },
-              }).showToast();
-
-            } else {
-              alert('Erro ao atualizar o status' + (data.message || 'Erro desconhecido'))
-            }
-          })
-          .catch(error => {
-            console.error('Erro: ', error);
-            alert('Erro ao atualizar o status');
-          })
-      }
-    }
+        } else {
+          alert('Erro ao atualizar o status: ' + (data.message || 'Erro desconhecido'))
+        }
+      })
+      .catch(error => {
+        console.error('Erro: ', error);
+        alert('Erro ao atualizar o status');
+      })
+  }
+}
   <?php endif; ?>
 </script>
