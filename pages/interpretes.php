@@ -177,6 +177,9 @@ function truncate_text($text, $length = 50, $suffix = '...')
     <button class="export-button" onclick="exportToPDF()">
       <i class="fas fa-file-pdf"></i> Exportar PDF
     </button>
+    <button class="export-button btn btn-success ml-2" onclick="exportToExcel()">
+      <i class="fas fa-file-excel"></i> Exportar Excel
+    </button>
     <span class="export-status" id="exportStatus"></span>
   </div>
 
@@ -367,45 +370,45 @@ function truncate_text($text, $length = 50, $suffix = '...')
   });
 
   function renderTable(interpreters) {
-  const tbody = document.getElementById('interpretersTableBody');
-  tbody.innerHTML = '';
+    const tbody = document.getElementById('interpretersTableBody');
+    tbody.innerHTML = '';
 
-  if (interpreters.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum intérprete encontrado</td></tr>';
-    return;
-  }
-
-  interpreters.forEach(interpreter => {
-    const enabled = interpreter.enabled == 1 ? 'Apto' :
-      interpreter.enabled == 0 ? 'Inapto' : 'Aguardando';
-
-    const statusClass = interpreter.enabled == 1 ? 'status-approved' :
-      interpreter.enabled == 0 ? 'status-not-approved' : 'status-pending';
-
-    // Format dates
-    const createdDate = new Date(interpreter.created_at);
-    const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' +
-      createdDate.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-
-    // Format called_at date
-    let calledDateF = '-';
-    if (interpreter.called_at) {
-      const calledDate = new Date(interpreter.called_at);
-      calledDateF = calledDate.toLocaleDateString('pt-BR');
+    if (interpreters.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum intérprete encontrado</td></tr>';
+      return;
     }
 
-    // Create row element
-    const row = document.createElement('tr');
-    row.className = 'interpreter-row';
-    row.style.cursor = 'pointer';
-    row.onclick = () => {
-      window.location.href = `interprete.php?id=${interpreter.id}`;
-    };
+    interpreters.forEach(interpreter => {
+      const enabled = interpreter.enabled == 1 ? 'Apto' :
+        interpreter.enabled == 0 ? 'Inapto' : 'Aguardando';
 
-    row.innerHTML = `
+      const statusClass = interpreter.enabled == 1 ? 'status-approved' :
+        interpreter.enabled == 0 ? 'status-not-approved' : 'status-pending';
+
+      // Format dates
+      const createdDate = new Date(interpreter.created_at);
+      const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' +
+        createdDate.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+      // Format called_at date
+      let calledDateF = '-';
+      if (interpreter.called_at) {
+        const calledDate = new Date(interpreter.called_at);
+        calledDateF = calledDate.toLocaleDateString('pt-BR');
+      }
+
+      // Create row element
+      const row = document.createElement('tr');
+      row.className = 'interpreter-row';
+      row.style.cursor = 'pointer';
+      row.onclick = () => {
+        window.location.href = `interprete.php?id=${interpreter.id}`;
+      };
+
+      row.innerHTML = `
       <td>${titleCase(interpreter.name)}</td>
       <td>${interpreter.email.toLowerCase()}</td>
       <td>${createdDateF}</td>
@@ -413,9 +416,9 @@ function truncate_text($text, $length = 50, $suffix = '...')
       <td><span class="${statusClass}">${enabled}</span></td>
     `;
 
-    tbody.appendChild(row);
-  });
-}
+      tbody.appendChild(row);
+    });
+  }
 
   function updateStats() {
     const statsDiv = document.getElementById('filterStats');
@@ -440,7 +443,66 @@ function truncate_text($text, $length = 50, $suffix = '...')
       return match.toUpperCase();
     });
   }
+function exportToExcel() {
+  const button = event.target.closest('button');
+  const originalText = button.innerHTML;
+  const statusElement = document.getElementById('exportStatus');
+  
+  // Disable button
+  button.disabled = true;
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+  
+  // Clear previous status
+  statusElement.textContent = '';
+  statusElement.className = 'export-status';
+  
+  // Get current filter
+  const statusFilter = document.getElementById('status').value;
+  const queryParams = new URLSearchParams();
+  if (statusFilter) queryParams.append('status', statusFilter);
+  
 
+  fetch(`../backend/api/export_interpreters_excel.php?${queryParams}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erro na resposta do servidor');
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `interpretes_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      // Show success message
+      statusElement.textContent = 'Excel exportado com sucesso!';
+      statusElement.className = 'export-status text-success';
+      
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = originalText;
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        statusElement.textContent = '';
+      }, 3000);
+    })
+    .catch(error => {
+      console.error('Erro na exportação:', error);
+      statusElement.textContent = 'Erro ao exportar Excel. Tente novamente.';
+      statusElement.className = 'export-status text-danger';
+      
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = originalText;
+    });
+}
   // Export to PDF
   function exportToPDF() {
     const button = document.querySelector('.export-button');

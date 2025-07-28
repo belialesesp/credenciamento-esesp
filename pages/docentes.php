@@ -560,18 +560,113 @@ $_SESSION['user-data'] = $teachers;
   document.getElementById('status').addEventListener('change', fetchFilteredData);
   document.getElementById('name').addEventListener('input', fetchFilteredData);
 
-  // Export functions
-  function exportToExcel() {
-    const table = document.querySelector('.table');
-    const wb = XLSX.utils.table_to_book(table, {
-      sheet: "Docentes"
+  // Export to Excel function
+function exportToExcel() {
+  const button = document.getElementById('export-btn');
+  const originalText = button.innerHTML;
+  
+  // Disable button and show loading
+  button.disabled = true;
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+  
+  // Get current filters
+  const category = document.getElementById('category').value;
+  const course = document.getElementById('course').value;
+  const status = document.getElementById('status').value;
+  const name = document.getElementById('name').value;
+  
+  const queryParams = new URLSearchParams();
+  if (category) queryParams.append('category', category);
+  if (course) queryParams.append('course', course);
+  if (status) queryParams.append('status', status);
+  if (name) queryParams.append('name', name);
+  
+  // Call the backend API
+  fetch(`../backend/api/export_docentes_excel.php?${queryParams}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erro na resposta do servidor');
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `docentes_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = originalText;
+    })
+    .catch(error => {
+      console.error('Erro na exportação:', error);
+      alert('Erro ao exportar para Excel. Tente novamente.');
+      
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = originalText;
     });
-    XLSX.writeFile(wb, 'docentes.xlsx');
-  }
+}
 
-  function exportToPDF() {
-    window.location.href = '../pdf/teachers_pdf.php';
-  }
+// Export to PDF function
+function exportToPDF() {
+  const button = document.getElementById('export-pdf-btn');
+  const originalText = button.innerHTML;
+  
+  // Disable button and show loading
+  button.disabled = true;
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+  
+  // Get current filters
+  const category = document.getElementById('category').value;
+  const course = document.getElementById('course').value;
+  const status = document.getElementById('status').value;
+  const name = document.getElementById('name').value;
+  
+  const queryParams = new URLSearchParams();
+  if (category) queryParams.append('category', category);
+  if (course) queryParams.append('course', course);
+  if (status) queryParams.append('status', status);
+  if (name) queryParams.append('name', name);
+  
+  // Call the backend API
+  fetch(`../backend/api/export_docentes_pdf.php?${queryParams}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erro na resposta do servidor');
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `docentes_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = originalText;
+    })
+    .catch(error => {
+      console.error('Erro na exportação:', error);
+      alert('Erro ao exportar PDF. Tente novamente.');
+      
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = originalText;
+    });
+}
   // Initialize the table with click handlers
   document.addEventListener('DOMContentLoaded', function() {
     updateTable();
