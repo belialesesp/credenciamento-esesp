@@ -63,25 +63,10 @@ function truncate_text($text, $length = 50, $suffix = '...')
 
   .export-button {
     margin-left: auto;
-    padding: 10px 20px;
-    background-color: #3F8624;
-    color: white;
-    border: none;
-    border-radius: 4px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 14px;
-  }
-
-  .export-button:hover {
-    background-color: #336b1d;
-  }
-
-  .export-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
   }
 
   .technician-row {
@@ -167,10 +152,10 @@ function truncate_text($text, $length = 50, $suffix = '...')
       </select>
     </div>
 
-    <button class="export-button" onclick="exportToPDF()">
+    <button id="export-pdf-btn" class="export-button btn btn-primary"  onclick="exportToPDF()">
       <i class="fas fa-file-pdf"></i> Exportar PDF
     </button>
-    <button class="export-button btn btn-success ml-2" onclick="exportToExcel()">
+    <button id="export-btn" class="btn btn-success ml-2" onclick="exportToExcel()">
       <i class="fas fa-file-excel"></i> Exportar Excel
     </button>
     <span class="export-status" id="exportStatus"></span>
@@ -419,24 +404,20 @@ function truncate_text($text, $length = 50, $suffix = '...')
     });
   }
 function exportToExcel() {
-  const button = event.target.closest('button');
+  const button = document.getElementById('export-btn');
   const originalText = button.innerHTML;
-  const statusElement = document.getElementById('exportStatus');
   
-  // Disable button
+  // Disable button and show loading
   button.disabled = true;
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
   
-  // Clear previous status
-  statusElement.textContent = '';
-  statusElement.className = 'export-status';
+  // Get current filters
+  const status = document.getElementById('status').value;
   
-  // Get current filter
-  const statusFilter = document.getElementById('status').value;
   const queryParams = new URLSearchParams();
-  if (statusFilter) queryParams.append('status', statusFilter);
+  if (status) queryParams.append('status', status);
   
-
+  // Call the backend API
   fetch(`../backend/api/export_technicians_excel.php?${queryParams}`)
     .then(response => {
       if (!response.ok) {
@@ -449,94 +430,72 @@ function exportToExcel() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tecnicos_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `technicians_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      // Show success message
-      statusElement.textContent = 'Excel exportado com sucesso!';
-      statusElement.className = 'export-status text-success';
-      
       // Reset button
       button.disabled = false;
       button.innerHTML = originalText;
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        statusElement.textContent = '';
-      }, 3000);
     })
     .catch(error => {
       console.error('Erro na exportação:', error);
-      statusElement.textContent = 'Erro ao exportar Excel. Tente novamente.';
-      statusElement.className = 'export-status text-danger';
+      alert('Erro ao exportar para Excel. Tente novamente.');
       
       // Reset button
       button.disabled = false;
       button.innerHTML = originalText;
     });
 }
-  // Export to PDF
-  function exportToPDF() {
-    const button = document.querySelector('.export-button');
-    const statusElement = document.getElementById('exportStatus');
 
-    // Disable button
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-
-    // Clear previous status
-    statusElement.textContent = '';
-    statusElement.className = 'export-status';
-
-    // Get current filter
-    const statusFilter = document.getElementById('status').value;
-    const queryParams = new URLSearchParams();
-    if (statusFilter) queryParams.append('status', statusFilter);
-
-    fetch(`../backend/api/export_technicians_pdf.php?${queryParams}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Erro na resposta do servidor');
-        }
-        return response.blob();
-      })
-      .then(blob => {
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `tecnicos_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        // Show success message
-        statusElement.textContent = 'PDF exportado com sucesso!';
-        statusElement.className = 'export-status text-success';
-
-        // Reset button
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
-
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          statusElement.textContent = '';
-        }, 3000);
-      })
-      .catch(error => {
-        console.error('Erro na exportação:', error);
-        statusElement.textContent = 'Erro ao exportar PDF. Tente novamente.';
-        statusElement.className = 'export-status text-danger';
-
-        // Reset button
-        button.disabled = false;
-        button.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
-      });
-  }
+function exportToPDF() {
+  const button = document.getElementById('export-pdf-btn');
+  const originalText = button.innerHTML;
+  
+  // Disable button and show loading
+  button.disabled = true;
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+  
+  // Get current filters
+  const status = document.getElementById('status').value;
+  
+  const queryParams = new URLSearchParams();
+  if (status) queryParams.append('status', status);
+  
+  // Call the backend API
+  fetch(`../backend/api/export_technicians_pdf.php?${queryParams}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erro na resposta do servidor');
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `technicians_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = originalText;
+    })
+    .catch(error => {
+      console.error('Erro na exportação:', error);
+      alert('Erro ao exportar PDF. Tente novamente.');
+      
+      // Reset button
+      button.disabled = false;
+      button.innerHTML = originalText;
+    });
+}
 </script>
 
 <?php include '../components/footer.php'; ?>

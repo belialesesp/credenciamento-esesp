@@ -103,14 +103,6 @@ $_SESSION['user-data'] = $teachers;
     max-width: 20%;
   }
 
-  /* Telefone */
-  .table th:nth-child(3),
-  .table td:nth-child(3) {
-    width: 10rem;
-    min-width: 10rem;
-    white-space: nowrap;
-  }
-
   /* Data de Inscrição */
   .table th:nth-child(4),
   .table td:nth-child(4) {
@@ -178,7 +170,7 @@ $_SESSION['user-data'] = $teachers;
       </select>
     </div>
   </div>
-  <div class="action-buttons">
+  <div class="action-buttons mb-3">
     <button
       id="export-btn"
       class="btn btn-success"
@@ -203,7 +195,6 @@ $_SESSION['user-data'] = $teachers;
         <tr>
           <th>Nome</th>
           <th>Email</th>
-          <th>Telefone</th>
           <th>Data de Inscrição</th>
           <th id="called-at-header" style="display: none;">Data de chamada</th>
           <th>Cursos e Status</th>
@@ -216,20 +207,6 @@ $_SESSION['user-data'] = $teachers;
           if (!$dateString) return '';
           $date = new DateTime($dateString);
           return $date->format('d/m/Y');
-        }
-
-        function formatPhone($phone)
-        {
-          $phone = preg_replace('/\D/', '', $phone);
-          if (strlen($phone) === 11) {
-            return sprintf(
-              '(%s) %s-%s',
-              substr($phone, 0, 2),
-              substr($phone, 2, 5),
-              substr($phone, 7)
-            );
-          }
-          return $phone;
         }
 
 
@@ -260,13 +237,11 @@ $_SESSION['user-data'] = $teachers;
 
         foreach ($teachers as $teacher):
           $created_at_formatted = formatDate($teacher['created_at']);
-          $phone_formatted = formatPhone($teacher['phone']);
 
         ?>
           <tr>
             <td><?= htmlspecialchars(titleCase($teacher['name'])) ?></td>
             <td><?= htmlspecialchars($teacher['email']) ?></td>
-            <td><?= htmlspecialchars($phone_formatted) ?></td>
 
             <td><?= $created_at_formatted ?></td>
             <td class="called-at-cell" style="display: none;"></td>
@@ -402,11 +377,6 @@ $_SESSION['user-data'] = $teachers;
       emailCell.textContent = teacher.email || '';
       row.appendChild(emailCell);
 
-      // Phone
-      const phoneCell = document.createElement('td');
-      phoneCell.textContent = formatPhone(teacher.phone || '');
-      row.appendChild(phoneCell);
-
       // Created at
       const createdCell = document.createElement('td');
       createdCell.textContent = formatDate(teacher.created_at);
@@ -483,15 +453,6 @@ $_SESSION['user-data'] = $teachers;
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
-  }
-
-  function formatPhone(phone) {
-    if (!phone) return '';
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 11) {
-      return `(${cleaned.slice(0,2)}) ${cleaned.slice(2,7)}-${cleaned.slice(7)}`;
-    }
-    return phone;
   }
 
   function parseStatusLabel(status) {

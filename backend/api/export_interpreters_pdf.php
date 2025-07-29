@@ -21,7 +21,7 @@ try {
 
     $status = $_GET['status'] ?? '';
 
-    $sql = "SELECT id, name, email, phone, created_at, enabled, called_at, scholarship 
+    $sql = "SELECT id, name, email, created_at, enabled, called_at, scholarship 
             FROM interpreter";
     $where = [];
     $params = [];
@@ -78,7 +78,6 @@ try {
 
     $pdf->Cell(55, 8, 'Nome', 1, 0, 'L', true);
     $pdf->Cell(45, 8, 'Email', 1, 0, 'L', true);
-    $pdf->Cell(30, 8, 'Telefone', 1, 0, 'L', true);
     $pdf->Cell(30, 8, 'Inscrição', 1, 0, 'C', true);
     $pdf->Cell(30, 8, 'Chamada', 1, 0, 'C', true);
     $pdf->Cell(30, 8, 'Escolaridade', 1, 0, 'L', true);
@@ -98,7 +97,6 @@ try {
 
         $pdf->Cell(55, 7, substr($interp['name'], 0, 35), 1, 0, 'L');
         $pdf->Cell(45, 7, substr(strtolower($interp['email']), 0, 30), 1, 0, 'L');
-        $pdf->Cell(30, 7, $interp['phone'], 1, 0, 'L');
         $pdf->Cell(30, 7, $dateF, 1, 0, 'C');
         $pdf->Cell(30, 7, $calledF, 1, 0, 'C');
         $pdf->Cell(30, 7, substr($interp['scholarship'] ?? 'N/A', 0, 20), 1, 0, 'L');

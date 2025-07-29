@@ -12,7 +12,7 @@ try {
     $status = $_GET['status'] ?? '';
     
     // Build query
-    $sql = "SELECT id, name, email, cpf, created_at, called_at, enabled FROM interpreter";
+    $sql = "SELECT id, name, email, created_at, called_at, enabled FROM interpreter";
     $params = [];
     
     if ($status !== '') {
@@ -42,7 +42,7 @@ try {
     $output = fopen('php://output', 'w');
     
     // Headers
-    fputcsv($output, ['Nome', 'Email', 'CPF', 'Data de Inscrição', 'Chamado em', 'Status'], ';');
+    fputcsv($output, ['Nome', 'Email', 'Data de Inscrição', 'Chamado em', 'Status'], ';');
     
     // Data
     foreach ($interpreters as $interpreter) {
@@ -58,7 +58,6 @@ try {
         fputcsv($output, [
             $interpreter['name'],
             $interpreter['email'],
-            $interpreter['cpf'],
             date('d/m/Y H:i', strtotime($interpreter['created_at'])),
             $interpreter['called_at'] ? date('d/m/Y', strtotime($interpreter['called_at'])) : '-',
             $statusText
