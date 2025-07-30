@@ -1,5 +1,5 @@
 <?php
-// backend/api/export_technicians_excel.php
+// backend/api/export_technicians_excel.php - WITH FILTER INFORMATION
 require_once '../classes/database.class.php';
 
 try {
@@ -9,27 +9,60 @@ try {
     $conection = new Database();
     $conn = $conection->connect();
     
+    // Get filter parameters
     $status = $_GET['status'] ?? '';
+    $name = $_GET['name'] ?? '';
     
     // Build query
-    $sql = "SELECT id, name, email, created_at, called_at, enabled FROM technician";
+    $sql = "SELECT id, name, email, created_at, enabled, called_at, scholarship 
+            FROM technician";
+    $where = [];
     $params = [];
     
+    // Add name filter
+    if ($name !== '') {
+        $where[] = "name LIKE :name";
+        $params[':name'] = '%' . $name . '%';
+    }
+    
+    // Add status filter
     if ($status !== '') {
-        if ($status === '1') {
-            $sql .= " WHERE enabled = 1";
-        } else if ($status === '0') {
-            $sql .= " WHERE enabled = 0";
-        } else if ($status === 'null') {
-            $sql .= " WHERE enabled IS NULL OR enabled = ''";
+        if ($status === 'null') {
+            $where[] = "(enabled IS NULL OR enabled = '')";
+        } else {
+            $where[] = "enabled = :status";
+            $params[':status'] = intval($status);
         }
     }
     
-    $sql .= " ORDER BY created_at DESC";
+    if (!empty($where)) {
+        $sql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    
+    $sql .= " ORDER BY 
+             CASE WHEN called_at IS NULL THEN 1 ELSE 0 END,
+             called_at DESC,
+             created_at DESC";
     
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
     $technicians = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get filter labels
+    $filterLabels = [];
+    if ($status !== '') {
+        $statusLabel = match($status) {
+            '1' => 'Apto',
+            '0' => 'Inapto', 
+            'null' => 'Aguardando',
+            default => 'Todos'
+        };
+        $filterLabels[] = "Status: " . $statusLabel;
+    }
+    
+    if ($name !== '') {
+        $filterLabels[] = "Nome: " . $name;
+    }
     
     // Set headers for CSV
     header('Content-Type: text/csv; charset=UTF-8');
@@ -41,25 +74,28 @@ try {
     // Output
     $output = fopen('php://output', 'w');
     
-    // Headers
+    // Add filter information at the top
+    if (!empty($filterLabels)) {
+        fputcsv($output, ['FILTROS APLICADOS: ' . implode(' | ', $filterLabels)], ';');
+        fputcsv($output, [''], ';'); // Empty line
+    }
+    
+    // Headers (without CPF/phone)
     fputcsv($output, ['Nome', 'Email', 'Data de Inscrição', 'Chamado em', 'Status'], ';');
     
     // Data
-    foreach ($technicians as $technician) {
-        $enabled = $technician['enabled'];
-        if ($enabled === null || $enabled === '') {
-            $statusText = 'Aguardando';
-        } elseif ($enabled == 1) {
-            $statusText = 'Apto';
-        } else {
-            $statusText = 'Inapto';
-        }
+    foreach ($technicians as $tech) {
+        $statusText = match (intval($tech['enabled'])) {
+            1 => 'Apto',
+            0 => 'Inapto',
+            default => 'Aguardando'
+        };
         
         fputcsv($output, [
-            $technician['name'],
-            $technician['email'],
-            date('d/m/Y H:i', strtotime($technician['created_at'])),
-            $technician['called_at'] ? date('d/m/Y', strtotime($technician['called_at'])) : '-',
+            $tech['name'],
+            strtolower($tech['email']),
+            date('d/m/Y', strtotime($tech['created_at'])),
+            $tech['called_at'] ? date('d/m/Y', strtotime($tech['called_at'])) : '-',
             $statusText
         ], ';');
     }

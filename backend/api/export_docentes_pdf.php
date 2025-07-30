@@ -1,5 +1,5 @@
 <?php
-// backend/api/export_docentes_pdf.php
+// backend/api/export_docentes_pdf.php - FIXED VERSION
 require_once '../classes/database.class.php';
 require_once '../../vendor/autoload.php';
 
@@ -14,6 +14,7 @@ try {
     $category = $_GET['category'] ?? '';
     $course = $_GET['course'] ?? '';
     $status = $_GET['status'] ?? '';
+    $name = $_GET['name'] ?? '';
     
     // Build query
     $sql = "SELECT DISTINCT t.id, t.name, t.email, t.created_at, t.called_at FROM teacher t";
@@ -21,13 +22,21 @@ try {
     $where = [];
     $params = [];
     
+    if ($name !== '') {
+        $where[] = "t.name LIKE :name";
+        $params[':name'] = '%' . $name . '%';
+    }
+    
     if ($category !== '') {
         $joins[] = "INNER JOIN teacher_activities ta ON t.id = ta.teacher_id";
         $where[] = "ta.activity_id = :category";
         $params[':category'] = $category;
     }
     
-    if ($status !== '' && $status !== 'no-disciplines') {
+    if ($status === 'no-disciplines') {
+        $joins[] = "LEFT JOIN teacher_disciplines td ON t.id = td.teacher_id";
+        $where[] = "td.teacher_id IS NULL";
+    } else if ($status !== '') {
         $joins[] = "INNER JOIN teacher_disciplines td_filter ON t.id = td_filter.teacher_id";
         
         if ($course !== '') {
@@ -36,15 +45,17 @@ try {
         }
         
         if ($status === '1') {
-            $where[] = "td_filter.enabled = 1";
+            $where[] = "(td_filter.enabled = '1' OR td_filter.enabled = 1)";
         } else if ($status === '0') {
-            $where[] = "td_filter.enabled = 0";
+            $where[] = "(td_filter.enabled = '0' OR td_filter.enabled = 0) AND td_filter.enabled IS NOT NULL";
         } else if ($status === 'null') {
-            $where[] = "(td_filter.enabled IS NULL OR td_filter.enabled = '')";
+            // FIXED: Exclude numeric zeros
+            $where[] = "(td_filter.enabled IS NULL OR (td_filter.enabled = '' AND td_filter.enabled != 0))";
         }
-    } else if ($status === 'no-disciplines') {
-        $joins[] = "LEFT JOIN teacher_disciplines td ON t.id = td.teacher_id";
-        $where[] = "td.teacher_id IS NULL";
+    } else if ($course !== '') {
+        $joins[] = "INNER JOIN teacher_disciplines td_filter ON t.id = td_filter.teacher_id";
+        $where[] = "td_filter.discipline_id = :course";
+        $params[':course'] = $course;
     }
     
     $sql .= ' ' . implode(' ', $joins);
@@ -83,85 +94,144 @@ try {
     // Date
     $pdf->SetFont('helvetica', '', 10);
     $pdf->Cell(0, 5, 'Gerado em: ' . date('d/m/Y H:i'), 0, 1, 'C');
-    $pdf->Ln(5);
+    
+    // Filter info
+    if ($category || $course || $status || $name) {
+        $pdf->Ln(5);
+        $pdf->SetFont('helvetica', 'B', 10);
+        $pdf->Cell(0, 5, 'Filtros Aplicados:', 0, 1);
+        $pdf->SetFont('helvetica', '', 9);
+        
+        if ($category !== '') {
+            $catStmt = $conn->prepare("SELECT name FROM activities WHERE id = :id");
+            $catStmt->execute([':id' => $category]);
+            $catName = $catStmt->fetchColumn();
+            $pdf->Cell(0, 5, 'Categoria: ' . ($catName ?: "ID $category"), 0, 1);
+        }
+        
+        if ($course !== '') {
+            $courseStmt = $conn->prepare("SELECT name FROM disciplinas WHERE id = :id");
+            $courseStmt->execute([':id' => $course]);
+            $courseName = $courseStmt->fetchColumn();
+            $pdf->Cell(0, 5, 'Curso: ' . ($courseName ?: "ID $course"), 0, 1);
+        }
+        
+        if ($status !== '') {
+            $statusMap = [
+                '1' => 'Apto',
+                '0' => 'Inapto',
+                'null' => 'Aguardando',
+                'no-disciplines' => 'Sem disciplinas'
+            ];
+            $pdf->Cell(0, 5, 'Status: ' . ($statusMap[$status] ?? $status), 0, 1);
+        }
+        
+        if ($name !== '') {
+            $pdf->Cell(0, 5, 'Nome: ' . $name, 0, 1);
+        }
+    }
     
     // Table header
+    $pdf->Ln(5);
     $pdf->SetFont('helvetica', 'B', 9);
-    $pdf->SetFillColor(200, 200, 200);
-    
-    $pdf->Cell(60, 8, 'Nome', 1, 0, 'L', true);
-    $pdf->Cell(50, 8, 'Email', 1, 0, 'L', true);
-    $pdf->Cell(30, 8, 'Inscrição', 1, 0, 'C', true);
-    $pdf->Cell(30, 8, 'Chamado em', 1, 0, 'C', true);
-    $pdf->Cell(107, 8, 'Disciplinas', 1, 1, 'L', true);
+    $pdf->SetFillColor(240, 240, 240);
+    $pdf->Cell(50, 7, 'Nome', 1, 0, 'L', true);
+    $pdf->Cell(50, 7, 'Email', 1, 0, 'L', true);
+    $pdf->Cell(30, 7, 'Data Inscrição', 1, 0, 'C', true);
+    $pdf->Cell(30, 7, 'Chamado em', 1, 0, 'C', true);
+    $pdf->Cell(110, 7, 'Disciplinas', 1, 1, 'L', true);
     
     // Table content
     $pdf->SetFont('helvetica', '', 8);
-    $pdf->SetFillColor(240, 240, 240);
-    $fill = false;
+    $pdf->SetFillColor(255, 255, 255);
     
     foreach ($teachers as $teacher) {
-        // Get disciplines
-        $discSql = "SELECT d.name, td.enabled 
-                    FROM teacher_disciplines td
-                    INNER JOIN disciplinas d ON td.discipline_id = d.id
-                    WHERE td.teacher_id = :teacher_id";
-        $discStmt = $conn->prepare($discSql);
-        $discStmt->execute([':teacher_id' => $teacher['id']]);
-        $disciplines = $discStmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        $discList = [];
-        foreach ($disciplines as $disc) {
-            $enabled = intval($disc['enabled']);
-            if ($enabled === 1) {
-                $status = 'Apto';
-            } elseif ($enabled === 0) {
-                $status = 'Inapto';
-            } else {
-                $status = 'Aguardando';
+        // Get disciplines for this teacher
+        if ($status === 'no-disciplines') {
+            $disciplineText = 'Sem disciplinas';
+        } else {
+            $discSql = "SELECT d.name, td.enabled 
+                        FROM teacher_disciplines td 
+                        INNER JOIN disciplinas d ON td.discipline_id = d.id 
+                        WHERE td.teacher_id = :teacher_id";
+            
+            $discParams = [':teacher_id' => $teacher['id']];
+            
+            if ($course !== '') {
+                $discSql .= " AND d.id = :course";
+                $discParams[':course'] = $course;
             }
-            $discList[] = $disc['name'] . ' (' . $status . ')';
+            
+            // FIXED: Apply status filter
+            if ($status === '1') {
+                $discSql .= " AND (td.enabled = '1' OR td.enabled = 1)";
+            } else if ($status === '0') {
+                $discSql .= " AND (td.enabled = '0' OR td.enabled = 0) AND td.enabled IS NOT NULL";
+            } else if ($status === 'null') {
+                $discSql .= " AND (td.enabled IS NULL OR (td.enabled = '' AND td.enabled != 0))";
+            }
+            
+            $discSql .= " ORDER BY d.name";
+            
+            $discStmt = $conn->prepare($discSql);
+            $discStmt->execute($discParams);
+            $disciplines = $discStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $discList = [];
+            foreach ($disciplines as $disc) {
+                $enabled = $disc['enabled'];
+                
+                // Determine status
+                if ($enabled === null) {
+                    $statusText = 'Aguardando';
+                } else if ($enabled === '' && $enabled !== 0 && $enabled !== '0') {
+                    $statusText = 'Aguardando';
+                } else if ($enabled === '0' || $enabled === 0) {
+                    $statusText = 'Inapto';
+                } else if ($enabled === '1' || $enabled === 1) {
+                    $statusText = 'Apto';
+                } else {
+                    $statusText = 'Aguardando';
+                }
+                
+                $discList[] = $disc['name'] . ' (' . $statusText . ')';
+            }
+            
+            $disciplineText = !empty($discList) ? implode(' | ', $discList) : 'Sem disciplinas';
         }
         
-        $disciplinesText = empty($discList) ? 'Sem disciplinas' : implode(' | ', $discList);
-        
         // Calculate row height based on content
-        $nameHeight = $pdf->getStringHeight(60, $teacher['name'], false, true, '', 1);
-        $emailHeight = $pdf->getStringHeight(50, $teacher['email'], false, true, '', 1);
-        $discHeight = $pdf->getStringHeight(107, $disciplinesText, false, true, '', 1);
-        $rowHeight = max(8, $nameHeight, $emailHeight, $discHeight);
+        $nameWidth = 50;
+        $emailWidth = 50;
+        $dateWidth = 30;
+        $disciplineWidth = 110;
         
-        // Check if we need a new page
+        $nameHeight = $pdf->getStringHeight($nameWidth, $teacher['name']);
+        $emailHeight = $pdf->getStringHeight($emailWidth, $teacher['email']);
+        $disciplineHeight = $pdf->getStringHeight($disciplineWidth, $disciplineText);
+        
+        $rowHeight = max(7, $nameHeight, $emailHeight, $disciplineHeight);
+        
+        // Add new page if needed
         if ($pdf->GetY() + $rowHeight > 190) {
             $pdf->AddPage();
             // Repeat header
             $pdf->SetFont('helvetica', 'B', 9);
-            $pdf->SetFillColor(200, 200, 200);
-            $pdf->Cell(60, 8, 'Nome', 1, 0, 'L', true);
-            $pdf->Cell(50, 8, 'Email', 1, 0, 'L', true);
-            $pdf->Cell(30, 8, 'Inscrição', 1, 0, 'C', true);
-            $pdf->Cell(30, 8, 'Chamado em', 1, 0, 'C', true);
-            $pdf->Cell(107, 8, 'Disciplinas', 1, 1, 'L', true);
+            $pdf->SetFillColor(240, 240, 240);
+            $pdf->Cell(50, 7, 'Nome', 1, 0, 'L', true);
+            $pdf->Cell(50, 7, 'Email', 1, 0, 'L', true);
+            $pdf->Cell(30, 7, 'Data Inscrição', 1, 0, 'C', true);
+            $pdf->Cell(30, 7, 'Chamado em', 1, 0, 'C', true);
+            $pdf->Cell(110, 7, 'Disciplinas', 1, 1, 'L', true);
             $pdf->SetFont('helvetica', '', 8);
         }
         
-        // Name
-        $pdf->MultiCell(60, $rowHeight, $teacher['name'], 1, 'L', $fill, 0);
-        
-        // Email
-        $pdf->MultiCell(50, $rowHeight, $teacher['email'], 1, 'L', $fill, 0);
-        
-        // Registration date
-        $pdf->MultiCell(30, $rowHeight, date('d/m/Y', strtotime($teacher['created_at'])), 1, 'C', $fill, 0);
-        
-        // Called date
-        $calledDate = $teacher['called_at'] ? date('d/m/Y', strtotime($teacher['called_at'])) : '-';
-        $pdf->MultiCell(30, $rowHeight, $calledDate, 1, 'C', $fill, 0);
-        
-        // Disciplines
-        $pdf->MultiCell(107, $rowHeight, $disciplinesText, 1, 'L', $fill, 1);
-        
-        $fill = !$fill;
+        // Print row
+        $pdf->MultiCell($nameWidth, $rowHeight, $teacher['name'], 1, 'L', false, 0);
+        $pdf->MultiCell($emailWidth, $rowHeight, $teacher['email'], 1, 'L', false, 0);
+        $pdf->MultiCell($dateWidth, $rowHeight, date('d/m/Y', strtotime($teacher['created_at'])), 1, 'C', false, 0);
+        $pdf->MultiCell($dateWidth, $rowHeight, $teacher['called_at'] ? date('d/m/Y', strtotime($teacher['called_at'])) : '-', 1, 'C', false, 0);
+        $pdf->MultiCell($disciplineWidth, $rowHeight, $disciplineText, 1, 'L', false, 1);
     }
     
     // Summary

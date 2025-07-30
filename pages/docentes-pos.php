@@ -65,8 +65,10 @@ $_SESSION['user-data'] = $teachers;
   .action-button:hover {
     background-color: #0056b3;
   }
+
   /* Status badge styles */
-  .status-approved, .status-badge.status-approved {
+  .status-approved,
+  .status-badge.status-approved {
     background-color: #d4edda;
     padding: 4px 8px;
     border-radius: 4px;
@@ -74,7 +76,8 @@ $_SESSION['user-data'] = $teachers;
     display: inline-block;
   }
 
-  .status-not-approved, .status-badge.status-not-approved {
+  .status-not-approved,
+  .status-badge.status-not-approved {
     background-color: #f8d7da;
     padding: 4px 8px;
     border-radius: 4px;
@@ -82,7 +85,8 @@ $_SESSION['user-data'] = $teachers;
     display: inline-block;
   }
 
-  .status-pending, .status-badge.status-pending {
+  .status-pending,
+  .status-badge.status-pending {
     background-color: #fff3cd;
     padding: 4px 8px;
     border-radius: 4px;
@@ -97,7 +101,7 @@ $_SESSION['user-data'] = $teachers;
   .discipline-name {
     margin-right: 10px;
   }
-  
+
   .table {
     table-layout: auto;
   }
@@ -127,7 +131,7 @@ $_SESSION['user-data'] = $teachers;
     width: 8rem;
   }
 
-    /* Cursos */
+  /* Cursos */
   .table th:last-child,
   .table td:last-child {
     width: 25%;
@@ -136,7 +140,7 @@ $_SESSION['user-data'] = $teachers;
 
 <div class="container">
   <a href="home.php" class="btn btn-info mt-5">← Voltar ao Início</a>
-  <h1 class="main-title">Docentes de Pós-Graduação</h1>
+  <h1 class="main-title">Docentes / Assessoramento Técnico - Pós Graduação</h1>
   <div class="filter-container">
     <div class="filter-group">
       <label for="name">Filtrar por nome</label>
@@ -171,6 +175,7 @@ $_SESSION['user-data'] = $teachers;
         <option value="1">Apto</option>
         <option value="0">Inapto</option>
         <option value="null">Aguardando</option>
+        <option value="no-disciplines">Sem disciplinas</option>
       </select>
     </div>
   </div>
@@ -292,6 +297,15 @@ $_SESSION['user-data'] = $teachers;
   };
   let isFilteredByCourse = false;
   const isAdmin = <?php echo json_encode($isAdmin); ?>;
+
+  function hasActiveFilters() {
+    const category = document.getElementById('category').value;
+    const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value;
+
+    return !!(category || course || status || name);
+  }
 
   function updateTable() {
     const tbody = document.getElementById('teachers-table-body');
@@ -452,7 +466,9 @@ $_SESSION['user-data'] = $teachers;
     // Update export button states
     const hasData = currentTeachers.length > 0;
     document.getElementById('export-btn').disabled = !hasData;
-    document.getElementById('export-pdf-btn').disabled = !hasData;
+    const hasFilters = hasActiveFilters();
+
+    document.getElementById('export-pdf-btn').disabled = !hasFilters;
   }
 
   function formatDate(dateString) {
@@ -550,7 +566,11 @@ $_SESSION['user-data'] = $teachers;
     fetch('../backend/api/get_filtered_teachers_postg.php?' + queryParams)
       .then(response => response.json())
       .then(data => {
-        currentTeachers = data;
+        if (status === 'no-disciplines') {
+          currentTeachers = allTeachers.filter(t => !t.discipline_statuses || t.discipline_statuses === '');
+        } else {
+          currentTeachers = data;
+        }
         updateTable();
       })
       .catch(error => {
@@ -567,114 +587,116 @@ $_SESSION['user-data'] = $teachers;
   document.getElementById('name').addEventListener('input', fetchFilteredData);
 
   // Export to Excel function
-function exportToExcel() {
-  const button = document.getElementById('export-btn');
-  const originalText = button.innerHTML;
-  
-  // Disable button and show loading
-  button.disabled = true;
-  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-  
-  // Get current filters
-  const category = document.getElementById('category').value;
-  const course = document.getElementById('course').value;
-  const status = document.getElementById('status').value;
-  const name = document.getElementById('name').value;
-  
-  const queryParams = new URLSearchParams();
-  if (category) queryParams.append('category', category);
-  if (course) queryParams.append('course', course);
-  if (status) queryParams.append('status', status);
-  if (name) queryParams.append('name', name);
-  
-  // Call the backend API
-  fetch(`../backend/api/export_docentes_pos_excel.php?${queryParams}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Erro na resposta do servidor');
-      }
-      return response.blob();
-    })
-    .then(blob => {
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `docentes_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      // Reset button
-      button.disabled = false;
-      button.innerHTML = originalText;
-    })
-    .catch(error => {
-      console.error('Erro na exportação:', error);
-      alert('Erro ao exportar para Excel. Tente novamente.');
-      
-      // Reset button
-      button.disabled = false;
-      button.innerHTML = originalText;
-    });
-}
+  function exportToExcel() {
+    const button = document.getElementById('export-btn');
+    const originalText = button.innerHTML;
 
-// Export to PDF function
-function exportToPDF() {
-  const button = document.getElementById('export-pdf-btn');
-  const originalText = button.innerHTML;
-  
-  // Disable button and show loading
-  button.disabled = true;
-  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-  
-  // Get current filters
-  const category = document.getElementById('category').value;
-  const course = document.getElementById('course').value;
-  const status = document.getElementById('status').value;
-  const name = document.getElementById('name').value;
-  
-  const queryParams = new URLSearchParams();
-  if (category) queryParams.append('category', category);
-  if (course) queryParams.append('course', course);
-  if (status) queryParams.append('status', status);
-  if (name) queryParams.append('name', name);
-  
-  // Call the backend API
-  fetch(`../backend/api/export_docentes_pos_pdf.php?${queryParams}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Erro na resposta do servidor');
-      }
-      return response.blob();
-    })
-    .then(blob => {
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `docentes_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      // Reset button
-      button.disabled = false;
-      button.innerHTML = originalText;
-    })
-    .catch(error => {
-      console.error('Erro na exportação:', error);
-      alert('Erro ao exportar PDF. Tente novamente.');
-      
-      // Reset button
-      button.disabled = false;
-      button.innerHTML = originalText;
-    });
-}
+    // Disable button and show loading
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+
+    // Get current filters
+    const category = document.getElementById('category').value;
+    const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value;
+
+    const queryParams = new URLSearchParams();
+    if (category) queryParams.append('category', category);
+    if (course) queryParams.append('course', course);
+    if (status) queryParams.append('status', status);
+    if (name) queryParams.append('name', name);
+
+    // Call the backend API
+    fetch(`../backend/api/export_docentes_pos_excel.php?${queryParams}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro na resposta do servidor');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `docentes_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = originalText;
+      })
+      .catch(error => {
+        console.error('Erro na exportação:', error);
+        alert('Erro ao exportar para Excel. Tente novamente.');
+
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = originalText;
+      });
+  }
+
+  // Export to PDF function
+  function exportToPDF() {
+    const button = document.getElementById('export-pdf-btn');
+    const originalText = button.innerHTML;
+
+    // Disable button and show loading
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+
+    // Get current filters
+    const category = document.getElementById('category').value;
+    const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value;
+
+    const queryParams = new URLSearchParams();
+    if (category) queryParams.append('category', category);
+    if (course) queryParams.append('course', course);
+    if (status) queryParams.append('status', status);
+    if (name) queryParams.append('name', name);
+
+    // Call the backend API
+    fetch(`../backend/api/export_docentes_pos_pdf.php?${queryParams}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro na resposta do servidor');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `docentes_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = originalText;
+      })
+      .catch(error => {
+        console.error('Erro na exportação:', error);
+        alert('Erro ao exportar PDF. Tente novamente.');
+
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = originalText;
+      });
+  }
   // Initialize the table with click handlers
   document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('export-btn').disabled = true;
+    document.getElementById('export-pdf-btn').disabled = true;
     updateTable();
   });
 </script>
