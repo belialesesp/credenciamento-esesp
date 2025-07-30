@@ -281,6 +281,14 @@ $_SESSION['user-data'] = $teachers;
   let allTeachers = <?php echo json_encode($teachers); ?>;
   let currentTeachers = [...allTeachers];
   let isFilteredByCourse = false;
+  function hasActiveFilters() {
+    const category = document.getElementById('category').value;
+    const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value;
+
+    return !!(category || course || status || name);
+}
   const isAdmin = <?php echo json_encode($isAdmin); ?>;
 
   function updateTable() {
@@ -446,7 +454,10 @@ $_SESSION['user-data'] = $teachers;
     // Update export button states
     const hasData = currentTeachers.length > 0;
     document.getElementById('export-btn').disabled = !hasData;
-    document.getElementById('export-pdf-btn').disabled = !hasData;
+    
+    // PDF export is only enabled when filters are active
+    const hasFilters = hasActiveFilters();
+    document.getElementById('export-pdf-btn').disabled = !hasFilters;
   }
 
   function formatDate(dateString) {
@@ -630,6 +641,9 @@ function exportToPDF() {
 }
   // Initialize the table with click handlers
   document.addEventListener('DOMContentLoaded', function() {
+    // Disable both export buttons initially
+    document.getElementById('export-btn').disabled = true;
+    document.getElementById('export-pdf-btn').disabled = true;
     updateTable();
   });
 </script>
