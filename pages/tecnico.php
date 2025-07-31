@@ -309,6 +309,12 @@ try {
             <?= $enabled == 0 ? 'disabled' : '' ?>>
             <i class="fas fa-times"></i> Reprovar
           </button>
+          <button type="button"
+            class="btn btn-secondary"
+            onclick="updateTechnicianStatus(<?= $technician_id ?>, null)"
+            <?= $enabled === null ? 'disabled' : '' ?>>
+            <i class="fas fa-undo"></i> Resetar status
+          </button>
         </div>
       </div>
     </div>
@@ -351,78 +357,65 @@ include '../components/footer.php';
 ?>
 
 <script>
-  function togglePassword(fieldId) {
-    const field = document.getElementById(fieldId);
-    const icon = document.getElementById(fieldId + '_icon');
-
-    if (field.type === 'password') {
-      field.type = 'text';
-      icon.classList.remove('fa-eye');
-      icon.classList.add('fa-eye-slash');
-    } else {
-      field.type = 'password';
-      icon.classList.remove('fa-eye-slash');
-      icon.classList.add('fa-eye');
-    }
-  }
-
-  // Password validation
-  document.getElementById('confirm_password')?.addEventListener('input', function() {
-    const newPassword = document.getElementById('new_password').value;
-    if (newPassword !== this.value) {
-      this.setCustomValidity('As senhas devem ser iguais');
-    } else {
-      this.setCustomValidity('');
-    }
-  });
-
-  <?php if ($is_admin): ?>
-
-    function updateTechnicianStatus(technicianId, status) {
-  if (confirm("Tem certeza que deseja alterar o status do técnico?")) {
-    fetch('../backend/api/update_technician_status.php', {
-        method: 'POST',
-        headers: {
-          'Content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          technician_id: technicianId,
-          status: status
+<?php if ($is_admin): ?>
+  function updateTechnicianStatus(technicianId, status) {
+    const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar o status');
+    
+    if (confirm(`Tem certeza que deseja ${statusText} o técnico?`)) {
+      fetch('../backend/api/update_technician_status.php', {
+          method: 'POST',
+          headers: {
+            'Content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            technician_id: technicianId,
+            status: status === null ? 'null' : status
+          })
         })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          const statusElement = document.querySelector('.user-status');
-          // Fix: Use more specific button selectors within the info-section
-          const enableButton = document.querySelector('.info-section .btn-success');
-          const disableButton = document.querySelector('.info-section .btn-danger');
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const statusElement = document.querySelector('.user-status');
+            const enableButton = document.querySelector('.info-section .btn-success');
+            const disableButton = document.querySelector('.info-section .btn-danger');
+            const resetButton = document.querySelector('.info-section .btn-secondary');
 
-          const statusText = status === 1 ? 'Apto' : 'Inapto';
+            let newStatusText, newStatusClass;
+            if (status === 1) {
+              newStatusText = 'Apto';
+              newStatusClass = 'status-approved';
+            } else if (status === 0) {
+              newStatusText = 'Inapto';
+              newStatusClass = 'status-not-approved';
+            } else {
+              newStatusText = 'Aguardando aprovação';
+              newStatusClass = 'status-pending';
+            }
 
-          statusElement.textContent = statusText;
-          statusElement.className = 'user-status ' + (status === 1 ? 'status-approved' : 'status-not-approved');
+            statusElement.textContent = newStatusText;
+            statusElement.className = 'user-status ' + newStatusClass;
 
-          enableButton.disabled = (status === 1);
-          disableButton.disabled = (status === 0);
+            // Update button states
+            enableButton.disabled = (status === 1);
+            disableButton.disabled = (status === 0);
+            resetButton.disabled = (status === null);
 
-          Toastify({
-            text: "Status do técnico atualizado!",
-            className: "statusToast",
-            style: {
-              background: "#38b000",
-            },
-          }).showToast();
-
-        } else {
-          alert('Erro ao atualizar o status: ' + (data.message || 'Erro desconhecido'))
-        }
-      })
-      .catch(error => {
-        console.error('Erro: ', error);
-        alert('Erro ao atualizar o status');
-      })
+            Toastify({
+              text: "Status atualizado!",
+              className: "statusToast",
+              style: {
+                background: "#38b000",
+              },
+            }).showToast();
+          } else {
+            alert('Erro ao atualizar status: ' + (data.message || 'Unknown error'));
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Erro ao atualizar status.');
+        });
+    }
   }
-}
-  <?php endif; ?>
+<?php endif; ?>
 </script>

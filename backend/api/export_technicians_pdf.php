@@ -1,7 +1,5 @@
 <?php
-// =================================================================
-// backend/api/export_technicians_pdf.php - WITHOUT CPF/PHONE
-// =================================================================
+// backend/api/export_technicians_pdf.php - FIXED VERSION V2
 
 if (ob_get_level()) {
     ob_end_clean();
@@ -26,12 +24,17 @@ try {
     $where = [];
     $params = [];
 
+    // Add status filter - FIXED with proper type checking
     if ($status !== '') {
         if ($status === 'null') {
-            $where[] = "(enabled IS NULL OR enabled = '')";
-        } else {
-            $where[] = "enabled = :status";
-            $params[':status'] = intval($status);
+            // For aguardando: only NULL or empty string, NOT numeric 0
+            // Use BINARY to avoid MySQL type coercion where 0 = ''
+            $where[] = "(enabled IS NULL OR (BINARY enabled = '' AND enabled != 0))";
+        } else if ($status === '1') {
+            $where[] = "(enabled = 1 OR enabled = '1')";
+        } else if ($status === '0') {
+            // For inapto: only 0, not NULL
+            $where[] = "(enabled = 0 OR enabled = '0') AND enabled IS NOT NULL";
         }
     }
 
@@ -40,9 +43,9 @@ try {
     }
 
     $sql .= " ORDER BY 
-             CASE WHEN called_at IS NULL THEN 1 ELSE 0 END,
-             called_at DESC,
-             created_at DESC";
+              CASE WHEN called_at IS NULL THEN 1 ELSE 0 END,
+              called_at DESC,
+              created_at DESC";
 
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
@@ -67,6 +70,7 @@ try {
         $statusText = match ($status) {
             '1' => 'Apto',
             '0' => 'Inapto',
+            'null' => 'Aguardando',
             default => 'Aguardando'
         };
         $pdf->Cell(0, 6, 'Filtro: Status = ' . $statusText, 0, 1, 'L');
@@ -90,11 +94,19 @@ try {
         $dateF = date('d/m/Y', strtotime($tech['created_at']));
         $calledF = $tech['called_at'] ? date('d/m/Y', strtotime($tech['called_at'])) : '-';
         
-        $statusText = match (intval($tech['enabled'])) {
-            1 => 'Apto',
-            0 => 'Inapto',
-            default => 'Aguardando'
-        };
+        // Check actual value, not intval
+        $enabled = $tech['enabled'];
+        
+        // Strict type checking for status
+        if ($enabled === null || $enabled === '' || (is_string($enabled) && trim($enabled) === '')) {
+            $statusText = 'Aguardando';
+        } else if ($enabled === '1' || $enabled === 1) {
+            $statusText = 'Apto';
+        } else if ($enabled === '0' || $enabled === 0) {
+            $statusText = 'Inapto';
+        } else {
+            $statusText = 'Aguardando';
+        }
 
         $pdf->Cell(70, 7, substr($tech['name'], 0, 40), 1, 0, 'L');
         $pdf->Cell(60, 7, substr(strtolower($tech['email']), 0, 35), 1, 0, 'L');
@@ -110,7 +122,7 @@ try {
     $pdf->Cell(0, 6, 'Data de geração: ' . date('d/m/Y H:i'), 0, 1, 'L');
 
     $pdf->Output('tecnicos_' . date('Y-m-d') . '.pdf', 'D');
-    
+
 } catch (Exception $e) {
     while (ob_get_level()) {
         ob_end_clean();

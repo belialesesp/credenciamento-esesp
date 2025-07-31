@@ -1,5 +1,5 @@
 <?php
-// backend/api/export_technicians_excel.php - WITH FILTER INFORMATION
+// backend/api/export_technicians_excel.php - FIXED VERSION V2
 require_once '../classes/database.class.php';
 
 try {
@@ -25,13 +25,17 @@ try {
         $params[':name'] = '%' . $name . '%';
     }
     
-    // Add status filter
+    // Add status filter - FIXED with proper type checking
     if ($status !== '') {
         if ($status === 'null') {
-            $where[] = "(enabled IS NULL OR enabled = '')";
-        } else {
-            $where[] = "enabled = :status";
-            $params[':status'] = intval($status);
+            // For aguardando: only NULL or empty string, NOT numeric 0
+            // Use BINARY to avoid MySQL type coercion where 0 = ''
+            $where[] = "(enabled IS NULL OR (BINARY enabled = '' AND enabled != 0))";
+        } else if ($status === '1') {
+            $where[] = "(enabled = 1 OR enabled = '1')";
+        } else if ($status === '0') {
+            // For inapto: only 0, not NULL
+            $where[] = "(enabled = 0 OR enabled = '0') AND enabled IS NOT NULL";
         }
     }
     
@@ -40,9 +44,9 @@ try {
     }
     
     $sql .= " ORDER BY 
-             CASE WHEN called_at IS NULL THEN 1 ELSE 0 END,
-             called_at DESC,
-             created_at DESC";
+              CASE WHEN called_at IS NULL THEN 1 ELSE 0 END,
+              called_at DESC,
+              created_at DESC";
     
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
@@ -85,11 +89,19 @@ try {
     
     // Data
     foreach ($technicians as $tech) {
-        $statusText = match (intval($tech['enabled'])) {
-            1 => 'Apto',
-            0 => 'Inapto',
-            default => 'Aguardando'
-        };
+        // Check actual value, not intval
+        $enabled = $tech['enabled'];
+        
+        // Strict type checking for status
+        if ($enabled === null || $enabled === '' || (is_string($enabled) && trim($enabled) === '')) {
+            $statusText = 'Aguardando';
+        } else if ($enabled === '1' || $enabled === 1) {
+            $statusText = 'Apto';
+        } else if ($enabled === '0' || $enabled === 0) {
+            $statusText = 'Inapto';
+        } else {
+            $statusText = 'Aguardando';
+        }
         
         fputcsv($output, [
             $tech['name'],
