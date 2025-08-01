@@ -52,11 +52,24 @@ try {
         $acceptedTeachers[(string)$row['teacher_id']] = $row['contract_info'];
     }
 
+    // Get all rejected teachers
+    $stmt = $conn->prepare("
+        SELECT teacher_id
+        FROM course_invitations 
+        WHERE course_id = :course_id 
+        AND teacher_type = :teacher_type
+        AND status = 'rejected'
+    ");
+    $stmt->execute([':course_id' => $courseId, ':teacher_type' => $teacherType]);
+    
+    $rejectedTeacherIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'teacher_id');
+
     $response = [
         'success' => true,
         'can_send_next' => count($pendingInvitations) === 0,
         'pending_teachers' => array_map('intval', $pendingTeacherIds),
         'accepted_teachers' => $acceptedTeachers,
+        'rejected_teachers' => array_map('intval', $rejectedTeacherIds),
         'hours_passed' => $pendingInvitations[0]['hours_passed'] ?? null
     ];
 
