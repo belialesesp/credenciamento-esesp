@@ -1,8 +1,7 @@
 <?php
-// pages/docente.php - Fixed version with proper header order
-session_start();
+// pages/docente.php
 require_once '../init.php'; 
-//require_once '../backend/classes/database.class.php';
+
 
 // Check authentication BEFORE any output
 if (!isset($_SESSION['user_id'])) {

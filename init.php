@@ -1,83 +1,36 @@
 <?php
-// init.php - Updated to work with roles table
-// Place this file in your ROOT directory
+// init.php - Core initialization file
+session_start();
+require_once __DIR__ . '/backend/classes/database.class.php';
 
-// Error reporting settings
-error_reporting(E_ALL & ~E_DEPRECATED);
-// For production, use:
-// error_reporting(0);
-// ini_set('display_errors', 0);
+// Initialize database connection
+$database = new Database();
+$conn = $database->connect();
 
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Initialize variables from session
+$user_id = $_SESSION['user_id'] ?? null;
+$user_name = $_SESSION['user_name'] ?? 'Usuário';
+$user_type = $_SESSION['user_type'] ?? null;
+$navbar = true; // Set to false on pages where navbar shouldn't appear
 
-// Include database class
-require_once(__DIR__ . "/backend/classes/database.class.php");
-
-// Create database connection
-try {
-    $conection = new Database();
-    $conn = $conection->connect();
-} catch (Exception $e) {
-    die("Database connection failed: " . $e->getMessage());
-}
-
-// Initialize user variables
-$user_name = '';
-$user_type = ''; // Kept for backward compatibility
-$user_email = '';
-$user_roles = []; // NEW: Array of user roles
-$is_admin = false;
-$is_authenticated = false;
-$navbar = false;
-$first_login = false;
-
-// Check if user is authenticated
-if(isset($_SESSION['user_id'])) {
-    $navbar = true;
-    $is_authenticated = true;
-    
-    // Get user details from session
-    $user_name = $_SESSION['user_name'] ?? '';
-    $user_email = $_SESSION['user_email'] ?? '';
-    $user_type = $_SESSION['user_type'] ?? ''; // Kept for backward compatibility
-    $first_login = $_SESSION['first_login'] ?? false;
-    
-    // NEW: Get user roles
-    if (isset($_SESSION['user_roles'])) {
-        $user_roles = $_SESSION['user_roles'];
-    } else {
-        // Fetch roles from database if not in session
-        $user_roles = getUserRolesById($_SESSION['user_id']);
-        $_SESSION['user_roles'] = $user_roles;
-    }
-    
-    // Check if user is admin
-    $is_admin = in_array('admin', $user_roles);
-}
-
-// Helper functions available throughout the application
+// User authentication check
 function isAuthenticated() {
     return isset($_SESSION['user_id']);
 }
 
-function isAdmin() {
-    $roles = $_SESSION['user_roles'] ?? [];
-    return in_array('admin', $roles);
-}
-
-// NEW: Check if user has a specific role
+// NEW: Role-based permission checks
 function hasRole($role) {
-    $roles = $_SESSION['user_roles'] ?? [];
-    return in_array($role, $roles);
+    $userRoles = $_SESSION['user_roles'] ?? [];
+    return in_array($role, $userRoles);
 }
 
-// NEW: Check if user has any of the specified roles
 function hasAnyRole($roles) {
     $userRoles = $_SESSION['user_roles'] ?? [];
     return !empty(array_intersect($userRoles, $roles));
+}
+
+function isAdmin() {
+    return hasRole('admin') || ($_SESSION['user_type'] === 'admin');
 }
 
 // NEW: Get user roles from database
@@ -106,6 +59,18 @@ function getUserType() {
     if (in_array('interprete', $roles)) return 'interpreter';
     
     return $_SESSION['user_type'] ?? null;
+}
+
+// MOVED HERE: Helper function for user type translation
+function translateUserType($user_type) {
+    $types = [
+        'admin' => 'Administrador',
+        'teacher' => 'Docente',
+        'postg_teacher' => 'Docente Pós-Graduação',
+        'technician' => 'Técnico',
+        'interpreter' => 'Intérprete'
+    ];
+    return $types[$user_type] ?? $user_type;
 }
 
 function getUserName() {
@@ -179,7 +144,7 @@ function requireAnyRole($roles) {
 // Get base path for redirects
 function getBasePath() {
     // Adjust this if your app is in a subdirectory
-    return '/credenciamento';
+    return '/credenciamento-esesp';
 }
 
 // NEW: Get primary role for display/routing
@@ -216,3 +181,4 @@ header('X-XSS-Protection: 1; mode=block');
 
 // Set default timezone (adjust as needed)
 date_default_timezone_set('America/Sao_Paulo');
+?>

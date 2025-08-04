@@ -161,17 +161,3 @@ $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
     
     <!-- Main content wrapper -->
     <main class="<?php echo isset($_SESSION['user_id']) ? 'py-4' : ''; ?>">
-
-<?php
-// Helper function for user type translation
-function translateUserType($user_type) {
-    $types = [
-        'admin' => 'Administrador',
-        'teacher' => 'Docente',
-        'postg_teacher' => 'Docente Pós-Graduação',
-        'technician' => 'Técnico',
-        'interpreter' => 'Intérprete'
-    ];
-    return $types[$user_type] ?? $user_type;
-}
-?>

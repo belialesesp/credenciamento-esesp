@@ -1,14 +1,14 @@
 <?php 
-  $date_now = getdate();
-  $year = $date_now['year'];
-
+// components/footer.php
+$date_now = getdate();
+$year = $date_now['year'];
 ?>
 
-
-<footer class="footer">
-
-  <p>EAD | Esesp <?= $year ?></p>
-
-</footer>
+    </main> <!-- Close the main tag opened in header.php -->
+    
+    <footer class="footer">
+        <p>EAD | Esesp <?= $year ?></p>
+    </footer>
+    
 </body>
 </html>

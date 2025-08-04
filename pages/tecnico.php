@@ -1,6 +1,6 @@
 <?php
 // pages/tecnico.php - Complete version with authentication
-session_start();
+
 require_once '../backend/classes/database.class.php';
 
 // Check authentication

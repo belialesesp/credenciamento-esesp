@@ -1,8 +1,8 @@
 <?php
-// pages/docente-pos.php - Complete version with authentication
-session_start();
+// pages/docente-pos.php
+
 require_once '../init.php'; 
-//require_once '../backend/classes/database.class.php';
+
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
