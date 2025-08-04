@@ -1,5 +1,5 @@
 <?php
-// pages/login.php - CPF Only Version
+// pages/login.php
 
 require_once('../init.php');
 

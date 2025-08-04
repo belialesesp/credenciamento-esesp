@@ -1,5 +1,5 @@
 <?php
-// auth/process_login.php - CPF Only Version
+// auth/process_login.php - Updated to work with roles
 session_start();
 require_once '../backend/classes/database.class.php';
 
@@ -36,38 +36,46 @@ function processUnifiedLogin($cpf, $password) {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($user && password_verify($password, $user['password_hash'])) {
+            // Get user roles
+            $roleStmt = $conn->prepare("SELECT role FROM user_roles WHERE user_id = ?");
+            $roleStmt->execute([$user['id']]);
+            $roles = $roleStmt->fetchAll(PDO::FETCH_COLUMN);
+            
             // Set session variables
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
             $_SESSION['user_email'] = $user['email'];
-            $_SESSION['user_type'] = $user['user_type'];
-            $_SESSION['type_id'] = $user['type_id'];
+            $_SESSION['user_type'] = $user['user_type']; // Keep for backward compatibility
+            $_SESSION['type_id'] = $user['type_id'] ?? $user['id']; // For backward compatibility
             $_SESSION['first_login'] = $user['first_login'];
+            $_SESSION['user_roles'] = $roles; // NEW: Store user roles
             
             $response['success'] = true;
             $response['message'] = 'Login realizado com sucesso!';
             
-            // Determine redirect based on user type
-            switch($user['user_type']) {
+            // Determine redirect based on primary role
+            $primaryRole = getPrimaryRole($roles);
+            
+            switch($primaryRole) {
                 case 'admin':
                     $response['redirect'] = '../pages/home.php';
                     break;
-                case 'teacher':
-                    $response['redirect'] = '../pages/docente.php?id=' . $user['type_id'];
+                case 'docente':
+                    $response['redirect'] = '../pages/docente.php?id=' . $user['id'];
                     break;
-                case 'postg_teacher':
-                    $response['redirect'] = '../pages/docente-pos.php?id=' . $user['type_id'];
+                case 'docente_pos':
+                    $response['redirect'] = '../pages/docente-pos.php?id=' . $user['id'];
                     break;
-                case 'technician':
+                case 'tecnico':
                     if (file_exists('../pages/tecnico.php')) {
-                        $response['redirect'] = '../pages/tecnico.php?id=' . $user['type_id'];
+                        $response['redirect'] = '../pages/tecnico.php?id=' . $user['id'];
                     } else {
                         $response['redirect'] = '../pages/home.php';
                     }
                     break;
-                case 'interpreter':
+                case 'interprete':
                     if (file_exists('../pages/interprete.php')) {
-                        $response['redirect'] = '../pages/interprete.php?id=' . $user['type_id'];
+                        $response['redirect'] = '../pages/interprete.php?id=' . $user['id'];
                     } else {
                         $response['redirect'] = '../pages/home.php';
                     }
@@ -75,6 +83,10 @@ function processUnifiedLogin($cpf, $password) {
                 default:
                     $response['redirect'] = '../pages/home.php';
             }
+            
+            // Log successful login
+            error_log("Successful login: User={$user['name']}, Roles=" . implode(',', $roles));
+            
         } else {
             $response['message'] = 'CPF ou senha inválidos!';
         }
@@ -84,6 +96,19 @@ function processUnifiedLogin($cpf, $password) {
     }
 
     return $response;
+}
+
+/**
+ * Get primary role for routing decisions
+ */
+function getPrimaryRole($roles) {
+    // Priority order: admin > docente_pos > docente > tecnico > interprete
+    if (in_array('admin', $roles)) return 'admin';
+    if (in_array('docente_pos', $roles)) return 'docente_pos';
+    if (in_array('docente', $roles)) return 'docente';
+    if (in_array('tecnico', $roles)) return 'tecnico';
+    if (in_array('interprete', $roles)) return 'interprete';
+    return null;
 }
 
 // Process POST request

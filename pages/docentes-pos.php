@@ -365,6 +365,23 @@ $_SESSION['user-data'] = $teachers;
     content: "⏱ ";
     font-size: 14px;
   }
+
+  .invitation-rejected {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+    font-weight: 500;
+  }
+
+  .invitation-rejected:before {
+    content: "✗ ";
+    font-size: 14px;
+  }
 </style>
 
 <div class="container">
@@ -704,24 +721,43 @@ Coordenação de Cursos
     // Sort by called_at when filtered by course
     if (isFilteredByCourse) {
       currentTeachers.sort((a, b) => {
-        // Check if either teacher has a pending invitation
+        // Check teacher statuses
         const courseSelect = document.getElementById('course');
         const selectedCourseId = courseSelect.value;
         const invitationStatus = invitationStatuses[selectedCourseId];
 
         let aPending = false;
         let bPending = false;
+        let aRejected = false;
+        let bRejected = false;
 
-        if (invitationStatus && invitationStatus.pending_teachers) {
-          aPending = invitationStatus.pending_teachers.includes(parseInt(a.id));
-          bPending = invitationStatus.pending_teachers.includes(parseInt(b.id));
+        if (invitationStatus) {
+          if (invitationStatus.pending_teachers) {
+            aPending = invitationStatus.pending_teachers.includes(parseInt(a.id));
+            bPending = invitationStatus.pending_teachers.includes(parseInt(b.id));
+          }
+          if (invitationStatus.rejected_teachers) {
+            aRejected = invitationStatus.rejected_teachers.includes(parseInt(a.id));
+            bRejected = invitationStatus.rejected_teachers.includes(parseInt(b.id));
+          }
         }
 
-        // If one is pending and the other isn't, pending goes to bottom
-        if (aPending && !bPending) return 1;
-        if (!aPending && bPending) return -1;
+        // Sorting priority:
+        // 1. Regular teachers (not pending, not rejected) sorted by called_at
+        // 2. Pending teachers at the bottom
+        // 3. Rejected teachers at the very bottom
 
-        // If both pending or both not pending, sort by called_at date
+        // If one is rejected and the other isn't, rejected goes to bottom
+        if (aRejected && !bRejected) return 1;
+        if (!aRejected && bRejected) return -1;
+
+        // If one is pending and the other isn't (and neither rejected), pending goes to bottom
+        if (!aRejected && !bRejected) {
+          if (aPending && !bPending) return 1;
+          if (!aPending && bPending) return -1;
+        }
+
+        // If both have same status (both regular, both pending, or both rejected), sort by called_at date
         let dateA = null;
         let dateB = null;
 
@@ -788,15 +824,30 @@ Coordenação de Cursos
         const invitationStatus = invitationStatuses[selectedCourseId];
 
         if (invitationStatus) {
+          // Convert teacher ID to appropriate formats
+          const teacherIdStr = String(teacher.id);
+          const teacherIdNum = parseInt(teacher.id);
+
+          // Check if this teacher has rejected the invitation
+          const hasRejectedInvitation = invitationStatus.rejected_teachers &&
+            invitationStatus.rejected_teachers.includes(teacherIdNum);
+
           // Check if this teacher has a pending invitation
           const hasPendingInvitation = invitationStatus.pending_teachers &&
-            invitationStatus.pending_teachers.includes(teacher.id);
+            invitationStatus.pending_teachers.includes(teacherIdNum);
 
-          // Check if this teacher has an accepted invitation
+          // Check if this teacher has accepted the invitation
           const isAcceptedTeacher = invitationStatus.accepted_teachers &&
-            invitationStatus.accepted_teachers.hasOwnProperty(teacher.id);
+            invitationStatus.accepted_teachers.hasOwnProperty(teacherIdStr);
 
-          if (hasPendingInvitation) {
+          if (hasRejectedInvitation) {
+            // Show "Recusado" for rejected teachers
+            const rejectedSpan = document.createElement('span');
+            rejectedSpan.className = 'invitation-rejected';
+            rejectedSpan.textContent = 'Recusado';
+            rejectedSpan.style.marginLeft = '10px';
+            nameCell.appendChild(rejectedSpan);
+          } else if (hasPendingInvitation) {
             // Show "Aguardando resposta" for pending teachers
             const pendingSpan = document.createElement('span');
             pendingSpan.className = 'invitation-pending';
@@ -804,7 +855,7 @@ Coordenação de Cursos
             pendingSpan.style.marginLeft = '10px';
             nameCell.appendChild(pendingSpan);
           } else if (isAcceptedTeacher) {
-            // Show contract textarea for any accepted teacher
+            // Show contract textarea for accepted teachers
             const contractDiv = document.createElement('div');
             contractDiv.style.display = 'inline-block';
             contractDiv.style.marginLeft = '10px';
@@ -816,7 +867,7 @@ Coordenação de Cursos
             const textarea = document.createElement('textarea');
             textarea.className = 'contract-textarea';
             textarea.placeholder = 'Informações do contrato...';
-            textarea.value = invitationStatus.accepted_teachers[teacher.id] || '';
+            textarea.value = invitationStatus.accepted_teachers[teacherIdStr] || '';
 
             const saveBtn = document.createElement('button');
             saveBtn.className = 'contract-save-btn';
@@ -832,8 +883,8 @@ Coordenação de Cursos
             nameCell.appendChild(contractDiv);
           }
 
-          // Handle invitation button only if not already handled and no pending invitation
-          if (!invitationHandled && !hasPendingInvitation && !isAcceptedTeacher) {
+          // Handle invitation button for first eligible teacher
+          if (!invitationHandled && !hasPendingInvitation && !hasRejectedInvitation && !isAcceptedTeacher) {
             if (invitationStatus.can_send_next && isFirstInList) {
               // Show send invitation button
               const actionButton = document.createElement('button');
@@ -856,7 +907,7 @@ Coordenação de Cursos
             }
           }
         } else if (!invitationHandled && isFirstInList) {
-          // No invitation sent yet, show button for first teacher
+          // No invitations sent yet, show button for first teacher
           const actionButton = document.createElement('button');
           actionButton.className = 'action-button';
           actionButton.textContent = 'Enviar Convite';

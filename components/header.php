@@ -1,4 +1,5 @@
-<?php require_once '../init.php'; 
+<?php 
+require_once '../init.php'; 
 $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';?>
 
 <!DOCTYPE html>
@@ -94,7 +95,6 @@ $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
               <li>
                 <a class="btn-link" href="cadastros.php">Cadastrar</a> 
               </li>
-              <li style="display: <?= $is_admin ? 'block' : 'none' ?>">Gerenciar cadastrados</li>
             </ul>
             <button class="btn header-btn" type="button" data-bs-toggle="modal" data-bs-target="#logoutModal">Sair</button>
           </nav>
