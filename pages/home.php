@@ -169,9 +169,6 @@ $type_id = $_SESSION['type_id'] ?? null;
                 <div class="card-body">
                     <p>Gerencie suas configurações de conta.</p>
                     <a href="change_password.php" class="btn btn-secondary">Alterar Senha</a>
-                    <?php if (isFirstLogin()): ?>
-                    <a href="complete_profile.php" class="btn btn-warning">Completar Perfil</a>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>

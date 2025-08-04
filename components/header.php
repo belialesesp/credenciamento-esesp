@@ -132,11 +132,6 @@ $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
                             <li><a class="dropdown-item" href="../pages/change_password.php">
                                 <i class="fas fa-key"></i> Alterar Senha
                             </a></li>
-                            <?php if (isFirstLogin()): ?>
-                            <li><a class="dropdown-item text-warning" href="../pages/complete_profile.php">
-                                <i class="fas fa-exclamation-triangle"></i> Completar Perfil
-                            </a></li>
-                            <?php endif; ?>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="../auth/logout.php">
                                 <i class="fas fa-sign-out-alt"></i> Sair
