@@ -58,7 +58,7 @@ $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
   <body>
     <!-- Navbar - only show if user is logged in -->
     <?php if (isset($_SESSION['user_id']) && $navbar): ?>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color:#59bcd9;">
         <div class="container">
             <a class="navbar-brand" href="/credenciamento-esesp">
                 <img src="../assets/Logo-02 esesp.png" alt="Logo" height="40"> Credenciamento ESESP
