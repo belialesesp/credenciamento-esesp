@@ -1,7 +1,8 @@
 <?php
 // pages/docente-pos.php - Complete version with authentication
 session_start();
-require_once '../backend/classes/database.class.php';
+require_once '../init.php'; 
+//require_once '../backend/classes/database.class.php';
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
@@ -12,7 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 // Check if user can access this profile
 $requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $user_type = $_SESSION['user_type'] ?? '';
-$is_admin = ($user_type === 'admin');
+$is_admin = isAdmin();
 $is_own_profile = false;
 
 if (!$requested_id) {

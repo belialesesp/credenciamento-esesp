@@ -37,7 +37,7 @@ $type_id = $_SESSION['type_id'] ?? null;
         </div>
     </div>
     
-    <?php if ($user_type === 'admin'): ?>
+    <?php if (isAdmin()): ?>
     <!-- Admin Dashboard -->
     <div class="row mt-4">
         <!-- Docentes Management -->

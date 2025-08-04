@@ -1,6 +1,8 @@
 <?php 
-require_once '../init.php'; 
-$is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';?>
+// components/header.php - Updated version with integrated navbar
+require_once __DIR__ . '/../init.php'; 
+$is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -51,55 +53,125 @@ $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
     <script src="https://cdn.jsdelivr.net/npm/inputmask@5.0.8/dist/inputmask.min.js" defer></script>
 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
   </head>
-
-  
-
   <body>
-    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModal" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5" id="modalTitle">Sair</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p>Tem certeza que deseja sair?</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-primary"><a href="../auth/logout.php" class="btn-link">Sair</a></button>
-          </div>
+    <!-- Navbar - only show if user is logged in -->
+    <?php if (isset($_SESSION['user_id']) && $navbar): ?>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/credenciamento-esesp">
+                <img src="../assets/Logo-02 esesp.png" alt="Logo" height="40"> Credenciamento ESESP
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <!-- Home link for all authenticated users -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="../pages/home.php">
+                            <i class="fas fa-home"></i> Início
+                        </a>
+                    </li>
+                    
+                    <?php if ($is_admin): ?>
+                        <!-- Admin menu -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-cog"></i> Administração
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="../pages/docentes.php">
+                                    <i class="fas fa-chalkboard-teacher"></i> Docentes
+                                </a></li>
+                                <li><a class="dropdown-item" href="../pages/docentes-pos.php">
+                                    <i class="fas fa-graduation-cap"></i> Docentes Pós
+                                </a></li>
+                                <li><a class="dropdown-item" href="../pages/tecnicos.php">
+                                    <i class="fas fa-tools"></i> Técnicos
+                                </a></li>
+                                <li><a class="dropdown-item" href="../pages/interpretes.php">
+                                    <i class="fas fa-sign-language"></i> Intérpretes
+                                </a></li>
+                            </ul>
+                        </li>
+                    <?php else: ?>
+                        <!-- Regular user - show their profile link -->
+                        <?php 
+                        $userType = $_SESSION['user_type'] ?? '';
+                        $userId = $_SESSION['user_id'] ?? 0;
+                        
+                        switch($userType) {
+                            case 'teacher':
+                                echo '<li class="nav-item"><a class="nav-link" href="../pages/docente.php?id=' . $userId . '"><i class="fas fa-user"></i> Meu Perfil</a></li>';
+                                break;
+                            case 'postg_teacher':
+                                echo '<li class="nav-item"><a class="nav-link" href="../pages/docente-pos.php?id=' . $userId . '"><i class="fas fa-user-graduate"></i> Meu Perfil</a></li>';
+                                break;
+                            case 'technician':
+                                echo '<li class="nav-item"><a class="nav-link" href="../pages/tecnico.php?id=' . $userId . '"><i class="fas fa-user-cog"></i> Meu Perfil</a></li>';
+                                break;
+                            case 'interpreter':
+                                echo '<li class="nav-item"><a class="nav-link" href="../pages/interprete.php?id=' . $userId . '"><i class="fas fa-hands"></i> Meu Perfil</a></li>';
+                                break;
+                        }
+                        ?>
+                    <?php endif; ?>
+                    
+                    <!-- User menu -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($user_name); ?>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><h6 class="dropdown-header">Tipo: <?php echo translateUserType($_SESSION['user_type'] ?? ''); ?></h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../pages/change_password.php">
+                                <i class="fas fa-key"></i> Alterar Senha
+                            </a></li>
+                            <?php if (isFirstLogin()): ?>
+                            <li><a class="dropdown-item text-warning" href="../pages/complete_profile.php">
+                                <i class="fas fa-exclamation-triangle"></i> Completar Perfil
+                            </a></li>
+                            <?php endif; ?>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../auth/logout.php">
+                                <i class="fas fa-sign-out-alt"></i> Sair
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
         </div>
-      </div>
-    </div>
-
-    <header>
-      <div class="container">
-        <div class="nav-content">
-          <figure>
-            <img
-              src="../assets/Logo-02 esesp.png"
-              alt="logo-esesp"
-              class="logo-esesp"
-            />
-            <img src="../assets/Logo-01 ead.png" alt="logo-ead" class="logo-ead" />
-          </figure>
-          <nav style="display: <?= $navbar ? 'flex' : 'none' ?>">
-            <ul>
-              <li>
-                <a class="btn-link" href="home.php">Home</a>
-              </li>
-              <li>
-                <a class="btn-link" href="cadastros.php">Cadastrar</a> 
-              </li>
-            </ul>
-            <button class="btn header-btn" type="button" data-bs-toggle="modal" data-bs-target="#logoutModal">Sair</button>
-          </nav>
-        </div>
-      </div>
-    </header>
+    </nav>
     
+    <?php if (isFirstLogin()): ?>
+    <!-- First login warning -->
+    <div class="alert alert-warning text-center mb-0 rounded-0">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Primeiro Acesso!</strong> Por favor, 
+        <a href="../pages/change_password.php" class="alert-link">altere sua senha</a> e 
+        <a href="../pages/complete_profile.php" class="alert-link">complete seu perfil</a>.
+    </div>
+    <?php endif; ?>
+    <?php endif; ?>
+    
+    <!-- Main content wrapper -->
+    <main class="<?php echo isset($_SESSION['user_id']) ? 'py-4' : ''; ?>">
 
+<?php
+// Helper function for user type translation
+function translateUserType($user_type) {
+    $types = [
+        'admin' => 'Administrador',
+        'teacher' => 'Docente',
+        'postg_teacher' => 'Docente Pós-Graduação',
+        'technician' => 'Técnico',
+        'interpreter' => 'Intérprete'
+    ];
+    return $types[$user_type] ?? $user_type;
+}
+?>

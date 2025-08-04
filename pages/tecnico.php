@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 // Check if user can access this profile
 $requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $user_type = $_SESSION['user_type'] ?? '';
-$is_admin = ($user_type === 'admin');
+$is_admin = hasRole('admin');
 $is_own_profile = false;
 
 if (!$requested_id) {
@@ -31,7 +31,7 @@ if (!$requested_id) {
 if ($is_admin) {
   // Admin can see all profiles
   $technician_id = $requested_id;
-} elseif ($_SESSION['user_type'] === 'technician' && $_SESSION['type_id'] == $requested_id) {
+} elseif (hasRole('tecnico') && $_SESSION['user_id'] == $requested_id) {
   // User viewing their own profile
   $technician_id = $requested_id;
   $is_own_profile = true;

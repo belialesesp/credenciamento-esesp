@@ -1,132 +1,229 @@
 <?php
-// pages/docente.php - Example of updated page using roles
+// pages/docente.php - Fixed version with proper header order
+session_start();
+require_once '../init.php'; 
+//require_once '../backend/classes/database.class.php';
 
-// Include the updated init.php
-require_once '../init.php';
-// Include styles and header
+// Check authentication BEFORE any output
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit();
+}
+
+// Check if user can access this profile
+$requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$user_type = $_SESSION['user_type'] ?? '';
+$is_admin = isAdmin();
+$is_own_profile = false;
+
+if (!$requested_id) {
+    // No ID provided
+    if (!$is_admin && $_SESSION['user_type'] === 'teacher') {
+        // Redirect to their own profile
+        header('Location: ?id=' . $_SESSION['type_id']);
+        exit();
+    } else {
+        header('Location: home.php');
+        exit();
+    }
+}
+
+// Check access permissions
+if ($is_admin) {
+    // Admin can see all profiles
+    $teacher_id = $requested_id;
+} elseif ($_SESSION['user_type'] === 'teacher' && $_SESSION['type_id'] == $requested_id) {
+    // User viewing their own profile
+    $teacher_id = $requested_id;
+    $is_own_profile = true;
+} else {
+    // Not authorized
+    header('Location: home.php');
+    exit();
+}
+
+// Get database connection
+$conection = new Database();
+$conn = $conection->connect();
+
+// Get teacher data BEFORE including header
+try {
+    // Using unified user table
+    $sql = "SELECT u.*, 
+            GROUP_CONCAT(ur.role) as roles
+            FROM user u
+            LEFT JOIN user_roles ur ON u.id = ur.user_id
+            WHERE u.id = :id
+            GROUP BY u.id";
+    
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([':id' => $teacher_id]);
+    $teacher = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$teacher) {
+        // Redirect if teacher not found
+        header('Location: home.php');
+        exit();
+    }
+
+    // Extract data
+    $name = $teacher['name'];
+    $document_number = $teacher['document_number'] ?? '';
+    $document_emissor = $teacher['document_emissor'] ?? '';
+    $document_uf = $teacher['document_uf'] ?? '';
+    $phone = $teacher['phone'] ?? '';
+    $cpf = $teacher['cpf'];
+    $email = $teacher['email'];
+    $special_needs = $teacher['special_needs'] ?? '';
+    $created_at = $teacher['created_at'];
+    $enabled = $teacher['enabled'] ?? null;
+    
+    // Address fields from unified table
+    $street = $teacher['street'] ?? '';
+    $number = $teacher['number'] ?? '';
+    $neighborhood = $teacher['neighborhood'] ?? '';
+    $city = $teacher['city'] ?? '';
+    $state = $teacher['state'] ?? '';
+    $zip_code = $teacher['zip_code'] ?? '';
+    
+    // Get roles
+    $userRoles = $teacher['roles'] ? explode(',', $teacher['roles']) : [];
+
+} catch (Exception $e) {
+    error_log("Error loading teacher data: " . $e->getMessage());
+    header('Location: home.php');
+    exit();
+}
+
+// NOW include the header after all redirects
 echo '<link rel="stylesheet" href="../styles/user.css">';
 include '../components/header.php';
 
 require_once '../pdf/assets/title_case.php';
-require_once '../backend/services/teacher.service.php';
-// Require authentication
-requireLogin();
 
-// Require teacher role (either docente or docente_pos)
-requireAnyRole(['docente', 'docente_pos']);
+// Status display
+$statusText = match ($enabled) {
+    1 => 'Apto',
+    0 => 'Inapto',
+    default => 'Aguardando aprovação',
+};
 
-// Get user ID from query parameter or session
-$userId = $_GET['id'] ?? getUserId();
+$statusClass = match ($enabled) {
+    1 => 'status-approved',
+    0 => 'status-not-approved',
+    default => 'status-pending',
+};
 
-// Verify the user can only see their own profile (unless admin)
-if ($userId != getUserId() && !isAdmin()) {
-    header('Location: ' . getBasePath() . '/pages/docente.php?id=' . getUserId());
-    exit;
+// Format date
+if ($created_at) {
+    $date = new DateTime($created_at);
+    $dateF = $date->format('d/m/Y H:i');
+} else {
+    $dateF = 'N/A';
 }
-
-// Fetch user data with roles
-try {
-    $stmt = $conn->prepare("
-        SELECT 
-            u.*,
-            GROUP_CONCAT(ur.role) as roles
-        FROM user u
-        LEFT JOIN user_roles ur ON u.id = ur.user_id
-        WHERE u.id = :id
-        GROUP BY u.id
-    ");
-    $stmt->execute(['id' => $userId]);
-    $userData = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$userData) {
-        $_SESSION['error'] = 'Usuário não encontrado.';
-        header('Location: ' . getBasePath() . '/pages/home.php');
-        exit;
-    }
-    
-    // Convert roles string to array
-    $userRoles = $userData['roles'] ? explode(',', $userData['roles']) : [];
-    
-} catch (Exception $e) {
-    error_log("Error fetching user data: " . $e->getMessage());
-    $_SESSION['error'] = 'Erro ao carregar dados do usuário.';
-    header('Location: ' . getBasePath() . '/pages/home.php');
-    exit;
-}
-
-// Check if user has specific permissions
-$isPostgTeacher = in_array('docente_pos', $userRoles);
-$canEditAllProfiles = isAdmin();
-
 ?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Área do Docente - <?php echo htmlspecialchars($userData['name']); ?></title>
-</head>
-<body>
-    <?php include '../includes/navbar.php'; ?>
+
+<div class="container">
+    <h1 class="main-title">Perfil do Docente</h1>
     
-    <div class="container">
-        <h1>Área do Docente</h1>
-        
-        <div class="user-info">
-            <h2><?php echo htmlspecialchars($userData['name']); ?></h2>
-            <p>Email: <?php echo htmlspecialchars($userData['email']); ?></p>
-            <p>CPF: <?php echo htmlspecialchars($userData['cpf']); ?></p>
-            
-            <!-- Show user roles -->
-            <div class="roles">
-                <h3>Perfis:</h3>
-                <ul>
-                    <?php foreach ($userRoles as $role): ?>
-                        <li><?php echo getRoleDisplayName($role); ?></li>
-                    <?php endforeach; ?>
-                </ul>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Informações Pessoais</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nome:</strong> <?= htmlspecialchars($name) ?></p>
+                            <p><strong>CPF:</strong> <?= htmlspecialchars($cpf) ?></p>
+                            <p><strong>Email:</strong> <?= htmlspecialchars($email) ?></p>
+                            <p><strong>Telefone:</strong> <?= htmlspecialchars($phone ?: 'Não informado') ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Documento:</strong> <?= htmlspecialchars($document_number ?: 'Não informado') ?></p>
+                            <?php if ($document_emissor): ?>
+                                <p><strong>Emissor:</strong> <?= htmlspecialchars($document_emissor) ?> - <?= htmlspecialchars($document_uf) ?></p>
+                            <?php endif; ?>
+                            <p><strong>Necessidades Especiais:</strong> <?= htmlspecialchars($special_needs ?: 'Nenhuma') ?></p>
+                            <p><strong>Cadastrado em:</strong> <?= $dateF ?></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Show roles -->
+                    <div class="mt-3">
+                        <p><strong>Perfis:</strong></p>
+                        <ul class="list-unstyled">
+                            <?php foreach ($userRoles as $role): ?>
+                                <li><span class="badge bg-info"><?= getRoleDisplayName($role) ?></span></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
             </div>
             
-            <!-- Show additional info if available -->
-            <?php if (!empty($userData['phone'])): ?>
-                <p>Telefone: <?php echo htmlspecialchars($userData['phone']); ?></p>
-            <?php endif; ?>
-            
-            <?php if (!empty($userData['document_number'])): ?>
-                <p>Documento: <?php echo htmlspecialchars($userData['document_number']); ?></p>
+            <?php if ($street || $city): ?>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Endereço</h5>
+                </div>
+                <div class="card-body">
+                    <?php if ($street): ?>
+                        <p><?= htmlspecialchars($street) ?><?= $number ? ', ' . htmlspecialchars($number) : '' ?></p>
+                    <?php endif; ?>
+                    <?php if ($neighborhood): ?>
+                        <p><?= htmlspecialchars($neighborhood) ?></p>
+                    <?php endif; ?>
+                    <?php if ($city || $state): ?>
+                        <p><?= htmlspecialchars($city) ?><?= $state ? ' - ' . htmlspecialchars($state) : '' ?></p>
+                    <?php endif; ?>
+                    <?php if ($zip_code): ?>
+                        <p>CEP: <?= htmlspecialchars($zip_code) ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
             <?php endif; ?>
         </div>
         
-        <!-- Show different options based on roles -->
-        <div class="actions">
-            <h3>Ações Disponíveis:</h3>
-            
-            <!-- All teachers can see these -->
-            <a href="edit_profile.php" class="btn">Editar Perfil</a>
-            <a href="my_courses.php" class="btn">Meus Cursos</a>
-            
-            <?php if ($isPostgTeacher): ?>
-                <!-- Only postgraduate teachers see this -->
-                <a href="postgrad_courses.png" class="btn">Cursos de Pós-Graduação</a>
-            <?php endif; ?>
-            
-            <?php if (isAdmin()): ?>
-                <!-- Admin-only options -->
-                <a href="manage_teacher.php?id=<?php echo $userId; ?>" class="btn btn-admin">Gerenciar Docente</a>
-                <a href="view_logs.php?user_id=<?php echo $userId; ?>" class="btn btn-admin">Ver Logs</a>
-            <?php endif; ?>
-        </div>
-        
-        <!-- First login message -->
-        <?php if (isFirstLogin()): ?>
-            <div class="alert alert-info">
-                <h4>Bem-vindo!</h4>
-                <p>Este é seu primeiro acesso. Por favor, complete seu perfil.</p>
-                <a href="complete_profile.php" class="btn btn-primary">Completar Perfil</a>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Status</h5>
+                </div>
+                <div class="card-body text-center">
+                    <span class="badge <?= $statusClass ?> fs-5 p-3">
+                        <?= $statusText ?>
+                    </span>
+                </div>
             </div>
-        <?php endif; ?>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Ações</h5>
+                </div>
+                <div class="card-body">
+                    <?php if ($is_own_profile || $is_admin): ?>
+                        <a href="edit_teacher.php?id=<?= $teacher_id ?>" class="btn btn-primary btn-sm mb-2 w-100">
+                            <i class="fas fa-edit"></i> Editar Perfil
+                        </a>
+                    <?php endif; ?>
+                    
+                    <?php if ($is_admin): ?>
+                        <a href="approve_teacher.php?id=<?= $teacher_id ?>" class="btn btn-success btn-sm mb-2 w-100">
+                            <i class="fas fa-check"></i> Gerenciar Aprovação
+                        </a>
+                        <a href="docentes.php" class="btn btn-secondary btn-sm w-100">
+                            <i class="fas fa-arrow-left"></i> Voltar para Lista
+                        </a>
+                    <?php else: ?>
+                        <a href="home.php" class="btn btn-secondary btn-sm w-100">
+                            <i class="fas fa-home"></i> Voltar ao Início
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <?php include '../includes/footer.php'; ?>
-</body>
-</html>
+</div>
+
+<?php include '../components/footer.php'; ?>
