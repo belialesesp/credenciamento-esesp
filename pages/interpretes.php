@@ -1,34 +1,33 @@
 <?php
-session_start();
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
-  header('Location: home.php');
-  exit();
-}
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
 require_once '../backend/classes/database.class.php';
 require_once '../backend/api/get_registers.php';
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check if user is admin using session-stored roles
+$isAdmin = $_SESSION['is_admin'] ?? false;
+
+// Helper function to truncate text
+function truncate_text($text, $length = 50)
+{
+    if (strlen($text) > $length) {
+        return substr($text, 0, $length) . '...';
+    }
+    return $text;
+}
 
 $conection = new Database();
 $conn = $conection->connect();
 
 // Get initial data - will be replaced by AJAX
 $interpreters = get_interpreters($conn);
+$_SESSION['user-data'] = $interpreters;
 
-// Function to truncate long text
-function truncate_text($text, $length = 50, $suffix = '...')
-{
-  $text = trim(preg_replace('/\s+/', ' ', $text));
-  if (strlen($text) <= $length) {
-    return $text;
-  }
-  $truncated = substr($text, 0, $length);
-  $lastSpace = strrpos($truncated, ' ');
-  if ($lastSpace !== false) {
-    $truncated = substr($truncated, 0, $lastSpace);
-  }
-  return $truncated . $suffix;
-}
 ?>
 
 <style>
@@ -138,6 +137,233 @@ function truncate_text($text, $length = 50, $suffix = '...')
     color: #333;
     font-weight: bold;
   }
+
+  /* Invitation styles */
+  .action-button {
+    margin-left: 10px;
+    padding: 4px 12px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .action-button:hover {
+    background-color: #218838;
+  }
+
+  .invitation-pending {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+    font-weight: 500;
+  }
+
+  .invitation-pending:before {
+    content: "⏱ ";
+    font-size: 14px;
+  }
+
+  .invitation-rejected {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+    font-weight: 500;
+  }
+
+  .invitation-rejected:before {
+    content: "✗ ";
+    font-size: 14px;
+  }
+
+  .invitation-accepted {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+    font-weight: 500;
+  }
+
+  .invitation-accepted:before {
+    content: "✓ ";
+    font-size: 14px;
+  }
+
+  /* Contract textarea styles */
+  .contract-textarea {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 13px;
+    resize: vertical;
+    min-height: 60px;
+    margin-top: 5px;
+    max-width: 300px;
+  }
+
+  .contract-label {
+    display: block;
+    font-weight: 600;
+    color: #28a745;
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+
+  .contract-save-btn {
+    padding: 4px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+
+  .contract-save-btn:hover {
+    background-color: #0056b3;
+  }
+
+  /* Modal Styles */
+  .modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: none;
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 0;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-header {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    color: #333;
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: #000;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #555;
+  }
+
+  .form-group p {
+    margin: 0;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  .form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background-color: #007bff;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background-color: #545b62;
+  }
 </style>
 
 <div class="container">
@@ -192,6 +418,54 @@ function truncate_text($text, $length = 50, $suffix = '...')
   </table>
 </div>
 
+<!-- Interpreter Invitation Modal -->
+<div id="invitationModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Enviar Convite para Intérprete</h2>
+      <span class="close" onclick="closeInvitationModal()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form id="invitationForm">
+        <input type="hidden" id="interpreterId" name="teacher_id">
+        <input type="hidden" id="interpreterEmail" name="teacher_email">
+        <input type="hidden" name="user_type" value="interpreter">
+        <input type="hidden" name="is_staff" value="true">
+
+        <div class="form-group">
+          <label><strong>Intérprete:</strong></label>
+          <p id="interpreterName"></p>
+        </div>
+
+        <div class="form-group">
+          <label for="messageSubject">Assunto:</label>
+          <input type="text" id="messageSubject" name="subject" class="form-control"
+            value="Convite para trabalho como intérprete" required>
+        </div>
+
+        <div class="form-group">
+          <label for="messageBody">Mensagem:</label>
+          <textarea id="messageBody" name="message" class="form-control" rows="6" required>
+            Prezado(a) Intérprete,
+
+            Gostaríamos de convidá-lo(a) para trabalhar conosco como intérprete.
+
+            Por favor, clique em um dos botões abaixo para aceitar ou recusar este convite.
+
+            Atenciosamente,
+            Coordenação
+          </textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Enviar Convite</button>
+          <button type="button" class="btn btn-secondary" onclick="closeInvitationModal()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
   // Global variables for sorting
   let allInterpreters = <?= json_encode($interpreters) ?>;
@@ -200,6 +474,117 @@ function truncate_text($text, $length = 50, $suffix = '...')
     column: 'called',
     direction: 'desc'
   };
+  let invitationStatuses = {};
+  const isAdmin = <?= json_encode($isAdmin) ?>;
+
+  // Modal functions
+  function openInvitationModal(userId, userName, userEmail) {
+    document.getElementById('interpreterId').value = userId;
+    document.getElementById('interpreterEmail').value = userEmail;
+    document.getElementById('interpreterName').textContent = userName;
+    document.getElementById('invitationModal').style.display = 'block';
+  }
+
+  function closeInvitationModal() {
+    document.getElementById('invitationModal').style.display = 'none';
+    document.getElementById('invitationForm').reset();
+  }
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    const modal = document.getElementById('invitationModal');
+    if (event.target == modal) {
+      closeInvitationModal();
+    }
+  }
+
+  // Form submission handler
+  document.getElementById('invitationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Enviando...';
+
+    const formData = new FormData(e.target);
+
+    try {
+      const response = await fetch('../backend/api/send_course_invitation.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      console.log("DEBUG: Send invitation result:", result);
+
+      if (result.success) {
+        alert('Convite enviado com sucesso!');
+        closeInvitationModal();
+
+        // Clear cache completely and refresh the data - LIKE TECHNICIANS
+        invitationStatuses = {};
+
+        // Force refresh of the data - LIKE TECHNICIANS
+        await fetchFilteredData();
+
+        // Force re-render the table - LIKE TECHNICIANS
+        await renderTable(currentInterpreters);
+
+      } else {
+        alert('Erro ao enviar convite: ' + (result.message || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Erro ao enviar convite. Tente novamente.');
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
+  });
+
+  async function checkInvitationStatus(interpreterId) {
+    try {
+      const response = await fetch(`../backend/api/check_course_invitation_status.php?user_id=${interpreterId}&is_staff=true`);
+      const data = await response.json();
+      console.log("DEBUG: checkInvitationStatus for ID", interpreterId, "returned:", data); // ADD THIS
+
+      if (data.success) {
+        return data;
+      }
+    } catch (error) {
+      console.error('Error checking invitation status:', error);
+    }
+    return null;
+  }
+
+  async function saveContractInfo(userId, contractInfo) {
+    try {
+      const response = await fetch('save_contract_info.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          contract_info: contractInfo
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Informações do contrato salvas com sucesso!');
+        // Refresh the table to show updated information
+        loadInterpreters();
+      } else {
+        alert('Erro ao salvar informações do contrato: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Error saving contract info:', error);
+      alert('Erro ao salvar informações do contrato.');
+    }
+  }
 
   // Load initial data
   document.addEventListener('DOMContentLoaded', function() {
@@ -210,14 +595,12 @@ function truncate_text($text, $length = 50, $suffix = '...')
         handleSort(sortColumn);
       });
     });
-    fetchFilteredData(); // Load data on page load
+
     // Set up filter handler
     document.getElementById('status').addEventListener('change', filterInterpreters);
 
-    // Initial sort and render with called_at as default
-    sortInterpreters();
-    renderTable(currentInterpreters);
-    updateStats();
+    // Load data and render table - ONLY call fetchFilteredData
+    fetchFilteredData();
 
     // Show that we're sorted by called_at by default
     const calledHeader = document.querySelector('th:nth-child(4)');
@@ -225,6 +608,7 @@ function truncate_text($text, $length = 50, $suffix = '...')
       calledHeader.innerHTML = 'Data de Chamada <span style="font-size: 12px;">↓</span>';
     }
   });
+
 
   // Sorting function
   function handleSort(column) {
@@ -262,51 +646,30 @@ function truncate_text($text, $length = 50, $suffix = '...')
 
   function sortInterpreters() {
     currentInterpreters.sort((a, b) => {
-      let compareResult = 0;
+      // Priority 1: Users without called_at come first
+      const hasCalledAtA = a.called_at && a.called_at.trim() !== '';
+      const hasCalledAtB = b.called_at && b.called_at.trim() !== '';
 
-      if (currentSort.column === 'name') {
-        // Normalize names: trim whitespace and handle case properly
-        const nameA = (a.name || '').trim();
-        const nameB = (b.name || '').trim();
+      if (!hasCalledAtA && hasCalledAtB) return -1; // A comes first (no called_at)
+      if (hasCalledAtA && !hasCalledAtB) return 1; // B comes first (no called_at)
 
-        // Use localeCompare with proper options for Portuguese sorting
-        compareResult = nameA.localeCompare(nameB, 'pt-BR', {
-          numeric: true,
-          sensitivity: 'accent' // Considers accents but ignores case
-        });
-
-      } else if (currentSort.column === 'created') {
-        const dateA = new Date(a.created_at);
-        const dateB = new Date(b.created_at);
-        compareResult = dateA - dateB;
-
-      } else if (currentSort.column === 'called') {
-        // Handle null values - always put them at the end
-        const dateA = a.called_at ? new Date(a.called_at) : null;
-        const dateB = b.called_at ? new Date(b.called_at) : null;
-
-        if (dateA === null && dateB === null) {
-          compareResult = 0;
-        } else if (dateA === null) {
-          return 1; // Always put nulls at the end
-        } else if (dateB === null) {
-          return -1; // Always put nulls at the end
-        } else {
-          // Both have dates - for desc order, newer dates should come first
-          compareResult = currentSort.direction === 'desc' ? dateB - dateA : dateA - dateB;
-        }
+      // Priority 2: If both have called_at, sort by called_at date (oldest first)
+      if (hasCalledAtA && hasCalledAtB) {
+        const dateA = parseDate(a.called_at);
+        const dateB = parseDate(b.called_at);
+        return dateA - dateB; // Oldest first
       }
 
-      // Apply sort direction only if not already handled
-      if (currentSort.column !== 'called') {
-        return currentSort.direction === 'asc' ? compareResult : -compareResult;
-      }
-
-      return compareResult;
+      // Priority 3: If neither has called_at, sort by creation date (oldest first)
+      const createdA = new Date(a.created_at);
+      const createdB = new Date(b.created_at);
+      return createdA - createdB; // Oldest first
     });
   }
 
-  function fetchFilteredData() {
+  async function fetchFilteredData() {
+
+
     const status = document.getElementById('status').value;
     const name = document.getElementById('name').value;
 
@@ -314,33 +677,43 @@ function truncate_text($text, $length = 50, $suffix = '...')
     if (status) queryParams.append('status', status);
     if (name) queryParams.append('name', name);
 
-    fetch('../backend/api/get_filtered_interpreters.php?' + queryParams.toString())
-      .then(response => response.json())
-      .then(data => {
-        // Store the data
-        allInterpreters = data;
-        currentInterpreters = [...data];
+    try {
+      const response = await fetch('../backend/api/get_filtered_interpreters.php?' + queryParams.toString());
+      const data = await response.json();
 
-        // Apply any additional filters if needed
-        filterInterpreters();
-      })
-      .catch(error => console.error('Error:', error));
+
+      // Store the data
+      allInterpreters = data;
+      currentInterpreters = [...data];
+
+      // Re-sort and re-render with the new data
+      sortInterpreters();
+      renderTable(currentInterpreters);
+      updateStats();
+    } catch (error) {
+      console.error('Error:', error);
+    }
   }
 
-  // Also add the filterInterpreters function if it doesn't exist
   function filterInterpreters() {
     const statusFilter = document.getElementById('status').value;
+    const nameFilter = document.getElementById('name').value.toLowerCase();
 
-    if (!statusFilter) {
+    if (!statusFilter && !nameFilter) {
       currentInterpreters = [...allInterpreters];
-    } else if (statusFilter === 'null') {
-      currentInterpreters = allInterpreters.filter(i =>
-        i.enabled === null || i.enabled === ''
-      );
     } else {
-      currentInterpreters = allInterpreters.filter(i =>
-        String(i.enabled) === statusFilter
-      );
+      currentInterpreters = allInterpreters.filter(i => {
+        // Status filter
+        const statusMatch = !statusFilter ||
+          (statusFilter === 'null' ? (i.enabled === null || i.enabled === '') :
+            String(i.enabled) === statusFilter);
+
+        // Name filter
+        const nameMatch = !nameFilter ||
+          (i.name && i.name.toLowerCase().includes(nameFilter));
+
+        return statusMatch && nameMatch;
+      });
     }
 
     sortInterpreters();
@@ -354,16 +727,65 @@ function truncate_text($text, $length = 50, $suffix = '...')
     window.nameFilterTimeout = setTimeout(fetchFilteredData, 300);
   });
 
-  function renderTable(interpreters) {
+  async function renderTable(interpreters) {
+  console.log("DEBUG: Checking interpreters:", interpreters.map(i => ({id: i.id, name: i.name})));
     const tbody = document.getElementById('interpretersTableBody');
-    tbody.innerHTML = '';
+    tbody.innerHTML = ''; // Clear table completely
 
     if (interpreters.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum intérprete encontrado</td></tr>';
       return;
     }
 
-    interpreters.forEach(interpreter => {
+    // Sort interpreters by priority: no called_at first, then by oldest created_at
+    const sortedInterpreters = [...interpreters].sort((a, b) => {
+      // Priority 1: Users without called_at come first
+      const hasCalledAtA = a.called_at && a.called_at.trim() !== '';
+      const hasCalledAtB = b.called_at && b.called_at.trim() !== '';
+
+      if (!hasCalledAtA && hasCalledAtB) return -1; // A comes first (no called_at)
+      if (hasCalledAtA && !hasCalledAtB) return 1; // B comes first (no called_at)
+
+      // Priority 2: If both have no called_at, sort by creation date (oldest first)
+      if (!hasCalledAtA && !hasCalledAtB) {
+        const createdA = new Date(a.created_at);
+        const createdB = new Date(b.created_at);
+        return createdA - createdB; // Oldest first
+      }
+
+      // Priority 3: If both have called_at, sort by called_at date (oldest first)
+      const dateA = parseDate(a.called_at);
+      const dateB = parseDate(b.called_at);
+      return dateA - dateB; // Oldest first
+    });
+
+    // Check invitation status for all interpreters first
+    const interpreterInvitationStatuses = {};
+    for (const interpreter of sortedInterpreters) {
+      if (interpreter.enabled == 1) { // Only check for "Apto" interpreters
+        interpreterInvitationStatuses[interpreter.id] = await checkInvitationStatus(interpreter.id);
+      }
+    }
+
+    // Find the interpreter who should get the invite button
+    let interpreterToInvite = null;
+    for (const interpreter of sortedInterpreters) {
+      // Only consider "Apto" interpreters
+      if (interpreter.enabled != 1) continue;
+
+      const invitationStatus = interpreterInvitationStatuses[interpreter.id];
+
+      if (!invitationStatus ||
+        (!invitationStatus.has_pending &&
+          !invitationStatus.is_accepted &&
+          !invitationStatus.is_rejected)) {
+        interpreterToInvite = interpreter;
+        break;
+      }
+    }
+
+    // Now render using the sorted interpreters array
+    for (const interpreter of sortedInterpreters) {
       const enabled = interpreter.enabled == 1 ? 'Apto' :
         interpreter.enabled == 0 ? 'Inapto' : 'Aguardando';
 
@@ -378,31 +800,144 @@ function truncate_text($text, $length = 50, $suffix = '...')
           minute: '2-digit'
         });
 
-      // Format called_at date
+      // Date formatting
       let calledDateF = '-';
       if (interpreter.called_at) {
-        const calledDate = new Date(interpreter.called_at);
-        calledDateF = calledDate.toLocaleDateString('pt-BR');
+        const calledDate = parseDate(interpreter.called_at);
+        if (!isNaN(calledDate.getTime())) {
+          calledDateF = calledDate.toLocaleDateString('pt-BR');
+        } else {
+          calledDateF = 'Data inválida';
+          console.warn('Invalid date format:', interpreter.called_at);
+        }
       }
 
       // Create row element
       const row = document.createElement('tr');
       row.className = 'interpreter-row';
       row.style.cursor = 'pointer';
-      row.onclick = () => {
+
+      // Name cell with invitation status
+      const nameCell = document.createElement('td');
+      nameCell.textContent = titleCase(interpreter.name);
+
+      // Get invitation status from our pre-fetched data
+      const invitationStatus = interpreterInvitationStatuses[interpreter.id];
+
+      if (invitationStatus) {
+        if (invitationStatus.has_pending) {
+          const pendingSpan = document.createElement('span');
+          pendingSpan.className = 'invitation-pending';
+          pendingSpan.textContent = 'Aguardando resposta';
+          pendingSpan.style.marginLeft = '10px';
+          nameCell.appendChild(pendingSpan);
+        } else if (invitationStatus.is_accepted) {
+          const acceptedSpan = document.createElement('span');
+          acceptedSpan.className = 'invitation-accepted';
+          acceptedSpan.textContent = 'Contratado';
+          acceptedSpan.style.marginLeft = '10px';
+          nameCell.appendChild(acceptedSpan);
+
+          // Add contract textarea for accepted staff
+          const contractDiv = document.createElement('div');
+          contractDiv.style.display = 'inline-block';
+          contractDiv.style.marginLeft = '10px';
+
+          const label = document.createElement('label');
+          label.className = 'contract-label';
+          label.textContent = 'Contrato:';
+
+          const textarea = document.createElement('textarea');
+          textarea.className = 'contract-textarea';
+          textarea.placeholder = 'Informações do contrato...';
+          textarea.value = invitationStatus.contract_info || '';
+
+          const saveBtn = document.createElement('button');
+          saveBtn.className = 'contract-save-btn';
+          saveBtn.textContent = 'Salvar';
+          saveBtn.onclick = (e) => {
+            e.stopPropagation();
+            saveContractInfo(interpreter.id, textarea.value);
+          };
+
+          contractDiv.appendChild(label);
+          contractDiv.appendChild(textarea);
+          contractDiv.appendChild(saveBtn);
+          nameCell.appendChild(contractDiv);
+        } else if (invitationStatus.is_rejected) {
+          const rejectedSpan = document.createElement('span');
+          rejectedSpan.className = 'invitation-rejected';
+          rejectedSpan.textContent = 'Recusado';
+          rejectedSpan.style.marginLeft = '10px';
+          nameCell.appendChild(rejectedSpan);
+        } else if (isAdmin && interpreter.enabled == 1) {
+          // SHOW INVITE BUTTON for all APTO interpreters without status
+          const inviteBtn = document.createElement('button');
+          inviteBtn.className = 'action-button';
+          inviteBtn.textContent = 'Enviar Convite';
+          inviteBtn.onclick = (e) => {
+            e.stopPropagation();
+            openInvitationModal(
+              interpreter.id,
+              interpreter.name,
+              interpreter.email
+            );
+          };
+          nameCell.appendChild(inviteBtn);
+        }
+      } else if (isAdmin && interpreterToInvite && interpreterToInvite.id === interpreter.id && interpreter.enabled == 1) {
+        // SHOW INVITE BUTTON only for the selected APTO interpreter
+        const inviteBtn = document.createElement('button');
+        inviteBtn.className = 'action-button';
+        inviteBtn.textContent = 'Enviar Convite';
+        inviteBtn.onclick = (e) => {
+          e.stopPropagation();
+          openInvitationModal(
+            interpreter.id,
+            interpreter.name,
+            interpreter.email
+          );
+        };
+        nameCell.appendChild(inviteBtn);
+      }
+
+      row.appendChild(nameCell);
+
+      // Email cell
+      const emailCell = document.createElement('td');
+      emailCell.textContent = interpreter.email.toLowerCase();
+      row.appendChild(emailCell);
+
+      // Created at cell
+      const createdCell = document.createElement('td');
+      createdCell.textContent = createdDateF;
+      row.appendChild(createdCell);
+
+      // Called at cell
+      const calledCell = document.createElement('td');
+      calledCell.textContent = calledDateF;
+      row.appendChild(calledCell);
+
+      // Status cell
+      const statusCell = document.createElement('td');
+      const statusSpan = document.createElement('span');
+      statusSpan.className = statusClass;
+      statusSpan.textContent = enabled;
+      statusCell.appendChild(statusSpan);
+      row.appendChild(statusCell);
+
+      // Click handler for row
+      row.onclick = (e) => {
+        if (e.target.closest('button, textarea, input')) {
+          return;
+        }
         window.location.href = `interprete.php?id=${interpreter.id}`;
       };
 
-      row.innerHTML = `
-      <td>${titleCase(interpreter.name)}</td>
-      <td>${interpreter.email.toLowerCase()}</td>
-      <td>${createdDateF}</td>
-      <td>${calledDateF}</td>
-      <td><span class="${statusClass}">${enabled}</span></td>
-    `;
-
       tbody.appendChild(row);
-    });
+    }
+
+    console.log("DEBUG: Table rendering complete");
   }
 
   function updateStats() {
@@ -421,6 +956,23 @@ function truncate_text($text, $length = 50, $suffix = '...')
     }
   }
 
+  // Helper function to parse dates in different formats
+  function parseDate(dateString) {
+    if (!dateString) return new Date(NaN);
+
+    if (dateString.includes('/')) {
+      // Handle "DD/MM/YYYY" format
+      const [day, month, year] = dateString.split('/');
+      return new Date(`${year}-${month}-${day}`);
+    } else if (dateString.includes('-')) {
+      // Handle "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" format
+      return new Date(dateString);
+    } else {
+      console.warn('Unknown date format:', dateString);
+      return new Date(NaN);
+    }
+  }
+
   // Title case function
   function titleCase(str) {
     if (!str) return '';
@@ -428,103 +980,104 @@ function truncate_text($text, $length = 50, $suffix = '...')
       return match.toUpperCase();
     });
   }
-function exportToExcel() {
-  const button = document.getElementById('export-btn');
-  const originalText = button.innerHTML;
-  
-  // Disable button and show loading
-  button.disabled = true;
-  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-  
-  // Get current filters
-  const status = document.getElementById('status').value;
-  const name = document.getElementById('name').value;
-  
-  const queryParams = new URLSearchParams();
-  if (status) queryParams.append('status', status);
-  if (name) queryParams.append('name', name);
-  
-  // Call the backend API
-  fetch(`../backend/api/export_interpreters_excel.php?${queryParams}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Erro na resposta do servidor');
-      }
-      return response.blob();
-    })
-    .then(blob => {
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `interpreters_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      // Reset button
-      button.disabled = false;
-      button.innerHTML = originalText;
-    })
-    .catch(error => {
-      console.error('Erro na exportação:', error);
-      alert('Erro ao exportar para Excel. Tente novamente.');
-      
-      // Reset button
-      button.disabled = false;
-      button.innerHTML = originalText;
-    });
-}
 
-function exportToPDF() {
-  const button = document.getElementById('export-pdf-btn');
-  const originalText = button.innerHTML;
-  
-  // Disable button and show loading
-  button.disabled = true;
-  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-  
-  // Get current filters
-  const status = document.getElementById('status').value;
-  const name = document.getElementById('name').value;
-  
-  const queryParams = new URLSearchParams();
-  if (status) queryParams.append('status', status);
-  if (name) queryParams.append('name', name);
-  
-  // Call the backend API
-  fetch(`../backend/api/export_interpreters_pdf.php?${queryParams}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Erro na resposta do servidor');
-      }
-      return response.blob();
-    })
-    .then(blob => {
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `interpreters_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      // Reset button
-      button.disabled = false;
-      button.innerHTML = originalText;
-    })
-    .catch(error => {
-      console.error('Erro na exportação:', error);
-      alert('Erro ao exportar PDF. Tente novamente.');
-      
-      // Reset button
-      button.disabled = false;
-      button.innerHTML = originalText;
-    });
-}
+  function exportToExcel() {
+    const button = document.getElementById('export-btn');
+    const originalText = button.innerHTML;
+
+    // Disable button and show loading
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+
+    // Get current filters
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value;
+
+    const queryParams = new URLSearchParams();
+    if (status) queryParams.append('status', status);
+    if (name) queryParams.append('name', name);
+
+    // Call the backend API
+    fetch(`../backend/api/export_interpreters_excel.php?${queryParams}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro na resposta do servidor');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `interpreters_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = originalText;
+      })
+      .catch(error => {
+        console.error('Erro na exportação:', error);
+        alert('Erro ao exportar para Excel. Tente novamente.');
+
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = originalText;
+      });
+  }
+
+  function exportToPDF() {
+    const button = document.getElementById('export-pdf-btn');
+    const originalText = button.innerHTML;
+
+    // Disable button and show loading
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+
+    // Get current filters
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value;
+
+    const queryParams = new URLSearchParams();
+    if (status) queryParams.append('status', status);
+    if (name) queryParams.append('name', name);
+
+    // Call the backend API
+    fetch(`../backend/api/export_interpreters_pdf.php?${queryParams}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro na resposta do servidor');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `interpreters_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = originalText;
+      })
+      .catch(error => {
+        console.error('Erro na exportação:', error);
+        alert('Erro ao exportar PDF. Tente novamente.');
+
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = originalText;
+      });
+  }
 </script>
 
 <?php include '../components/footer.php'; ?>

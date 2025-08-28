@@ -4,6 +4,11 @@ require_once '../classes/database.class.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $name = $_GET['name'] ?? '';
 $category = $_GET['category'] ?? '';
 $course = $_GET['course'] ?? '';
@@ -15,14 +20,16 @@ try {
 
     // Handle 'sem disciplinas' (no-disciplines) filter separately
     if ($status === 'no-disciplines') {
-        // Get teachers with NO disciplines at all - REMOVED t.cpf
-        $sql = "SELECT t.id, t.name, t.email, t.phone, t.created_at, 
-                t.document_number, t.document_emissor, t.document_uf, 
-                t.special_needs, t.address_id 
-                FROM teacher t
-                WHERE NOT EXISTS (
+        // Get teachers (users with role 'docente') with NO disciplines at all
+        $sql = "SELECT u.id, u.name, u.email, u.phone, u.created_at, 
+                u.document_number, u.document_emissor, u.document_uf, 
+                u.special_needs, u.address_id 
+                FROM user u
+                INNER JOIN user_roles ur ON u.id = ur.user_id
+                WHERE ur.role = 'docente'
+                AND NOT EXISTS (
                     SELECT 1 FROM teacher_disciplines td 
-                    WHERE td.teacher_id = t.id
+                    WHERE td.user_id = u.id
                 )";
 
         $params = [];
@@ -31,12 +38,18 @@ try {
         if ($category !== '') {
             $sql .= " AND EXISTS (
                 SELECT 1 FROM teacher_activities ta 
-                WHERE ta.teacher_id = t.id AND ta.activity_id = :category
+                WHERE ta.user_id = u.id AND ta.activity_id = :category
             )";
             $params[':category'] = $category;
         }
 
-        $sql .= " ORDER BY t.created_at ASC";
+        // Apply name filter if present
+        if ($name !== '') {
+            $sql .= " AND u.name LIKE :name";
+            $params[':name'] = '%' . $name . '%';
+        }
+
+        $sql .= " ORDER BY u.created_at ASC";
 
         $stmt = $conn->prepare($sql);
         $stmt->execute($params);
@@ -51,48 +64,45 @@ try {
         exit;
     }
 
-    // Get teachers matching filters (for all other cases) - REMOVED t.cpf
-    $sql = "SELECT DISTINCT t.id, t.name, t.email, t.phone, t.created_at,
-            t.document_number, t.document_emissor, t.document_uf, 
-            t.special_needs, t.address_id 
-            FROM teacher t";
-    $joins = [];
-    $where = [];
+    // Get teachers (users with role 'docente') matching filters (for all other cases)
+    $sql = "SELECT DISTINCT u.id, u.name, u.email, u.phone, u.created_at,
+            u.document_number, u.document_emissor, u.document_uf, 
+            u.special_needs, u.address_id 
+            FROM user u
+            INNER JOIN user_roles ur ON u.id = ur.user_id
+            LEFT JOIN teacher_disciplines td ON u.id = td.user_id
+            LEFT JOIN teacher_activities ta ON u.id = ta.user_id
+            WHERE ur.role = 'docente'";
+    
     $params = [];
 
-
+    // Apply filters
     if ($category !== '') {
-        $joins[] = "INNER JOIN teacher_activities ta ON t.id = ta.teacher_id";
-        $where[] = "ta.activity_id = :category";
+        $sql .= " AND ta.activity_id = :category";
         $params[':category'] = $category;
     }
 
-    // Always use LEFT JOIN for disciplines to include teachers without disciplines
-    $joins[] = "LEFT JOIN teacher_disciplines td ON t.id = td.teacher_id";
-
     if ($course !== '') {
-        $where[] = "td.discipline_id = :course";
+        $sql .= " AND td.discipline_id = :course";
         $params[':course'] = $course;
     }
+    
     if ($name !== '') {
-        $where[] = "t.name LIKE :name";
+        $sql .= " AND u.name LIKE :name";
         $params[':name'] = '%' . $name . '%';
     }
+    
     // Use BINARY for exact comparison to avoid type coercion issues
     if ($status === '1') {
-        $where[] = "BINARY td.enabled = '1'";
+        $sql .= " AND BINARY td.enabled = '1'";
     } else if ($status === '0') {
-        $where[] = "BINARY td.enabled = '0'";
+        $sql .= " AND BINARY td.enabled = '0'";
     } else if ($status === 'null') {
         // Use BINARY to ensure '0' doesn't match empty string
-        $where[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
+        $sql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
     }
 
-    $sql .= ' ' . implode(' ', $joins);
-    if (!empty($where)) {
-        $sql .= ' WHERE ' . implode(' AND ', $where);
-    }
-    $sql .= ' ORDER BY t.created_at ASC';
+    $sql .= ' ORDER BY u.created_at ASC';
 
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
@@ -109,10 +119,10 @@ try {
                 td.called_at
             FROM teacher_disciplines td
             INNER JOIN disciplinas d ON td.discipline_id = d.id
-            WHERE td.teacher_id = :teacher_id
+            WHERE td.user_id = :user_id
         ";
 
-        $discParams = [':teacher_id' => $teacher['id']];
+        $discParams = [':user_id' => $teacher['id']];
 
         if ($course !== '') {
             $discSql .= " AND d.id = :course";
@@ -172,8 +182,25 @@ try {
     }
 
     echo json_encode($result, JSON_UNESCAPED_UNICODE);
-} catch (Exception $e) {
-    error_log("Error in get_filtered_teachers.php: " . $e->getMessage());
+} catch (PDOException $e) {
+    // More specific database error handling
+    error_log("Database Error in get_filtered_teachers.php: " . $e->getMessage());
+    error_log("SQL Error Code: " . $e->getCode());
+    error_log("SQL Query: " . $sql);
+    error_log("SQL Parameters: " . print_r($params, true));
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode([
+        'error' => 'Database error occurred',
+        'message' => $e->getMessage(),
+        'code' => $e->getCode(),
+        'sql' => $sql
+    ]);
+} catch (Exception $e) {
+    error_log("General Error in get_filtered_teachers.php: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'An unexpected error occurred',
+        'message' => $e->getMessage()
+    ]);
 }

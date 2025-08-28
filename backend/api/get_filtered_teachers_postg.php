@@ -1,5 +1,5 @@
 <?php
-// backend/api/get_filtered_teachers_postg.php - FIXED VERSION
+// backend/api/get_filtered_teachers_postg.php - UPDATED VERSION
 require_once '../classes/database.class.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -15,11 +15,16 @@ try {
 
     // Handle 'sem disciplinas' (no-disciplines) filter separately
     if ($status === 'no-disciplines') {
-        // Get teachers with NO disciplines at all
-        $sql = "SELECT t.* FROM postg_teacher t
-                WHERE NOT EXISTS (
+        // Get postgraduate teachers (users with role 'docente_pos') with NO disciplines at all
+        $sql = "SELECT u.id, u.name, u.email, u.phone, u.created_at, 
+                u.document_number, u.document_emissor, u.document_uf, 
+                u.special_needs, u.address_id 
+                FROM user u
+                INNER JOIN user_roles ur ON u.id = ur.user_id
+                WHERE ur.role = 'docente_pos'
+                AND NOT EXISTS (
                     SELECT 1 FROM postg_teacher_disciplines td 
-                    WHERE td.teacher_id = t.id
+                    WHERE td.user_id = u.id
                 )";
 
         $params = [];
@@ -28,12 +33,18 @@ try {
         if ($category !== '') {
             $sql .= " AND EXISTS (
                 SELECT 1 FROM postg_teacher_activities ta 
-                WHERE ta.teacher_id = t.id AND ta.activity_id = :category
+                WHERE ta.user_id = u.id AND ta.activity_id = :category
             )";
             $params[':category'] = $category;
         }
 
-        $sql .= " ORDER BY t.created_at ASC";
+        // Apply name filter if present
+        if ($name !== '') {
+            $sql .= " AND u.name LIKE :name";
+            $params[':name'] = '%' . $name . '%';
+        }
+
+        $sql .= " ORDER BY u.created_at ASC";
 
         $stmt = $conn->prepare($sql);
         $stmt->execute($params);
@@ -48,29 +59,37 @@ try {
         exit;
     }
 
-    // Get teachers matching filters (for all other cases)
-    $sql = "SELECT DISTINCT t.* FROM postg_teacher t";
+    // Get postgraduate teachers (users with role 'docente_pos') matching filters
+    $sql = "SELECT DISTINCT u.id, u.name, u.email, u.phone, u.created_at,
+            u.document_number, u.document_emissor, u.document_uf, 
+            u.special_needs, u.address_id 
+            FROM user u
+            INNER JOIN user_roles ur ON u.id = ur.user_id
+            WHERE ur.role = 'docente_pos'";
+    
     $joins = [];
     $where = [];
     $params = [];
 
     if ($category !== '') {
-        $joins[] = "INNER JOIN postg_teacher_activities ta ON t.id = ta.teacher_id";
+        $joins[] = "INNER JOIN postg_teacher_activities ta ON u.id = ta.user_id";
         $where[] = "ta.activity_id = :category";
         $params[':category'] = $category;
     }
 
     // Always use LEFT JOIN for disciplines to include teachers without disciplines
-    $joins[] = "LEFT JOIN postg_teacher_disciplines td ON t.id = td.teacher_id";
+    $joins[] = "LEFT JOIN postg_teacher_disciplines td ON u.id = td.user_id";
 
     if ($course !== '') {
         $where[] = "td.discipline_id = :course";
         $params[':course'] = $course;
     }
+    
     if ($name !== '') {
-        $where[] = "t.name LIKE :name";
+        $where[] = "u.name LIKE :name";
         $params[':name'] = '%' . $name . '%';
     }
+    
     // Use BINARY for exact comparison to avoid type coercion issues
     if ($status === '1') {
         $where[] = "BINARY td.enabled = '1'";
@@ -81,11 +100,15 @@ try {
         $where[] = "(td.enabled IS NULL OR BINARY td.enabled = '')";
     }
 
-    $sql .= ' ' . implode(' ', $joins);
-    if (!empty($where)) {
-        $sql .= ' WHERE ' . implode(' AND ', $where);
+    if (!empty($joins)) {
+        $sql .= ' ' . implode(' ', $joins);
     }
-    $sql .= ' ORDER BY t.created_at ASC';
+    
+    if (!empty($where)) {
+        $sql .= ' AND ' . implode(' AND ', $where);
+    }
+    
+    $sql .= ' ORDER BY u.created_at ASC';
 
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
@@ -102,10 +125,10 @@ try {
                 td.called_at
             FROM postg_teacher_disciplines td
             INNER JOIN postg_disciplinas d ON td.discipline_id = d.id
-            WHERE td.teacher_id = :teacher_id
+            WHERE td.user_id = :user_id
         ";
 
-        $discParams = [':teacher_id' => $teacher['id']];
+        $discParams = [':user_id' => $teacher['id']];
 
         if ($course !== '') {
             $discSql .= " AND d.id = :course";

@@ -3,6 +3,7 @@ let disciplinesIndex = 0;
 
 // Load content
 
+
 function loadEixos() {
   const eixoSelect = document.querySelectorAll(".eixo-select");
 

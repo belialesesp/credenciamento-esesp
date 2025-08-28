@@ -1,21 +1,18 @@
-
-<?php 
-  include_once('../components/header.php');
+<?php
+include_once('../components/header.php');
 ?>
 
 <style>
+  .select2-container--default .select2-selection--multiple {
+    padding: 10px 0px 20px 5px !important;
+    border: solid 1px #3d85d8 !important;
+  }
 
-.select2-container--default .select2-selection--multiple {
-  padding: 10px 0px 20px 5px !important;
-  border: solid 1px #3d85d8 !important;
-}
-
-.select2-container .select2-selection--multiple .select2-search--inline .select2-search__field {
+  .select2-container .select2-selection--multiple .select2-search--inline .select2-search__field {
     color: #3d85d8 !important;
     font-size: 1em;
     font-style: italic;
-}
-
+  }
 </style>
 
 <main>
@@ -27,7 +24,7 @@
         <h5 class="form-subtitle">Dados Pessoais</h5>
         <div class="row">
           <div class="did-floating-label-content col-12">
-            <input name="name" id="name" class="did-floating-input form-control" type="text" placeholder=" " required/>
+            <input name="name" id="name" class="did-floating-input form-control" type="text" placeholder=" " required />
             <label for="name" class="did-floating-label">Nome*</label>
             <div class="invalid-feedback">Informe seu nome</div>
           </div>
@@ -39,7 +36,7 @@
             <div class="invalid-feedback">Informe um número de documento de identidade</div>
           </div>
           <div class="did-floating-label-content col-6 col-md-4">
-            <input name="rgEmissor" id="rgEmissor" class="did-floating-input form-control" type="text" placeholder=" "  required />
+            <input name="rgEmissor" id="rgEmissor" class="did-floating-input form-control" type="text" placeholder=" " required />
             <label for="rgEmissor" class="did-floating-label">Órgão emissor*</label>
             <div class="invalid-feedback">Informe o órgão emissor</div>
           </div>
@@ -117,17 +114,14 @@
                 <select
                   name="degree_0"
                   class="did-floating-select form-select"
-                  required
-                >
+                  required>
                   <option value=""></option>
                   <option value="Graduação">Graduação</option>
                   <option value="Especialidade">Especialização</option>
                   <option value="Mestrado">Mestrado</option>
                   <option value="Doutorado">Doutorado</option>
                 </select>
-                <label class="did-floating-label"
-                  >Escolaridade*</label
-                >
+                <label class="did-floating-label">Escolaridade*</label>
                 <div class="invalid-feedback">Informe seu grau de escolaridade</div>
               </div>
             </div>
@@ -139,8 +133,7 @@
                     type="text"
                     name="courseName_0"
                     required
-                    placeholder=" "
-                  />
+                    placeholder=" " />
                   <label class="did-floating-label">Nome do curso*</label>
                   <div class="invalid-feedback">Informe o nome do curso</div>
                 </div>
@@ -152,8 +145,7 @@
                     type="text"
                     name="institution_0"
                     required
-                    placeholder=" "
-                  />
+                    placeholder=" " />
                   <label class="did-floating-label">Instituição*</label>
                   <div class="invalid-feedback">Informe a instituição</div>
                 </div>
@@ -164,8 +156,7 @@
             class="btnF add-section-btn"
             type="button"
             onclick="cloneSection('scholarship')"
-            id="scholarshipBtn"
-          >
+            id="scholarshipBtn">
             Adicionar mais
           </button>
         </div>
@@ -183,13 +174,10 @@
                   id="eixo_0"
                   class="did-floating-select form-select eixo-select"
                   onchange="loadEstacoes(this)"
-                  required
-                >
+                  required>
                 </select>
                 <option value=""></option>
-                <label for="eixo_0" class="did-floating-label"
-                  >Eixo*</label
-                >
+                <label for="eixo_0" class="did-floating-label">Eixo*</label>
               </div>
             </div>
 
@@ -200,13 +188,10 @@
                   id="estacao_0"
                   class="did-floating-select form-select"
                   onchange="loadDisciplinas(this)"
-                  required
-                >
+                  required>
                 </select>
                 <option value=""></option>
-                <label for="estacao_0" class="did-floating-label"
-                  >Estação/ Órgão*</label
-                >
+                <label for="estacao_0" class="did-floating-label">Estação/ Órgão*</label>
               </div>
             </div>
 
@@ -217,13 +202,10 @@
                   id="disciplina_0"
                   class="did-floating-select form-select disciplines"
                   onchange="loadModulos(this)"
-                  required
-                >
+                  required>
                 </select>
                 <option value=""></option>
-                <label for="disciplina_0" class="did-floating-label"
-                  >Curso/ Programa*</label
-                >
+                <label for="disciplina_0" class="did-floating-label">Curso/ Programa*</label>
               </div>
             </div>
             <div class="row" id="lectureSection_0" style="display: none;">
@@ -231,21 +213,19 @@
                 <input
                   class="did-floating-input"
                   type="text"
-                  
+
                   name="lectureName_0"
-                  placeholder=" "
-                />
+                  placeholder=" " />
                 <label class="did-floating-label">Nome*</label>
               </div>
-              
+
               <div class="did-floating-label-content col-12">
                 <textarea
                   class="did-floating-input"
                   name="lectureDetail_0"
                   style="height: 200px; padding-top: 10px;"
-                  
-                  placeholder=" "
-                ></textarea>
+
+                  placeholder=" "></textarea>
 
                 <label class="did-floating-label">Detalhes*</label>
               </div>
@@ -255,11 +235,10 @@
               <div class="did-floating-label-content col-12 ">
                 <select
                   name="modulos_0[]"
-                  
+
                   id="modulos_0"
                   class="did-floating-select form-select modulos"
-                  multiple
-                >
+                  multiple>
                 </select>
               </div>
             </div>
@@ -272,8 +251,7 @@
             class="btnF add-section-btn"
             onclick="cloneSection('disciplines')"
             type="button"
-            id="disciplinesBtn"
-            >
+            id="disciplinesBtn">
             Adicionar mais
           </button>
         </div>
@@ -284,19 +262,19 @@
         <div class="checkbox-group">
           <p class="control-label col-md-12" for="position" style="font-weight:500">Selecione as categorias nas quais você deseja se credenciar</p>
           <div class="col-md-6">
-            <input type="checkbox" name="position[]" value="1" id="position1"/> <label for="position1">Docente</label><br>
-            <input type="checkbox" name="position[]" value="2" id="position2"/> <label for="position2"> Docente Conteudista</label><br>
-            <input type="checkbox" name="position[]" value="3" id="position3"/> <label for="position3">Docente Assistente</label> <br>
-            <input type="checkbox" name="position[]" value="4" id="position4"/> <label for="position4">Coordenador Técnico</label> <br>
-            <input type="checkbox" name="position[]" value="5" id="position5"/> <label for="position5">Conferencista/Palestrante</label> <br>
-            <input type="checkbox" name="position[]" value="6" id="position6"/> <label for="position6">Painelista/Debatedor</label> <br>
-            <input type="checkbox" name="position[]" value="7" id="position7"/> <label for="position7">Moderador</label> <br>
-            <input type="checkbox" name="position[]" value="8" id="position8"/> <label for="position8">Reunião Técnica</label> <br>
-            <input type="checkbox" name="position[]" value="9" id="position9"/> <label for="position9">Assessoramento Técnico</label> <br>
-            <input type="checkbox" name="position[]" value="10" id="position10"/> <label for="position10">Revisão de Texto</label> <br>
-            <input type="checkbox" name="position[]" value="11" id="position11"/> <label for="position11">Entrevista</label> 
+            <input type="checkbox" name="position[]" value="1" id="position1" /> <label for="position1">Docente</label><br>
+            <input type="checkbox" name="position[]" value="2" id="position2" /> <label for="position2"> Docente Conteudista</label><br>
+            <input type="checkbox" name="position[]" value="3" id="position3" /> <label for="position3">Docente Assistente</label> <br>
+            <input type="checkbox" name="position[]" value="4" id="position4" /> <label for="position4">Coordenador Técnico</label> <br>
+            <input type="checkbox" name="position[]" value="5" id="position5" /> <label for="position5">Conferencista/Palestrante</label> <br>
+            <input type="checkbox" name="position[]" value="6" id="position6" /> <label for="position6">Painelista/Debatedor</label> <br>
+            <input type="checkbox" name="position[]" value="7" id="position7" /> <label for="position7">Moderador</label> <br>
+            <input type="checkbox" name="position[]" value="8" id="position8" /> <label for="position8">Reunião Técnica</label> <br>
+            <input type="checkbox" name="position[]" value="9" id="position9" /> <label for="position9">Assessoramento Técnico</label> <br>
+            <input type="checkbox" name="position[]" value="10" id="position10" /> <label for="position10">Revisão de Texto</label> <br>
+            <input type="checkbox" name="position[]" value="11" id="position11" /> <label for="position11">Entrevista</label>
           </div>
-        </div>         
+        </div>
       </section>
 
       <section class="form-section">
@@ -311,12 +289,12 @@
 
       <section class="form-section">
         <h5 class="form-subtitle">Informações Adicionais</h5>
-        <div >
-          <p >É portador de necessidades especiais?</p>
+        <div>
+          <p>É portador de necessidades especiais?</p>
           <div class="form-check form-check-inline radio-div">
             <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsYes" value="yes" onclick="showSpecialNeeds(true)" required>
             <span class="check"></span>
-            <label class="form-check-label terms-label" for="specialNeedsYes" >Sim</label>
+            <label class="form-check-label terms-label" for="specialNeedsYes">Sim</label>
           </div>
           <div class="form-check form-check-inline radio-div">
             <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsNo" value="no" onclick="showSpecialNeeds(false)" required>
@@ -324,12 +302,12 @@
             <label class="form-check-label terms-label" for="specialNeedsNo">Não</label>
           </div>
           <div class="did-floating-label-content" style="display:none; margin-top: 10px" id="specialNeedsDetailsContainer">
-            <input name="specialNeedsDetails" id="specialNeedsDetails" class="did-floating-input form-control" type="text" placeholder=" " required/>
+            <input name="specialNeedsDetails" id="specialNeedsDetails" class="did-floating-input form-control" type="text" placeholder=" " required />
             <label for="specialNeedsDetails" class="did-floating-label">Especifique*</label>
             <div class="invalid-feedback">Você deve especificar</div>
           </div>
         </div>
-        
+
       </section>
 
       <div>
@@ -361,24 +339,18 @@
   </div>
 </main>
 
-<?php 
-  include_once('../components/footer.php');
+<?php
+include_once('../components/footer.php');
 
 ?>
 
 <script src="../scripts/formScript.js"></script>
 <script type="module">
-  import { handleTeacherSubmission } from '../scripts/main.js';
+  import {
+    handleTeacherSubmission
+  } from '../scripts/main.js';
   document.addEventListener("DOMContentLoaded", () => {
-  loadEixos();
-  handleTeacherSubmission()
-});
-
+    loadEixos();
+    handleTeacherSubmission()
+  });
 </script>
-
-
-
-
-
-
-

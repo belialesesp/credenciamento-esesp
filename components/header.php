@@ -28,28 +28,16 @@ $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
     <link rel="stylesheet" href="../styles/forms.css">
     <link rel="stylesheet" href="../styles/responsivity.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
+    
+    <!-- jQuery first, then Bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
-      defer
-    ></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-      integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
-      crossorigin="anonymous"
-      defer
-    ></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
-      integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy"
-      crossorigin="anonymous"
-      defer
     ></script>
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js" defer></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/inputmask@5.0.8/dist/inputmask.min.js" defer></script>
 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -129,9 +117,11 @@ $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><h6 class="dropdown-header">Tipo: <?php echo translateUserType($_SESSION['user_type'] ?? ''); ?></h6></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../pages/change_password.php">
-                                <i class="fas fa-key"></i> Alterar Senha
+                            <?php if (isFirstLogin()): ?>
+                            <li><a class="dropdown-item text-warning" href="#">
+                                <i class="fas fa-exclamation-triangle"></i> Complete seu perfil na página de perfil
                             </a></li>
+                            <?php endif; ?>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="../auth/logout.php">
                                 <i class="fas fa-sign-out-alt"></i> Sair
@@ -147,9 +137,7 @@ $is_admin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
     <!-- First login warning -->
     <div class="alert alert-warning text-center mb-0 rounded-0">
         <i class="fas fa-exclamation-triangle"></i>
-        <strong>Primeiro Acesso!</strong> Por favor, 
-        <a href="../pages/change_password.php" class="alert-link">altere sua senha</a> e 
-        <a href="../pages/complete_profile.php" class="alert-link">complete seu perfil</a>.
+        <strong>Primeiro Acesso!</strong> Por favor, acesse seu perfil para alterar sua senha e completar suas informações.
     </div>
     <?php endif; ?>
     <?php endif; ?>

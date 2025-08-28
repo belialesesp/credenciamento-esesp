@@ -1,44 +1,11 @@
 <?php
 // pages/docente-pos.php
 
-require_once '../init.php'; 
-
+require_once '../init.php';
 
 // Check authentication
 if (!isset($_SESSION['user_id'])) {
   header('Location: login.php');
-  exit();
-}
-
-// Check if user can access this profile
-$requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$user_type = $_SESSION['user_type'] ?? '';
-$is_admin = isAdmin();
-$is_own_profile = false;
-
-if (!$requested_id) {
-  // No ID provided
-  if (!$is_admin && $_SESSION['user_type'] === 'postg_teacher') {
-    // Redirect to their own profile
-    header('Location: ?id=' . $_SESSION['type_id']);
-    exit();
-  } else {
-    header('Location: home.php');
-    exit();
-  }
-}
-
-// Check access permissions
-if ($is_admin) {
-  // Admin can see all profiles
-  $teacher_id = $requested_id;
-} elseif ($_SESSION['user_type'] === 'postg_teacher' && $_SESSION['type_id'] == $requested_id) {
-  // User viewing their own profile
-  $teacher_id = $requested_id;
-  $is_own_profile = true;
-} else {
-  // Not authorized
-  header('Location: home.php');
   exit();
 }
 
@@ -49,22 +16,66 @@ include '../components/header.php';
 require_once '../pdf/assets/title_case.php';
 require_once '../backend/services/teacherpos.service.php';
 
-// Get teacher data
-$conection = new Database();
-$conn = $conection->connect();
+// Initialize database connection
+$connection = new Database();
+$conn = $connection->connect();
+
+// Check if user is admin
+$is_admin = false;
+if (isset($_SESSION['user_id'])) {
+  $admin_check = $conn->prepare("
+        SELECT COUNT(*) 
+        FROM user_roles 
+        WHERE user_id = ? AND role = 'admin'
+    ");
+  $admin_check->execute([$_SESSION['user_id']]);
+  $is_admin = ($admin_check->fetchColumn() > 0);
+}
+
+// Get requested ID from URL
+$requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// Verify the requested user exists and is a teacher
+$stmt = $conn->prepare("
+    SELECT u.id 
+    FROM user u
+    INNER JOIN user_roles ur ON ur.user_id = u.id
+    WHERE u.id = ? AND ur.role = 'docente' AND u.enabled = 1
+");
+$stmt->execute([$requested_id]);
+
+if (!$stmt->fetch()) {
+  header('Location: docentes-pos.php');
+  exit();
+}
+
+// Check access permissions
+$is_own_profile = false;
+if ($is_admin) {
+  $is_own_profile = false;
+} elseif ($_SESSION['user_type'] === 'postg_teacher' && $_SESSION['user_id'] == $requested_id) {
+  $is_own_profile = true;
+} else {
+  header('Location: home.php');
+  exit();
+}
+
+// Use existing connection
 $teacherService = new TeacherPostGService($conn);
 
 try {
-  $teacher = $teacherService->getTeacherPostG($teacher_id);
+  $teacher = $teacherService->getTeacherPostG($requested_id);
 
-  // Check if teacher was found
   if (!$teacher) {
+    ob_start();
+    include '../components/header.php';
     echo '<div class="container">
                 <h1 class="main-title">Erro</h1>
                 <p>Docente não encontrado.</p>
                 <a href="docentes-pos.php" class="btn btn-primary">Voltar para lista de docentes</a>
               </div>';
     include '../components/footer.php';
+    ob_end_flush();
     exit();
   }
 
@@ -83,7 +94,8 @@ try {
   $zip = $teacher->address->zip;
   $file_path = $teacher->file_path;
   $education_degree = $teacher->educations;
-  $disciplines = $teacher->disciplines;
+  $disciplines = $teacher->disciplines[0];
+  $post_graduation = $teacher->disciplines[1];
   $activities = $teacher->activities;
   $special_needs = $teacher->special_needs;
   $enabled = $teacher->enabled;
@@ -115,14 +127,19 @@ try {
     }
   }
 } catch (Exception $e) {
+  ob_start();
+  include '../components/header.php';
   echo '<div class="container">
             <h1 class="main-title">Erro</h1>
             <p>Erro ao carregar dados do docente: ' . htmlspecialchars($e->getMessage()) . '</p>
             <a href="docentes-pos.php" class="btn btn-primary">Voltar para lista de docentes</a>
           </div>';
   include '../components/footer.php';
+  ob_end_flush();
   exit();
 }
+
+ob_start();
 ?>
 
 <div class="container container-user">
@@ -201,70 +218,70 @@ try {
   </div>
 
   <div class="info-section">
-  <h3>Cursos</h3>
-  <?php if (!empty($disciplines)): ?>
-    <?php foreach($disciplines as $discipline): ?>
-    <?php 
-      // Handle both getter methods and public properties
-      $disc_id = method_exists($discipline, 'getId') ? $discipline->getId() : (property_exists($discipline, 'id') ? $discipline->id : 0);
-      $disc_name = method_exists($discipline, 'getName') ? $discipline->getName() : (property_exists($discipline, 'name') ? $discipline->name : 'Nome não disponível');
-      $disc_enabled = method_exists($discipline, 'getEnabled') ? $discipline->getEnabled() : (property_exists($discipline, 'enabled') ? $discipline->enabled : null);
-      $disc_eixo = method_exists($discipline, 'getEixo') ? $discipline->getEixo() : (property_exists($discipline, 'eixo') ? $discipline->eixo : null);
-      $disc_estacao = method_exists($discipline, 'getEstacao') ? $discipline->getEstacao() : (property_exists($discipline, 'estacao') ? $discipline->estacao : null);
-      
-      // Determine status
-      $statusText = match($disc_enabled) {
-        1 => 'Apto',
-        0 => 'Inapto',
-        null => 'Aguardando',
-        default => 'Aguardando'
-      };
-      $statusClass = match($disc_enabled) {
-        1 => 'status-approved',
-        0 => 'status-not-approved',
-        null => 'status-pending',
-        default => 'status-pending'
-      };
-    ?>
-    <div class="discipline-item">
-      <div class="discipline-header">
-        <?= htmlspecialchars($disc_name) ?>
-        <span class="ms-5 discipline-status <?= $statusClass ?>"><?= $statusText ?></span>
-      </div>
-      
-      <?php if($disc_eixo || $disc_estacao): ?>
-      <div class="discipline-details">
-        <?php if($disc_eixo): ?>Eixo: <?= htmlspecialchars($disc_eixo) ?><?php endif; ?>
-        <?php if($disc_eixo && $disc_estacao): ?><br><?php endif; ?>
-        <?php if($disc_estacao): ?>Estação: <?= htmlspecialchars($disc_estacao) ?><?php endif; ?>
-      </div>
-      <?php endif; ?>
-      
-      <?php if($is_admin): ?>
-      <div class="discipline-actions">
-        <button class="btn btn-success" 
-                onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $disc_id ?>, 1)"
+    <h3>Cursos</h3>
+    <?php if (!empty($disciplines)): ?>
+      <?php foreach ($disciplines as $discipline): ?>
+        <?php
+        // Handle both getter methods and public properties
+        $disc_id = method_exists($discipline, 'getId') ? $discipline->getId() : (property_exists($discipline, 'id') ? $discipline->id : 0);
+        $disc_name = method_exists($discipline, 'getName') ? $discipline->getName() : (property_exists($discipline, 'name') ? $discipline->name : 'Nome não disponível');
+        $disc_enabled = method_exists($discipline, 'getEnabled') ? $discipline->getEnabled() : (property_exists($discipline, 'enabled') ? $discipline->enabled : null);
+        $disc_eixo = method_exists($discipline, 'getEixo') ? $discipline->getEixo() : (property_exists($discipline, 'eixo') ? $discipline->eixo : null);
+        $disc_estacao = method_exists($discipline, 'getEstacao') ? $discipline->getEstacao() : (property_exists($discipline, 'estacao') ? $discipline->estacao : null);
+
+        // Determine status
+        $statusText = match ($disc_enabled) {
+          1 => 'Apto',
+          0 => 'Inapto',
+          null => 'Aguardando',
+          default => 'Aguardando'
+        };
+        $statusClass = match ($disc_enabled) {
+          1 => 'status-approved',
+          0 => 'status-not-approved',
+          null => 'status-pending',
+          default => 'status-pending'
+        };
+        ?>
+        <div class="discipline-item">
+          <div class="discipline-header">
+            <?= htmlspecialchars($disc_name) ?>
+            <span class="ms-5 discipline-status <?= $statusClass ?>"><?= $statusText ?></span>
+          </div>
+
+          <?php if ($disc_eixo || $disc_estacao): ?>
+            <div class="discipline-details">
+              <?php if ($disc_eixo): ?>Eixo: <?= htmlspecialchars($disc_eixo) ?><?php endif; ?>
+              <?php if ($disc_eixo && $disc_estacao): ?><br><?php endif; ?>
+              <?php if ($disc_estacao): ?>Estação: <?= htmlspecialchars($disc_estacao) ?><?php endif; ?>
+            </div>
+          <?php endif; ?>
+
+          <?php if ($is_admin): ?>
+            <div class="discipline-actions">
+              <button class="btn btn-success"
+                onclick="updateDisciplineStatus(<?= $requested_id ?>, <?= $disc_id ?>, 1)"
                 <?= $disc_enabled === 1 ? 'disabled' : '' ?>>
-          Aprovar para este curso
-        </button>
-        <button class="btn btn-danger" 
-                onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $disc_id ?>, 0)"
+                Aprovar para este curso
+              </button>
+              <button class="btn btn-danger"
+                onclick="updateDisciplineStatus(<?= $requested_id ?>, <?= $disc_id ?>, 0)"
                 <?= $disc_enabled === 0 ? 'disabled' : '' ?>>
-          Reprovar para este curso
-        </button>
-        <button class="btn btn-secondary" 
-                onclick="updateDisciplineStatus(<?= $teacher_id ?>, <?= $disc_id ?>, null)"
+                Reprovar para este curso
+              </button>
+              <button class="btn btn-secondary"
+                onclick="updateDisciplineStatus(<?= $requested_id ?>, <?= $disc_id ?>, null)"
                 <?= $disc_enabled === null ? 'disabled' : '' ?>>
-          Resetar status
-        </button>
-      </div>
-      <?php endif; ?>
-    </div>
-    <?php endforeach ?>
-  <?php else: ?>
-    <p>Nenhum curso cadastrado.</p>
-  <?php endif; ?>
-</div>
+                Resetar status
+              </button>
+            </div>
+          <?php endif; ?>
+        </div>
+      <?php endforeach ?>
+    <?php else: ?>
+      <p>Nenhum curso cadastrado.</p>
+    <?php endif; ?>
+  </div>
 
   <div class="info-section">
     <h3>Categoria</h3>
@@ -283,6 +300,13 @@ try {
       <a href="../backend/documentos/posgraduacao/<?= $path ?>" target="_blank">Download</a>
     <?php else: ?>
       <p>Nenhum documento disponível.</p>
+      <?php if ($is_admin): ?>
+        <div class="text-muted small">
+          <div>Debug Info:</div>
+          <div>Full Path: <?= htmlspecialchars($teacher->file_path ?? 'NULL') ?></div>
+          <div>File Exists: <?= file_exists($teacher->file_path) ? 'Yes' : 'No' ?></div>
+        </div>
+      <?php endif; ?>
     <?php endif; ?>
   </div>
 
@@ -356,10 +380,6 @@ try {
 
 </div>
 
-<?php
-include '../components/footer.php';
-?>
-
 <script>
   function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
@@ -376,22 +396,12 @@ include '../components/footer.php';
     }
   }
 
-  // Password validation
-  document.getElementById('confirm_password')?.addEventListener('input', function() {
-    const newPassword = document.getElementById('new_password').value;
-    if (newPassword !== this.value) {
-      this.setCustomValidity('As senhas devem ser iguais');
-    } else {
-      this.setCustomValidity('');
-    }
-  });
-
   <?php if ($is_admin): ?>
 
     function updateDisciplineStatus(teacherId, disciplineId, status) {
       const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar o status');
 
-      if (confirm(`Tem certeza que deseja ${statusText}o docente para este curso?`)) {
+      if (confirm(`Tem certeza que deseja ${statusText} o docente para este curso?`)) {
         fetch('../backend/api/update_postg_teacher_discipline_status.php', {
             method: 'POST',
             headers: {
@@ -406,73 +416,49 @@ include '../components/footer.php';
           .then(response => response.json())
           .then(data => {
             if (data.success) {
-              Toastify({
-                text: "Status do curso atualizado!",
-                className: "statusToast",
-                style: {
-                  background: "#38b000",
-                },
-              }).showToast();
-
-              // Reload the page to show updated status
-              setTimeout(() => {
-                location.reload();
-              }, 1000);
+              alert('Status do curso atualizado com sucesso!');
+              location.reload();
             } else {
-              alert('Erro ao atualizar o status: ' + (data.message || 'Erro desconhecido'));
+              alert('Erro ao atualizar status: ' + (data.message || 'Erro desconhecido'));
             }
           })
           .catch(error => {
-            console.error('Erro: ', error);
-            alert('Erro ao atualizar o status');
+            alert('Erro ao processar requisição');
+            console.error('Error:', error);
           });
       }
     }
 
-    function updateTeacherStatus(teacherId, status) {
-      if (confirm("Tem certeza que deseja alterar o status do docente?")) {
+    function updateTeacherStatus(userId, status) {
+      if (confirm('Tem certeza que deseja ' + (status ? 'aprovar' : 'reprovar') + ' este docente?')) {
         fetch('../backend/api/update_postg_teacher_status.php', {
             method: 'POST',
             headers: {
               'Content-type': 'application/json'
             },
             body: JSON.stringify({
-              teacher_id: teacherId,
+              user_id: userId,
               status: status
             })
           })
           .then(response => response.json())
           .then(data => {
             if (data.success) {
-              const statusElement = document.querySelector('.user-status');
-              const enableButton = document.querySelector('.ok-btn');
-              const disableButton = document.querySelector('.cancel-btn');
-
-              const statusText = status === 1 ? 'Apto' : 'Inapto';
-
-              statusElement.textContent = statusText;
-              statusElement.className = 'user-status ' + (status === 1 ? 'status-approved' : 'status-not-approved');
-
-              enableButton.disabled = (status === 1);
-              disableButton.disabled = (status === 0);
-
-              Toastify({
-                text: "Status do docente atualizado!",
-                className: "statusToast",
-                style: {
-                  background: "#38b000",
-                },
-              }).showToast();
-
+              alert('Status geral atualizado com sucesso!');
+              location.reload();
             } else {
-              alert('Erro ao atualizar o status' + (data.message || 'Erro desconhecido'))
+              alert('Erro ao atualizar status: ' + (data.message || 'Erro desconhecido'));
             }
           })
           .catch(error => {
-            console.error('Erro: ', error);
-            alert('Erro ao atualizar o status');
-          })
+            alert('Erro ao processar requisição');
+            console.error('Error:', error);
+          });
       }
     }
   <?php endif; ?>
 </script>
+
+<?php include '../components/footer.php';
+ob_end_flush();
+?>

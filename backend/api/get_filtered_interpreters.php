@@ -1,44 +1,46 @@
 <?php
-// backend/api/get_filtered_interpreters.php - Example with name filter
+// backend/api/get_filtered_interpreters.php
 require_once '../classes/database.class.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-// Get filter parameters
-$status = $_GET['status'] ?? '';
 $name = $_GET['name'] ?? '';
+$status = $_GET['status'] ?? '';
 
 try {
     $conection = new Database();
     $conn = $conection->connect();
     
-    // Base query
-    $sql = "SELECT * FROM interpreter WHERE 1=1";
-    $conditions = [];
+    // Base query with JOIN to user_roles table
+    $sql = "SELECT u.* 
+            FROM user u 
+            JOIN user_roles ur ON u.id = ur.user_id 
+            WHERE ur.role = 'interprete'";
+    $where = [];
     $params = [];
     
-    // Add status filter
+    // Apply status filter
     if ($status !== '') {
         if ($status === 'null') {
-            $conditions[] = "(enabled IS NULL OR enabled = '')";
+            $where[] = "(u.enabled IS NULL OR u.enabled = '')";
         } else {
-            $conditions[] = "enabled = :status";
-            $params[':status'] = $status;
+            $where[] = "u.enabled = :status";
+            $params[':status'] = intval($status);
         }
     }
     
-    // Add name filter
+    // Apply name filter
     if ($name !== '') {
-        $conditions[] = "name LIKE :name";
+        $where[] = "u.name LIKE :name";
         $params[':name'] = '%' . $name . '%';
     }
     
-    // Build final query
-    if (!empty($conditions)) {
-        $sql .= " AND " . implode(" AND ", $conditions);
+    // Add WHERE clause if there are conditions
+    if (!empty($where)) {
+        $sql .= ' AND ' . implode(' AND ', $where);
     }
-    
-    $sql .= " ORDER BY name ASC";
+
+    $sql .= " ORDER BY u.name ASC";
     
     // Execute query
     $stmt = $conn->prepare($sql);
@@ -48,9 +50,13 @@ try {
     // Return JSON response
     echo json_encode($interpreters, JSON_UNESCAPED_UNICODE);
     
-} catch (Exception $e) {
-    error_log("Error in get_filtered_interpreters.php: " . $e->getMessage());
+} catch (PDOException $e) {
+    error_log("Database error in get_filtered_interpreters.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+} catch (Exception $e) {
+    error_log("Server error in get_filtered_interpreters.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
 }
 ?>

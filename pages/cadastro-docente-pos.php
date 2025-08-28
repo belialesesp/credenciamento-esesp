@@ -2,6 +2,7 @@
 <?php 
   include_once('../components/header.php');
 ?>
+
 <main>
   <div class="container">
     <h1 class="main-title">Credenciamento de Docentes <br> Pós Graduação</h1>

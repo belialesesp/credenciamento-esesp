@@ -6,137 +6,283 @@ require_once '../helpers/email.helper.php';
 
 header('Content-Type: application/json');
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
-    echo json_encode(['success' => false, 'message' => 'Acesso não autorizado']);
-    exit;
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
 }
 
+$isAdmin = false;
+if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
+  $isAdmin = in_array('admin', $_SESSION['user_roles']);
+}
 // Validate input
-$teacherId = filter_input(INPUT_POST, 'teacher_id', FILTER_VALIDATE_INT);
-$courseId = filter_input(INPUT_POST, 'course_id', FILTER_VALIDATE_INT);
-$teacherEmail = filter_input(INPUT_POST, 'teacher_email', FILTER_VALIDATE_EMAIL);
+$userId = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
+$userEmail = filter_input(INPUT_POST, 'teacher_email', FILTER_VALIDATE_EMAIL);
 $subject = trim($_POST['subject'] ?? '');
 $message = trim($_POST['message'] ?? '');
 
-if (!$teacherId || !$courseId || !$teacherEmail || empty($subject) || empty($message)) {
-    echo json_encode(['success' => false, 'message' => 'Dados inválidos']);
+// New fields for staff invitations
+$userType = trim($_POST['user_type'] ?? ''); // 'technician', 'interpreter', or empty for teachers
+$courseId = filter_input(INPUT_POST, 'course_id', FILTER_VALIDATE_INT); // Only for teachers
+$teacherType = trim($_POST['teacher_type'] ?? 'regular'); // 'regular' or 'postgraduate'
+
+// Debug: Log all extracted values
+error_log("DEBUG: Extracted values - user_id: $userId, teacher_email: $userEmail, user_type: $userType, course_id: $courseId, teacher_type: $teacherType");
+
+// For teachers, course ID is required
+if (empty($userType) && !$courseId) {
+    error_log("DEBUG: Course ID is required for teachers but not provided");
+    echo json_encode(['success' => false, 'message' => 'ID do curso é obrigatório para professores']);
     exit;
+}
+
+if (!$userId) {
+    error_log("DEBUG: Invalid user_id: " . ($_POST['user_id'] ?? 'NULL'));
+    echo json_encode(['success' => false, 'message' => 'ID do usuário inválido']);
+    exit;
+}
+
+if (!$userEmail) {
+    error_log("DEBUG: Invalid teacher_email: " . ($_POST['teacher_email'] ?? 'NULL'));
+    // We'll continue anyway since we'll get the email from the database
+    error_log("DEBUG: Will try to get email from database");
 }
 
 try {
     $connection = new Database();
     $conn = $connection->connect();
-    
+
     // Generate unique invitation token
     $token = bin2hex(random_bytes(32));
     $expires = date('Y-m-d H:i:s', strtotime('+7 days'));
-    
-    // Check if it's postgraduate or regular course
-    $isPostgraduate = strpos($_SERVER['HTTP_REFERER'], 'docentes-pos') !== false;
-    
-    // Get teacher and course details
-    if ($isPostgraduate) {
-        $teacherTable = 'postg_teacher';
-        $courseTable = 'postg_disciplinas';
-    } else {
-        $teacherTable = 'teacher';
-        $courseTable = 'disciplinas';
-    }
-    
-    // Get teacher name
-    $stmt = $conn->prepare("SELECT name FROM $teacherTable WHERE id = :id");
-    $stmt->bindParam(':id', $teacherId);
-    $stmt->execute();
-    $teacher = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    // Get course name
-    $stmt = $conn->prepare("SELECT name FROM $courseTable WHERE id = :id");
-    $stmt->bindParam(':id', $courseId);
-    $stmt->execute();
-    $course = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$teacher || !$course) {
-        throw new Exception('Professor ou curso não encontrado');
-    }
-    
-    // Store invitation in database
+
+    $userName = '';
+    $invitationDetails = '';
+
+    // Get user details
     $stmt = $conn->prepare("
-        INSERT INTO course_invitations 
-        (teacher_id, course_id, teacher_type, token, expires_at, status, created_at) 
-        VALUES (:teacher_id, :course_id, :teacher_type, :token, :expires, 'pending', NOW())
+        SELECT u.name, u.email 
+        FROM user u 
+        WHERE u.id = :id
     ");
-    
-    $teacherType = $isPostgraduate ? 'postgraduate' : 'regular';
-    $stmt->bindParam(':teacher_id', $teacherId);
-    $stmt->bindParam(':course_id', $courseId);
-    $stmt->bindParam(':teacher_type', $teacherType);
-    $stmt->bindParam(':token', $token);
-    $stmt->bindParam(':expires', $expires);
+    $stmt->bindParam(':id', $userId);
     $stmt->execute();
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    error_log("DEBUG: User query result: " . print_r($user, true));
+
+    if (!$user) {
+        throw new Exception('Usuário não encontrado no banco de dados');
+    }
+
+    $userName = $user['name'];
+    $userEmail = $user['email']; // Use email from database
     
+    error_log("DEBUG: Using email from database: $userEmail");
+
+    if (empty($userType)) {
+        // Handle teacher invitation
+        // Check if user has the appropriate role
+        $requiredRole = $teacherType === 'postgraduate' ? 'docente_pos' : 'docente';
+        
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) as has_role 
+            FROM user_roles 
+            WHERE user_id = :user_id AND role = :role
+        ");
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->bindParam(':role', $requiredRole);
+        $stmt->execute();
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("DEBUG: Role check result: " . print_r($result, true));
+        
+        if (!$result || $result['has_role'] == 0) {
+            throw new Exception('Usuário não tem a função de professor necessária');
+        }
+
+        // Get course name
+        $courseTable = $teacherType === 'postgraduate' ? 'postg_disciplinas' : 'disciplinas';
+        $stmt = $conn->prepare("SELECT name FROM $courseTable WHERE id = :id");
+        $stmt->bindParam(':id', $courseId);
+        $stmt->execute();
+        $course = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$course) {
+            throw new Exception('Curso não encontrado');
+        }
+        
+        $invitationDetails = $course['name'];
+
+        // Store invitation in database
+        $stmt = $conn->prepare("
+            INSERT INTO course_invitations 
+            (user_id, course_id, teacher_type, token, expires_at, status, created_at) 
+            VALUES (:user_id, :course_id, :teacher_type, :token, :expires, 'pending', NOW())
+        ");
+
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->bindParam(':course_id', $courseId);
+        $stmt->bindParam(':teacher_type', $teacherType);
+        $stmt->bindParam(':token', $token);
+        $stmt->bindParam(':expires', $expires);
+        $stmt->execute();
+        
+        error_log("DEBUG: Course invitation stored successfully");
+    } else if ($userType === 'technician') {
+        // Check if user has tecnico role
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) as has_role 
+            FROM user_roles 
+            WHERE user_id = :user_id AND role = 'tecnico'
+        ");
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->execute();
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("DEBUG: Technician role check result: " . print_r($result, true));
+        
+        if (!$result || $result['has_role'] == 0) {
+            throw new Exception('Usuário não tem a função de técnico');
+        }
+
+        $invitationDetails = 'Técnico';
+
+        // Store invitation in staff_invitations table
+        $stmt = $conn->prepare("
+            INSERT INTO staff_invitations (user_id, token, status, expires_at) 
+            VALUES (:user_id, :token, 'pending', :expires_at)
+        ");
+
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->bindParam(':token', $token);
+        $stmt->bindParam(':expires_at', $expires);
+        $stmt->execute();
+
+        $invitationId = $conn->lastInsertId();
+        error_log("DEBUG: Created staff invitation with ID: $invitationId for user_id: $userId, user_type: $userType");
+    } else if ($userType === 'interpreter') {
+        // Check if user has interprete role
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) as has_role 
+            FROM user_roles 
+            WHERE user_id = :user_id AND role = 'interprete'
+        ");
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->execute();
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        error_log("DEBUG: Interpreter role check result: " . print_r($result, true));
+        
+        if (!$result || $result['has_role'] == 0) {
+            throw new Exception('Usuário não tem a função de intérprete');
+        }
+
+        $invitationDetails = 'Intérprete';
+
+        // Store invitation in staff_invitations table
+        $stmt = $conn->prepare("
+            INSERT INTO staff_invitations (user_id, token, status, expires_at) 
+            VALUES (:user_id, :token, 'pending', :expires_at)
+        ");
+
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->bindParam(':token', $token);
+        $stmt->bindParam(':expires_at', $expires);
+        $stmt->execute();
+        
+        error_log("DEBUG: Interpreter invitation stored successfully");
+    }
+
     // Prepare email content
-    $acceptLink = getInvitationLink($token, 'accept');
-    $rejectLink = getInvitationLink($token, 'reject');
-    
+    $acceptLink = getInvitationLink($token, 'accept', $userType);
+    $rejectLink = getInvitationLink($token, 'reject', $userType);
+
     $emailBody = createInvitationEmailTemplate(
-        $teacher['name'],
-        $course['name'],
+        $userName,
+        $invitationDetails,
         $message,
         $acceptLink,
         $rejectLink,
-        $expires
+        $expires,
+        !empty($userType) // isStaff flag
     );
-    
+
     // Send email
-    $emailSent = sendEmail($teacherEmail, $teacher['name'], $subject, $emailBody);
-    
+    error_log("DEBUG: Attempting to send email to: $userEmail");
+    $emailSent = sendEmail($userEmail, $userName, $subject, $emailBody);
+
+    // After sending the email successfully, update sent_at
     if ($emailSent) {
+        // Update sent_at timestamp
+        $table = empty($userType) ? 'course_invitations' : 'staff_invitations';
+        $updateStmt = $conn->prepare("
+            UPDATE $table 
+            SET sent_at = NOW() 
+            WHERE token = :token
+        ");
+        $updateStmt->bindParam(':token', $token);
+        $updateStmt->execute();
+
+        $logMessage = empty($userType)
+            ? "Course invitation sent - Teacher: {$userName}, Course: {$invitationDetails}"
+            : "Staff invitation sent - {$userType}: {$userName}";
+
+        error_log($logMessage);
         echo json_encode(['success' => true, 'message' => 'Convite enviado com sucesso']);
-        
-        // Log the invitation
-        error_log("Course invitation sent - Teacher: {$teacher['name']}, Course: {$course['name']}");
     } else {
         // Remove invitation record if email failed
-        $stmt = $conn->prepare("DELETE FROM course_invitations WHERE token = :token");
+        $table = empty($userType) ? 'course_invitations' : 'staff_invitations';
+        $stmt = $conn->prepare("DELETE FROM $table WHERE token = :token");
         $stmt->bindParam(':token', $token);
         $stmt->execute();
-        
+
+        error_log("DEBUG: Email sending failed");
         echo json_encode(['success' => false, 'message' => 'Erro ao enviar email']);
     }
-    
 } catch (Exception $e) {
-    error_log("Course invitation error: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Erro no sistema']);
+    error_log("DEBUG: Exception caught: " . $e->getMessage());
+    error_log("DEBUG: Exception trace: " . $e->getTraceAsString());
+    echo json_encode(['success' => false, 'message' => 'Erro no sistema: ' . $e->getMessage()]);
 }
 
 /**
  * Generate invitation action link
  */
-function getInvitationLink($token, $action) {
+function getInvitationLink($token, $action, $userType = '')
+{
     $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'];
     $basePath = dirname(dirname(dirname($_SERVER['REQUEST_URI'])));
-    
-    return $protocol . '://' . $host . $basePath . '/pages/course-invitation-response.php?token=' . $token . '&action=' . $action;
+
+    $page = empty($userType)
+        ? 'course-invitation-response.php'
+        : 'staff-invitation-response.php';
+
+    return $protocol . '://' . $host . $basePath . '/pages/' . $page . '?token=' . $token . '&action=' . $action;
 }
 
 /**
  * Create invitation email template
  */
-function createInvitationEmailTemplate($teacherName, $courseName, $message, $acceptLink, $rejectLink, $expires) {
+function createInvitationEmailTemplate($userName, $details, $message, $acceptLink, $rejectLink, $expires, $isStaff = false)
+{
     $expiresFormatted = date('d/m/Y \à\s H:i', strtotime($expires));
-    
+    $invitationType = $isStaff ? 'Técnico/Intérprete' : 'Curso';
+
     return "
     <html>
     <head>
-        <title>Convite para Curso</title>
+        <title>Convite para {$invitationType}</title>
         <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: #007bff; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
             .content { background: #f8f9fa; padding: 30px; border: 1px solid #dee2e6; border-radius: 0 0 5px 5px; }
-            .course-info { background: #fff; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #e9ecef; }
+            .details { background: #fff; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #e9ecef; }
             .message-box { background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0; }
             .buttons { text-align: center; margin: 30px 0; }
             .button { display: inline-block; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 0 10px; font-weight: bold; }
@@ -148,14 +294,14 @@ function createInvitationEmailTemplate($teacherName, $courseName, $message, $acc
     <body>
         <div class='container'>
             <div class='header'>
-                <h2>Convite para Lecionar</h2>
+                <h2>Convite para {$invitationType}</h2>
             </div>
             <div class='content'>
-                <p>Prezado(a) <strong>{$teacherName}</strong>,</p>
+                <p>Prezado(a) <strong>{$userName}</strong>,</p>
                 
-                <div class='course-info'>
-                    <h3 style='margin-top: 0;'>Detalhes do Curso:</h3>
-                    <p><strong>Curso:</strong> {$courseName}</p>
+                <div class='details'>
+                    <h3 style='margin-top: 0;'>Detalhes:</h3>
+                    <p><strong>{$invitationType}:</strong> {$details}</p>
                 </div>
                 
                 <div class='message-box'>

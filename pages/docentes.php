@@ -5,9 +5,15 @@ require_once '../backend/api/get_registers.php';
 require_once '../backend/api/get_all_courses.php';
 require_once '../backend/classes/database.class.php';
 
-// Check if user is admin
-$isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
 
+$isAdmin = false;
+if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
+  $isAdmin = in_array('admin', $_SESSION['user_roles']);
+}
 // Helper function to truncate text
 function truncate_text($text, $length = 50)
 {
@@ -531,10 +537,10 @@ $_SESSION['user-data'] = $teachers;
     </div>
     <div class="modal-body">
       <form id="invitationForm">
-        <input type="hidden" id="teacherId" name="teacher_id">
+        <input type="hidden" id="teacherId" name="user_id">
         <input type="hidden" id="courseId" name="course_id">
         <input type="hidden" id="teacherEmail" name="teacher_email">
-        <input type="hidden" id="isPostgraduate" name="is_postgraduate" value="">
+        <input type="hidden" id="teacherType" name="teacher_type">
 
         <div class="form-group">
           <label><strong>Professor:</strong></label>
@@ -555,14 +561,14 @@ $_SESSION['user-data'] = $teachers;
         <div class="form-group">
           <label for="messageBody">Mensagem:</label>
           <textarea id="messageBody" name="message" class="form-control" rows="6" required>
-Prezado(a) Professor(a),
+            Prezado(a) Professor(a),
 
-Gostaríamos de convidá-lo(a) para lecionar no curso mencionado acima.
+            Gostaríamos de convidá-lo(a) para lecionar no curso mencionado acima.
 
-Por favor, clique em um dos botões abaixo para aceitar ou recusar este convite.
+            Por favor, clique em um dos botões abaixo para aceitar ou recusar este convite.
 
-Atenciosamente,
-Coordenação de Cursos
+            Atenciosamente,
+            Coordenação de Cursos
           </textarea>
         </div>
 
@@ -589,17 +595,64 @@ Coordenação de Cursos
     return !!(category || course || status || name);
   }
   const isAdmin = <?php echo json_encode($isAdmin); ?>;
-  let invitationStatuses = {}; // Cache for invitation statuses
+  let invitationStatuses = {};
+  // Add this function to get hours passed from sent_at date
+  function getHoursPassedFromDate(sentAtDate) {
+    if (!sentAtDate) return null;
 
+    const sentDate = new Date(sentAtDate);
+    const now = new Date();
+    const hoursPassed = Math.floor((now - sentDate) / (1000 * 60 * 60));
+
+    return hoursPassed;
+  }
+  // Updated checkInvitationStatus function with better error handling
   async function checkInvitationStatus(courseId) {
+
     const isPostgraduate = window.location.pathname.includes('docentes-pos');
 
     try {
-      const response = await fetch(`../backend/api/check_course_invitation_status.php?course_id=${courseId}&is_postgraduate=${isPostgraduate}`);
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      const response = await fetch(`../backend/api/check_course_invitation_status.php?course_id=${courseId}&is_postgraduate=${isPostgraduate}&_t=${timestamp}`);
       const data = await response.json();
 
       if (data.success) {
-        invitationStatuses[courseId] = data;
+        // Handle expired invitations - treat them as rejected
+        if (data.expired_teachers && data.expired_teachers.length > 0) {
+
+          // Move expired teachers to rejected list if not already there
+          if (!data.rejected_teachers) {
+            data.rejected_teachers = [];
+          }
+
+          data.expired_teachers.forEach(teacherId => {
+            if (!data.rejected_teachers.includes(teacherId)) {
+              data.rejected_teachers.push(teacherId);
+            }
+          });
+        }
+
+        // Calculate hours since last invitation based on created_at (not sent_at)
+        if (data.last_invitation_created_at) {
+          const lastInvitationDate = new Date(data.last_invitation_created_at);
+          const now = new Date();
+          data.hours_since_last_invitation = Math.floor((now - lastInvitationDate) / (1000 * 60 * 60));
+        }
+
+        // Determine if we can send next invitation
+        if (data.pending_teachers && data.pending_teachers.length > 0) {
+          // There are pending invitations
+          if (data.hours_since_last_invitation !== undefined && data.hours_since_last_invitation >= 24) {
+            data.can_send_next = true;
+          } else {
+            data.can_send_next = false;
+          }
+        } else {
+          // No pending invitations
+          data.can_send_next = true;
+        }
+
         return data;
       }
     } catch (error) {
@@ -609,10 +662,11 @@ Coordenação de Cursos
     return null;
   }
 
+
   async function saveContractInfo(teacherId, courseId, contractInfo) {
     const isPostgraduate = window.location.pathname.includes('docentes-pos');
     const formData = new FormData();
-    formData.append('teacher_id', teacherId);
+    formData.append('user_id', teacherId);
     formData.append('course_id', courseId);
     formData.append('contract_info', contractInfo);
     formData.append('teacher_type', isPostgraduate ? 'postgraduate' : 'regular');
@@ -634,186 +688,187 @@ Coordenação de Cursos
       alert('Erro ao salvar informações contratuais');
     }
   }
+
+
+  let isRendering = false;
+
   async function updateTable() {
-    console.log('UpdateTable called, isFilteredByCourse:', isFilteredByCourse);
-
-    invitationStatuses = {};
-    const tbody = document.querySelector('.table tbody');
-    tbody.innerHTML = '';
-
-    if (!currentTeachers || currentTeachers.length === 0) {
-      const row = document.createElement('tr');
-      const cell = document.createElement('td');
-      cell.colSpan = isAdmin ? 5 : 4;
-      cell.textContent = 'Nenhum docente encontrado.';
-      cell.style.textAlign = 'center';
-      row.appendChild(cell);
-      tbody.appendChild(row);
-
-      // Disable export buttons when no data
-      document.getElementById('export-btn').disabled = true;
-      document.getElementById('export-pdf-btn').disabled = !hasActiveFilters();
+    if (isRendering) {
+      console.log('Already rendering, skipping duplicate call');
       return;
     }
 
-    // Only check invitation status if filtered by course
-    if (isFilteredByCourse) {
-      const courseSelect = document.getElementById('course');
-      const selectedCourseId = courseSelect.value;
+    isRendering = true;
 
-      console.log('Checking invitation status for course:', selectedCourseId);
+    try {
+      let invitationHandled = false;
+      invitationStatuses = {};
 
-      if (selectedCourseId) {
-        const invitationStatus = await checkInvitationStatus(selectedCourseId);
-        console.log('Invitation status result:', invitationStatus);
-        console.log('invitationStatuses cache after check:', invitationStatuses);
-      }
-    }
+      const tbody = document.querySelector('.table tbody');
+      tbody.innerHTML = '';
 
-    if (isFilteredByCourse) {
-      document.getElementById('called-at-header').style.display = '';
-    } else {
-      document.getElementById('called-at-header').style.display = 'none';
-    }
+      if (!currentTeachers || currentTeachers.length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = isAdmin ? 5 : 4;
+        cell.textContent = 'Nenhum docente encontrado.';
+        cell.style.textAlign = 'center';
+        row.appendChild(cell);
+        tbody.appendChild(row);
 
-    // Sort by called_at when filtered by course
-    if (isFilteredByCourse) {
-      currentTeachers.sort((a, b) => {
-        // Check teacher statuses
-        const courseSelect = document.getElementById('course');
-        const selectedCourseId = courseSelect.value;
-        const invitationStatus = invitationStatuses[selectedCourseId];
-
-        let aPending = false;
-        let bPending = false;
-        let aRejected = false;
-        let bRejected = false;
-
-        if (invitationStatus) {
-          if (invitationStatus.pending_teachers) {
-            aPending = invitationStatus.pending_teachers.includes(parseInt(a.id));
-            bPending = invitationStatus.pending_teachers.includes(parseInt(b.id));
-          }
-          if (invitationStatus.rejected_teachers) {
-            aRejected = invitationStatus.rejected_teachers.includes(parseInt(a.id));
-            bRejected = invitationStatus.rejected_teachers.includes(parseInt(b.id));
-          }
-        }
-
-        // Sorting priority:
-        // 1. Regular teachers (not pending, not rejected) sorted by called_at
-        // 2. Pending teachers at the bottom
-        // 3. Rejected teachers at the very bottom
-
-        // If one is rejected and the other isn't, rejected goes to bottom
-        if (aRejected && !bRejected) return 1;
-        if (!aRejected && bRejected) return -1;
-
-        // If one is pending and the other isn't (and neither rejected), pending goes to bottom
-        if (!aRejected && !bRejected) {
-          if (aPending && !bPending) return 1;
-          if (!aPending && bPending) return -1;
-        }
-
-        // If both have same status (both regular, both pending, or both rejected), sort by called_at date
-        let dateA = null;
-        let dateB = null;
-
-        if (a.discipline_statuses) {
-          const disciplinesA = a.discipline_statuses.split('|~~|');
-          for (const disc of disciplinesA) {
-            const parts = disc.split('|~|');
-            if (parts.length >= 4 && parts[3]) {
-              const dateParts = parts[3].split('/');
-              if (dateParts.length === 3) {
-                const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                if (!dateA || date < dateA) dateA = date;
-              }
-            }
-          }
-        }
-
-        if (b.discipline_statuses) {
-          const disciplinesB = b.discipline_statuses.split('|~~|');
-          for (const disc of disciplinesB) {
-            const parts = disc.split('|~|');
-            if (parts.length >= 4 && parts[3]) {
-              const dateParts = parts[3].split('/');
-              if (dateParts.length === 3) {
-                const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                if (!dateB || date < dateB) dateB = date;
-              }
-            }
-          }
-        }
-
-        if (!dateA) dateA = '9999-12-31';
-        if (!dateB) dateB = '9999-12-31';
-
-        return dateA.localeCompare(dateB);
-      });
-    }
-
-    let isFirstInList = true;
-    let invitationHandled = false;
-
-    currentTeachers.forEach((teacher) => {
-      const row = document.createElement('tr');
-
-      // Make row clickable if admin
-      if (isAdmin) {
-        row.style.cursor = 'pointer';
-        row.onclick = () => {
-          // Use the appropriate page based on current location
-          const targetPage = window.location.pathname.includes('docentes-pos') ? 'docente-pos.php' : 'docente.php';
-          window.location.href = `${targetPage}?id=${teacher.id}`;
-        };
+        document.getElementById('export-btn').disabled = true;
+        document.getElementById('export-pdf-btn').disabled = !hasActiveFilters();
+        return;
       }
 
-      // Name cell with invitation logic
-      const nameCell = document.createElement('td');
-      nameCell.textContent = teacher.name || '';
-
-      // Handle course filter actions
+      let invitationStatus = null;
       if (isFilteredByCourse) {
         const courseSelect = document.getElementById('course');
         const selectedCourseId = courseSelect.value;
-        const selectedCourseName = courseSelect.options[courseSelect.selectedIndex].text;
-        const invitationStatus = invitationStatuses[selectedCourseId];
 
-        if (invitationStatus) {
-          // Convert teacher ID to appropriate formats
-          const teacherIdStr = String(teacher.id);
-          const teacherIdNum = parseInt(teacher.id);
+        if (selectedCourseId) {
+          invitationStatus = await checkInvitationStatus(selectedCourseId);
+          invitationStatuses[selectedCourseId] = invitationStatus;
 
-          // Check if this teacher has rejected the invitation
-          const hasRejectedInvitation = invitationStatus.rejected_teachers &&
-            invitationStatus.rejected_teachers.includes(teacherIdNum);
 
-          // Check if this teacher has a pending invitation
-          const hasPendingInvitation = invitationStatus.pending_teachers &&
-            invitationStatus.pending_teachers.includes(teacherIdNum);
+        }
+      }
 
-          // Check if this teacher has accepted the invitation
-          const isAcceptedTeacher = invitationStatus.accepted_teachers &&
-            invitationStatus.accepted_teachers.hasOwnProperty(teacherIdStr);
+      const calledAtHeader = document.getElementById('called-at-header');
+      if (isFilteredByCourse) {
+        calledAtHeader.style.display = '';
+      } else {
+        calledAtHeader.style.display = 'none';
+      }
 
-          if (hasRejectedInvitation) {
-            // Show "Recusado" for rejected teachers
+      let sortedTeachers = [...currentTeachers];
+
+      // FIXED: Improved sorting logic with better debugging
+      if (isFilteredByCourse && invitationStatus) {
+
+        sortedTeachers.sort((a, b) => {
+          // Convert IDs to integers for comparison
+          const aId = parseInt(a.id);
+          const bId = parseInt(b.id);
+
+          // FIXED: Better status checking with type conversion and debugging
+          const aPending = invitationStatus.pending_teachers ?
+            invitationStatus.pending_teachers.some(id => parseInt(id) === aId) : false;
+          const bPending = invitationStatus.pending_teachers ?
+            invitationStatus.pending_teachers.some(id => parseInt(id) === bId) : false;
+
+          const aRejected = invitationStatus.rejected_teachers ?
+            invitationStatus.rejected_teachers.some(id => parseInt(id) === aId) : false;
+          const bRejected = invitationStatus.rejected_teachers ?
+            invitationStatus.rejected_teachers.some(id => parseInt(id) === bId) : false;
+
+          const aExpired = invitationStatus.expired_teachers ?
+            invitationStatus.expired_teachers.some(id => parseInt(id) === aId) : false;
+          const bExpired = invitationStatus.expired_teachers ?
+            invitationStatus.expired_teachers.some(id => parseInt(id) === bId) : false;
+
+          const aAccepted = invitationStatus.accepted_teachers ?
+            invitationStatus.accepted_teachers.hasOwnProperty(aId.toString()) : false;
+          const bAccepted = invitationStatus.accepted_teachers ?
+            invitationStatus.accepted_teachers.hasOwnProperty(bId.toString()) : false;
+
+          console.log(`Sorting check - Teacher ${aId} (${a.name}): pending=${aPending}, rejected=${aRejected}, expired=${aExpired}, accepted=${aAccepted}`);
+
+          const aIneligible = aPending || aRejected || aExpired || aAccepted;
+          const bIneligible = bPending || bRejected || bExpired || bAccepted;
+
+          // Eligible teachers (can receive invitations) come first
+          if (!aIneligible && bIneligible) return -1;
+          if (aIneligible && !bIneligible) return 1;
+
+          // Among eligible teachers, sort by called_at date
+          let dateA = '9999-12-31';
+          let dateB = '9999-12-31';
+
+          if (a.discipline_statuses) {
+            const disciplinesA = a.discipline_statuses.split('|~~|');
+            for (const disc of disciplinesA) {
+              const parts = disc.split('|~|');
+              if (parts.length >= 4 && parts[3]) {
+                const dateParts = parts[3].split('/');
+                if (dateParts.length === 3) {
+                  const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                  if (date < dateA) dateA = date;
+                }
+              }
+            }
+          }
+
+          if (b.discipline_statuses) {
+            const disciplinesB = b.discipline_statuses.split('|~~|');
+            for (const disc of disciplinesB) {
+              const parts = disc.split('|~|');
+              if (parts.length >= 4 && parts[3]) {
+                const dateParts = parts[3].split('/');
+                if (dateParts.length === 3) {
+                  const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                  if (date < dateB) dateB = date;
+                }
+              }
+            }
+          }
+
+          return dateA.localeCompare(dateB);
+        });
+      }
+
+      // Render teachers
+      for (let i = 0; i < sortedTeachers.length; i++) {
+        const teacher = sortedTeachers[i];
+        console.log(`Rendering teacher ${i + 1}/${sortedTeachers.length}:`, teacher.name, 'ID:', teacher.id);
+
+        const row = document.createElement('tr');
+        row.dataset.teacherId = teacher.id;
+
+        row.addEventListener('click', function(e) {
+          if (e.target.closest('button, textarea, input, a')) {
+            return;
+          }
+          const targetPage = window.location.pathname.includes('docentes-pos') ?
+            'docente-pos.php' : 'docente.php';
+          window.location.href = `${targetPage}?id=${teacher.id}`;
+        });
+
+        const nameCell = document.createElement('td');
+        nameCell.textContent = teacher.name || '';
+
+        if (isFilteredByCourse && invitationStatus) {
+          const courseSelect = document.getElementById('course');
+          const selectedCourseId = courseSelect.value;
+          const selectedCourseName = courseSelect.options[courseSelect.selectedIndex].text;
+
+          // FIXED: Better teacher ID comparison with type conversion
+          const teacherId = parseInt(teacher.id);
+
+          const hasPendingInvitation = invitationStatus.pending_teachers ?
+            invitationStatus.pending_teachers.some(id => parseInt(id) === teacherId) : false;
+          const hasRejectedInvitation = invitationStatus.rejected_teachers ?
+            invitationStatus.rejected_teachers.some(id => parseInt(id) === teacherId) : false;
+          const hasExpiredInvitation = invitationStatus.expired_teachers ?
+            invitationStatus.expired_teachers.some(id => parseInt(id) === teacherId) : false;
+          const isAcceptedTeacher = invitationStatus.accepted_teachers ?
+            invitationStatus.accepted_teachers.hasOwnProperty(teacherId.toString()) : false;
+
+          console.log(`Teacher ${teacherId} (${teacher.name}) status - pending: ${hasPendingInvitation}, rejected: ${hasRejectedInvitation}, expired: ${hasExpiredInvitation}, accepted: ${isAcceptedTeacher}`);
+
+          if (hasExpiredInvitation || hasRejectedInvitation) {
             const rejectedSpan = document.createElement('span');
             rejectedSpan.className = 'invitation-rejected';
             rejectedSpan.textContent = 'Recusado';
-            rejectedSpan.style.marginLeft = '10px';
             nameCell.appendChild(rejectedSpan);
           } else if (hasPendingInvitation) {
-            // Show "Aguardando resposta" for pending teachers
             const pendingSpan = document.createElement('span');
             pendingSpan.className = 'invitation-pending';
             pendingSpan.textContent = 'Aguardando resposta';
-            pendingSpan.style.marginLeft = '10px';
             nameCell.appendChild(pendingSpan);
+            console.log(`Added pending status for teacher ${teacherId}`);
           } else if (isAcceptedTeacher) {
-            // Show contract textarea for accepted teachers
+            // Contract info logic (unchanged)
             const contractDiv = document.createElement('div');
             contractDiv.style.display = 'inline-block';
             contractDiv.style.marginLeft = '10px';
@@ -825,7 +880,7 @@ Coordenação de Cursos
             const textarea = document.createElement('textarea');
             textarea.className = 'contract-textarea';
             textarea.placeholder = 'Informações do contrato...';
-            textarea.value = invitationStatus.accepted_teachers[teacherIdStr] || '';
+            textarea.value = invitationStatus.accepted_teachers[teacherId.toString()] || '';
 
             const saveBtn = document.createElement('button');
             saveBtn.className = 'contract-save-btn';
@@ -839,24 +894,31 @@ Coordenação de Cursos
             contractDiv.appendChild(textarea);
             contractDiv.appendChild(saveBtn);
             nameCell.appendChild(contractDiv);
-          }
+          } else if (!invitationHandled && isAdmin) {
+            let canSendInvitation = false;
 
-          // Handle invitation button for first eligible teacher
-          if (!invitationHandled && !hasPendingInvitation && !hasRejectedInvitation && !isAcceptedTeacher) {
-            if (invitationStatus.can_send_next && isFirstInList) {
-              // Show send invitation button
+            if (invitationStatus.can_send_next) {
+              canSendInvitation = true;
+            } else if (invitationStatus.hours_since_last_invitation !== undefined && invitationStatus.hours_since_last_invitation !== null) {
+              canSendInvitation = invitationStatus.hours_since_last_invitation >= 24;
+            }
+
+            console.log(`Can send invitation to teacher ${teacherId}:`, canSendInvitation, 'hours since last:', invitationStatus.hours_since_last_invitation);
+
+            if (canSendInvitation) {
               const actionButton = document.createElement('button');
               actionButton.className = 'action-button';
               actionButton.textContent = 'Enviar Convite';
-
               actionButton.onclick = (e) => {
                 e.stopPropagation();
+                const teacherType = window.location.pathname.includes('docentes-pos') ? 'postgraduate' : 'regular';
                 openInvitationModal(
                   teacher.id,
                   teacher.name,
                   teacher.email,
                   selectedCourseId,
-                  selectedCourseName
+                  selectedCourseName,
+                  teacherType
                 );
               };
 
@@ -864,111 +926,126 @@ Coordenação de Cursos
               invitationHandled = true;
             }
           }
-        } else if (!invitationHandled && isFirstInList) {
-          // No invitations sent yet, show button for first teacher
-          const actionButton = document.createElement('button');
-          actionButton.className = 'action-button';
-          actionButton.textContent = 'Enviar Convite';
-
-          actionButton.onclick = (e) => {
-            e.stopPropagation();
-            openInvitationModal(
-              teacher.id,
-              teacher.name,
-              teacher.email,
-              selectedCourseId,
-              selectedCourseName
-            );
-          };
-
-          nameCell.appendChild(actionButton);
-          invitationHandled = true;
         }
 
-        isFirstInList = false;
-      }
+        row.appendChild(nameCell);
 
-      row.appendChild(nameCell);
+        const emailCell = document.createElement('td');
+        emailCell.textContent = teacher.email || '';
+        row.appendChild(emailCell);
 
-      // Email
-      const emailCell = document.createElement('td');
-      emailCell.textContent = teacher.email || '';
-      row.appendChild(emailCell);
+        const createdCell = document.createElement('td');
+        createdCell.textContent = formatDate(teacher.created_at);
+        row.appendChild(createdCell);
 
-      // Created at
-      const createdCell = document.createElement('td');
-      createdCell.textContent = formatDate(teacher.created_at);
-      row.appendChild(createdCell);
+        const calledCell = document.createElement('td');
+        calledCell.className = 'called-at-cell';
 
-      // Called at (only when filtered by course)
-      const calledCell = document.createElement('td');
-      calledCell.className = 'called-at-cell';
+        if (isFilteredByCourse && teacher.discipline_statuses) {
+          const disciplines = teacher.discipline_statuses.split('|~~|');
+          let earliestDate = null;
 
-      if (isFilteredByCourse && teacher.discipline_statuses) {
-        // Extract called_at from filtered discipline
-        const disciplines = teacher.discipline_statuses.split('|~~|');
-        let earliestDate = null;
-
-        disciplines.forEach(disc => {
-          const parts = disc.split('|~|');
-          if (parts.length >= 4 && parts[3]) {
-            if (!earliestDate || parts[3] < earliestDate) {
-              earliestDate = parts[3];
+          disciplines.forEach(disc => {
+            const parts = disc.split('|~|');
+            if (parts.length >= 4 && parts[3]) {
+              if (!earliestDate || parts[3] < earliestDate) {
+                earliestDate = parts[3];
+              }
             }
-          }
-        });
+          });
 
-        calledCell.textContent = earliestDate || '';
-        calledCell.style.display = '';
-      } else {
-        calledCell.style.display = 'none';
+          calledCell.textContent = earliestDate || '';
+          calledCell.style.display = '';
+        } else {
+          calledCell.style.display = 'none';
+        }
+
+        row.appendChild(calledCell);
+
+        const disciplinesCell = document.createElement('td');
+        if (teacher.discipline_statuses) {
+          const disciplineGroups = teacher.discipline_statuses.split('|~~|');
+          disciplineGroups.forEach(group => {
+            const parts = group.split('|~|');
+            if (parts.length >= 3) {
+              const disciplineId = parts[0];
+              const disciplineName = parts[1];
+              const status = parts[2];
+
+              const div = document.createElement('div');
+              div.className = 'discipline-status';
+
+              const nameSpan = document.createElement('span');
+              nameSpan.className = 'discipline-name';
+              nameSpan.textContent = disciplineName;
+
+              const statusSpan = document.createElement('span');
+              statusSpan.className = `status-badge ${getStatusClass(status)}`;
+              statusSpan.textContent = parseStatusLabel(status);
+
+              div.appendChild(nameSpan);
+              div.appendChild(statusSpan);
+              disciplinesCell.appendChild(div);
+            }
+          });
+        } else {
+          disciplinesCell.innerHTML = '<span class="text-muted">Sem disciplinas</span>';
+        }
+        row.appendChild(disciplinesCell);
+
+        tbody.appendChild(row);
       }
 
-      row.appendChild(calledCell);
 
-      // Disciplines
-      const disciplinesCell = document.createElement('td');
-      if (teacher.discipline_statuses) {
-        const disciplineGroups = teacher.discipline_statuses.split('|~~|');
-        disciplineGroups.forEach(group => {
-          const parts = group.split('|~|');
-          if (parts.length >= 3) {
-            const disciplineId = parts[0];
-            const disciplineName = parts[1];
-            const status = parts[2];
+      const hasData = currentTeachers.length > 0;
+      document.getElementById('export-btn').disabled = !hasData;
+      document.getElementById('export-pdf-btn').disabled = !hasActiveFilters();
 
-            const div = document.createElement('div');
-            div.className = 'discipline-status';
-
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'discipline-name';
-            nameSpan.textContent = disciplineName;
-
-            const statusSpan = document.createElement('span');
-            statusSpan.className = `status-badge ${getStatusClass(status)}`;
-            statusSpan.textContent = parseStatusLabel(status);
-
-            div.appendChild(nameSpan);
-            div.appendChild(statusSpan);
-            disciplinesCell.appendChild(div);
-          }
-        });
-      } else {
-        disciplinesCell.innerHTML = '<span class="text-muted">Sem disciplinas</span>';
-      }
-      row.appendChild(disciplinesCell);
-
-      tbody.appendChild(row);
-    });
-
-    // Update export button states
-    const hasData = currentTeachers.length > 0;
-    document.getElementById('export-btn').disabled = !hasData;
-
-    // PDF export is only enabled when filters are active
-    const hasFilters = hasActiveFilters();
-    document.getElementById('export-pdf-btn').disabled = !hasFilters;
+    } finally {
+      isRendering = false;
+    }
   }
+
+
+  // Updated fetchFilteredData function to ensure proper cache clearing
+  async function fetchFilteredData() {
+
+    const category = document.getElementById('category').value;
+    const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value;
+
+    // Update isFilteredByCourse flag
+    isFilteredByCourse = course !== '';
+
+    // ALWAYS clear invitation statuses when filters change or data is refreshed
+    invitationStatuses = {};
+
+    if (!category && !course && !status && !name) {
+      currentTeachers = [...allTeachers];
+      await updateTable();
+      return;
+    }
+
+    const queryParams = new URLSearchParams();
+    if (category) queryParams.append('category', category);
+    if (course) queryParams.append('course', course);
+    if (status) queryParams.append('status', status);
+    if (name) queryParams.append('name', name);
+
+    try {
+      const response = await fetch('../backend/api/get_filtered_teachers.php?' + queryParams);
+      const data = await response.json();
+
+      currentTeachers = data;
+      await updateTable();
+    } catch (error) {
+      currentTeachers = [];
+      await updateTable();
+    }
+
+  }
+
   setInterval(async () => {
     if (isFilteredByCourse) {
       const courseSelect = document.getElementById('course');
@@ -1006,54 +1083,6 @@ Coordenação de Cursos
       return 'status-not-approved';
     }
     return 'status-pending';
-  }
-
-  async function fetchFilteredData() {
-    const category = document.getElementById('category').value;
-    const course = document.getElementById('course').value;
-    const status = document.getElementById('status').value;
-    const name = document.getElementById('name').value;
-
-    // Check if filtering by course
-    isFilteredByCourse = course !== '';
-
-    console.log('fetchFilteredData called, isFilteredByCourse:', isFilteredByCourse, 'course:', course);
-
-    if (isFilteredByCourse) {
-      document.getElementById('called-at-header').style.display = '';
-    } else {
-      document.getElementById('called-at-header').style.display = 'none';
-    }
-
-    if (!category && !course && !status && !name) {
-      currentTeachers = [...allTeachers];
-      await updateTable();
-      return;
-    }
-
-    const queryParams = new URLSearchParams();
-    if (category) queryParams.append('category', category);
-    if (course) queryParams.append('course', course);
-    if (status && status !== 'no-disciplines') queryParams.append('status', status);
-    if (name) queryParams.append('name', name);
-
-    try {
-      const response = await fetch('../backend/api/get_filtered_teachers.php?' + queryParams);
-      const data = await response.json();
-
-      if (status === 'no-disciplines') {
-        currentTeachers = allTeachers.filter(t => !t.discipline_statuses || t.discipline_statuses === '');
-      } else {
-        currentTeachers = data;
-      }
-
-      console.log('Filtered teachers loaded:', currentTeachers.length);
-      await updateTable();
-    } catch (error) {
-      console.error('Error:', error);
-      currentTeachers = [];
-      await updateTable();
-    }
   }
 
   // Add event listeners
@@ -1170,16 +1199,13 @@ Coordenação de Cursos
       });
   }
   // Modal functions
-  function openInvitationModal(teacherId, teacherName, teacherEmail, courseId, courseName) {
+  function openInvitationModal(teacherId, teacherName, teacherEmail, courseId, courseName, teacherType) {
     document.getElementById('teacherId').value = teacherId;
     document.getElementById('teacherEmail').value = teacherEmail;
     document.getElementById('courseId').value = courseId;
     document.getElementById('teacherName').textContent = teacherName;
     document.getElementById('courseName').textContent = courseName;
-
-    // Determine if it's postgraduate based on current page
-    const isPostgraduate = window.location.pathname.includes('docentes-pos');
-    document.getElementById('isPostgraduate').value = isPostgraduate ? '1' : '0';
+    document.getElementById('teacherType').value = teacherType;
 
     document.getElementById('invitationModal').style.display = 'block';
   }
@@ -1198,7 +1224,6 @@ Coordenação de Cursos
   }
 
   // Replace the form submission handler with this updated version:
-
   document.getElementById('invitationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -1221,9 +1246,19 @@ Coordenação de Cursos
         alert('Convite enviado com sucesso!');
         closeInvitationModal();
 
-        // Clear cache and refresh the table to show the pending status
+        // FIXED: Force complete refresh of data
+        console.log('Invitation sent successfully, refreshing data...');
+
+        // Clear ALL caches
         invitationStatuses = {};
+
+        // Wait a moment for the database to be updated
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Force fresh data fetch
         await fetchFilteredData();
+
+        console.log('Data refreshed after invitation sent');
       } else {
         alert('Erro ao enviar convite: ' + (result.message || 'Erro desconhecido'));
       }
@@ -1236,20 +1271,8 @@ Coordenação de Cursos
     }
   });
 
-  // Update the action button onclick to include course information
-  // This function should replace the existing onclick handler in the table rendering code
-  function handleActionButton(teacher, courseId, courseName) {
-    openInvitationModal(
-      teacher.id,
-      teacher.name,
-      teacher.email,
-      courseId,
-      courseName
-    );
-  }
   // After all your functions are defined, at the very end of your script, have just one:
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing...');
 
     // Disable both export buttons initially
     document.getElementById('export-btn').disabled = true;
@@ -1257,7 +1280,6 @@ Coordenação de Cursos
 
     const courseSelect = document.getElementById('course');
     if (courseSelect && courseSelect.value) {
-      console.log('Initial course selected:', courseSelect.value);
       // Small delay to ensure everything is initialized
       setTimeout(() => {
         invitationStatuses = {};
@@ -1267,6 +1289,23 @@ Coordenação de Cursos
       // Initialize table without filters
       updateTable();
     }
+  });
+  // Add event listeners with debug
+  document.getElementById('category').addEventListener('change', function() {
+    console.log('Category changed, calling fetchFilteredData');
+    fetchFilteredData();
+  });
+  document.getElementById('course').addEventListener('change', function() {
+    console.log('Course changed, calling fetchFilteredData');
+    fetchFilteredData();
+  });
+  document.getElementById('status').addEventListener('change', function() {
+    console.log('Status changed, calling fetchFilteredData');
+    fetchFilteredData();
+  });
+  document.getElementById('name').addEventListener('input', function() {
+    console.log('Name input, calling fetchFilteredData');
+    fetchFilteredData();
   });
 </script>
 
