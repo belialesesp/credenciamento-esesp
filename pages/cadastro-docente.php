@@ -13,6 +13,86 @@ include_once('../components/header.php');
     font-size: 1em;
     font-style: italic;
   }
+  .form-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .form-subtitle {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .document-subsection {
+            background: white;
+            border-radius: 6px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .subsection-title {
+            color: #212529;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .file-upload-group {
+            margin-bottom: 1rem;
+        }
+        
+        .file-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+        }
+        
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .form-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        
+        .required-indicator {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .upload-status {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .upload-success {
+            color: #198754;
+        }
+        
+        .upload-error {
+            color: #dc3545;
+        }
+        
+        .optional-label {
+            font-style: italic;
+            color: #6c757d;
+        }
 </style>
 
 <main>
@@ -278,14 +358,174 @@ include_once('../components/header.php');
       </section>
 
       <section class="form-section">
-        <h5 class="form-subtitle">Documentos</h5>
-        <p>Envie as documentações pessoais e habilitações requeridas no Edital</p>
-        <div class="mb-4" id="fileContainer">
-          <input class="form-control" type="file" id="documents" name="documents" accept="application/pdf" required>
-          <div class="invalid-feedback">Documentos de comprovação obrigatório</div>
-          <div class="form-text">*Apenas documentos unificados em formato de pdf serão aceitos</div>
-        </div>
-      </section>
+            <h5 class="form-subtitle">
+                <i class="fas fa-file-upload me-2"></i>
+                Documentos
+            </h5>
+            <p class="text-muted mb-4">
+                Envie as documentações pessoais e habilitações requeridas no Edital. 
+                Cada documento deve ser enviado separadamente em formato PDF.
+            </p>
+            
+            <!-- Documentos Pessoais -->
+            <div class="document-subsection">
+                <h6 class="subsection-title">
+                    <i class="fas fa-user me-2"></i>
+                    Documentos Pessoais
+                </h6>
+                
+                <div class="file-upload-group">
+                    <label for="comprovante_residencia" class="file-label">
+                        Comprovante de Residência <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="comprovante_residencia" 
+                           name="comprovante_residencia" accept="application/pdf" required>
+                    <div class="invalid-feedback">Comprovante de residência é obrigatório</div>
+                    <div class="form-text">Conta de luz, água, telefone ou similar dos últimos 3 meses</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="documento_identificacao" class="file-label">
+                        Documento de Identificação oficial com foto e CPF <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="documento_identificacao" 
+                           name="documento_identificacao" accept="application/pdf" required>
+                    <div class="invalid-feedback">Documento de identificação é obrigatório</div>
+                    <div class="form-text">RG, CNH ou outro documento oficial com foto</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="certificado_reservista" class="file-label">
+                        Certificado de Reservista <span class="optional-label">(se aplicável)</span>
+                    </label>
+                    <input class="form-control" type="file" id="certificado_reservista" 
+                           name="certificado_reservista" accept="application/pdf">
+                    <div class="form-text">Obrigatório apenas para candidatos do sexo masculino</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="titulo_eleitor" class="file-label">
+                        Título de Eleitor <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="titulo_eleitor" 
+                           name="titulo_eleitor" accept="application/pdf" required>
+                    <div class="invalid-feedback">Título de eleitor é obrigatório</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="pis_pasep" class="file-label">
+                        PIS/PASEP <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="pis_pasep" 
+                           name="pis_pasep" accept="application/pdf" required>
+                    <div class="invalid-feedback">PIS/PASEP é obrigatório</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="protocolo_siades" class="file-label">
+                        Protocolo SIADES <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="protocolo_siades" 
+                           name="protocolo_siades" accept="application/pdf" required>
+                    <div class="invalid-feedback">Protocolo SIADES é obrigatório</div>
+                </div>
+            </div>
+            
+            <!-- Comprovação de Qualificação Técnica -->
+            <div class="document-subsection">
+                <h6 class="subsection-title">
+                    <i class="fas fa-graduation-cap me-2"></i>
+                    Comprovação de Qualificação Técnica
+                </h6>
+                
+                <div class="file-upload-group">
+                    <label for="formacao_escolar" class="file-label">
+                        Formação Escolar <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="formacao_escolar" 
+                           name="formacao_escolar" accept="application/pdf" required>
+                    <div class="invalid-feedback">Comprovação de formação escolar é obrigatória</div>
+                    <div class="form-text">Diploma, certificado ou declaração de conclusão</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="experiencia_profissional" class="file-label">
+                        Comprovante de experiência profissional na área de atuação <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="experiencia_profissional" 
+                           name="experiencia_profissional" accept="application/pdf" required>
+                    <div class="invalid-feedback">Comprovante de experiência profissional é obrigatório</div>
+                    <div class="form-text">Carteira de trabalho, declaração ou contrato</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="publicacoes" class="file-label">
+                        Publicações <span class="optional-label">(se houver)</span>
+                    </label>
+                    <input class="form-control" type="file" id="publicacoes" 
+                           name="publicacoes" accept="application/pdf">
+                    <div class="form-text">Artigos, livros ou outras publicações relevantes</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="certificados_cursos" class="file-label">
+                        Certificados ou declarações de conclusão de cursos <span class="optional-label">(se houver)</span>
+                    </label>
+                    <input class="form-control" type="file" id="certificados_cursos" 
+                           name="certificados_cursos" accept="application/pdf">
+                    <div class="form-text">Cursos complementares, especializações ou capacitações</div>
+                </div>
+            </div>
+            
+            <!-- Qualificação Econômico-Financeira -->
+            <div class="document-subsection">
+                <h6 class="subsection-title">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>
+                    Qualificação Econômico-Financeira e Regularidade Fiscal e Trabalhista
+                </h6>
+                
+                <div class="file-upload-group">
+                    <label for="certidao_estadual" class="file-label">
+                        Certidão Negativa Estadual <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="certidao_estadual" 
+                           name="certidao_estadual" accept="application/pdf" required>
+                    <div class="invalid-feedback">Certidão Negativa Estadual é obrigatória</div>
+                    <div class="form-text">Certidão de regularidade com a Fazenda Estadual</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="certidao_municipal" class="file-label">
+                        Certidão Negativa Municipal <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="certidao_municipal" 
+                           name="certidao_municipal" accept="application/pdf" required>
+                    <div class="invalid-feedback">Certidão Negativa Municipal é obrigatória</div>
+                    <div class="form-text">Certidão de regularidade com a Fazenda Municipal</div>
+                </div>
+                
+                <div class="file-upload-group">
+                    <label for="certidao_conjunta" class="file-label">
+                        Certidão Conjunta PGFN e RFB <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="certidao_conjunta" 
+                           name="certidao_conjunta" accept="application/pdf" required>
+                    <div class="invalid-feedback">Certidão Conjunta PGFN e RFB é obrigatória</div>
+                    <div class="form-text">Certidão de regularidade com a Receita Federal e PGFN</div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Observações importantes:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>Apenas documentos em formato PDF serão aceitos</li>
+                    <li>Cada arquivo deve ter no máximo 5MB</li>
+                    <li>Certifique-se de que todos os documentos estão legíveis</li>
+                    <li>Documentos com <span class="required-indicator">*</span> são obrigatórios</li>
+                </ul>
+            </div>
+        </section>
 
       <section class="form-section">
         <h5 class="form-subtitle">Informações Adicionais</h5>
