@@ -503,10 +503,20 @@ include_once('../components/header.php');
                     <div class="invalid-feedback">Certidão Negativa Municipal é obrigatória</div>
                     <div class="form-text">Certidão de regularidade com a Fazenda Municipal</div>
                 </div>
+
+                <div class="file-upload-group">
+                    <label for="certidao_federal" class="file-label">
+                        Certidão Negativa Federal <span class="required-indicator">*</span>
+                    </label>
+                    <input class="form-control" type="file" id="certidao_federal" 
+                           name="certidao_federal" accept="application/pdf" required>
+                    <div class="invalid-feedback">Certidão Negativa Federal é obrigatória</div>
+                    <div class="form-text">Certidão de regularidade com a Fazenda Federal</div>
+                </div>
                 
                 <div class="file-upload-group">
                     <label for="certidao_conjunta" class="file-label">
-                        Certidão Conjunta PGFN e RFB <span class="required-indicator">*</span>
+                        Certidão Conjunta PGFN e RFB do Tribunal de Justiça <span class="required-indicator">*</span>
                     </label>
                     <input class="form-control" type="file" id="certidao_conjunta" 
                            name="certidao_conjunta" accept="application/pdf" required>
