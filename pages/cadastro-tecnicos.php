@@ -111,13 +111,14 @@
       </section>
 
       <section class="form-section">
-        <h5 class="form-subtitle">Documentos</h5>
-        <p>Envie as documentações pessoais e habilitações requeridas no Edital</p>
-        <div class="mb-4" id="fileContainer">
-          <label for="documents" class="form-label label-file">Documento de comprovação*</label>
-          <input class="form-control" type="file" id="documents" name="documents" accept="application/pdf" required>
-          <div class="invalid-feedback">Documentos de comprovação obrigatório</div>
-          <div class="form-text">*Apenas documentos unificados em formato de pdf serão aceitos</div>
+        <div class="file-upload-group">
+          <label for="formacao_escolar" class="file-label">
+            Formação Escolar <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="formacao_escolar"
+            name="formacao_escolar" accept="application/pdf" required>
+          <div class="invalid-feedback">Comprovação de formação escolar é obrigatória</div>
+          <div class="form-text">Diploma, certificado ou declaração de conclusão</div>
         </div>
       </section>
 

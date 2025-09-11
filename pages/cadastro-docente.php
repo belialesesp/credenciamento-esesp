@@ -491,7 +491,7 @@ include_once('../components/header.php');
                     <input class="form-control" type="file" id="certidao_estadual" 
                            name="certidao_estadual" accept="application/pdf" required>
                     <div class="invalid-feedback">Certidão Negativa Estadual é obrigatória</div>
-                    <div class="form-text">Certidão de regularidade com a Fazenda Estadual</div>
+                    <div class="form-text">Certidão de regularidade com a Fazenda Estadual pode ser emitida <a href="https://sefaz.es.gov.br/emissao-de-certidoes" target="_blank">aqui</a></div>
                 </div>
                 
                 <div class="file-upload-group">
@@ -511,7 +511,7 @@ include_once('../components/header.php');
                     <input class="form-control" type="file" id="certidao_federal" 
                            name="certidao_federal" accept="application/pdf" required>
                     <div class="invalid-feedback">Certidão Negativa Federal é obrigatória</div>
-                    <div class="form-text">Certidão de regularidade com a Fazenda Federal</div>
+                    <div class="form-text">Certidão de regularidade com a Fazenda Federal pode ser emitida <a href="https://servicos.receitafederal.gov.br/servico/certidoes/#/home" target="_blank">aqui</a></div>
                 </div>
                 
                 <div class="file-upload-group">
@@ -521,7 +521,7 @@ include_once('../components/header.php');
                     <input class="form-control" type="file" id="certidao_conjunta" 
                            name="certidao_conjunta" accept="application/pdf" required>
                     <div class="invalid-feedback">Certidão Conjunta PGFN e RFB é obrigatória</div>
-                    <div class="form-text">Certidão de regularidade com a Receita Federal e PGFN</div>
+                    <div class="form-text">Certidão de regularidade com a Receita Federal e PGFN pode ser emitida <a href="https://servicos.receitafederal.gov.br/servico/certidoes/#/home" target="_blank">aqui</a></div>
                 </div>
             </div>
             

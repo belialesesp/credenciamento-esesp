@@ -110,16 +110,33 @@
         </div>
       </section>
 
-      <section class="form-section">
-        <h5 class="form-subtitle">Documentos</h5>
-        <p>Envie as documentações pessoais e habilitações requeridas no Edital</p>
-        <div class="mb-4" id="fileContainer">
-          <label for="documents" class="form-label label-file">Documento de comprovação*</label>
-          <input class="form-control" type="file" id="documents" name="documents" accept="application/pdf" required>
-          <div class="invalid-feedback">Documentos de comprovação obrigatório</div>
-          <div class="form-text">*Apenas documentos unificados em formato de pdf serão aceitos</div>
+      <!-- Comprovação de Qualificação Técnica -->
+      <div class="document-subsection">
+        <h6 class="subsection-title">
+          <i class="fas fa-graduation-cap me-2"></i>
+          Comprovação de Qualificação Técnica
+        </h6>
+
+        <div class="file-upload-group">
+          <label for="formacao_escolar" class="file-label">
+            Formação Escolar <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="formacao_escolar"
+            name="formacao_escolar" accept="application/pdf" required>
+          <div class="invalid-feedback">Comprovação de formação escolar é obrigatória</div>
+          <div class="form-text">Diploma, certificado ou declaração de conclusão</div>
         </div>
-      </section>
+
+        <div class="file-upload-group">
+          <label for="experiencia_profissional" class="file-label">
+            Comprovante de experiência profissional na área de atuação <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="experiencia_profissional"
+            name="experiencia_profissional" accept="application/pdf" required>
+          <div class="invalid-feedback">Comprovante de experiência profissional é obrigatório</div>
+          <div class="form-text">Carteira de trabalho, declaração ou contrato</div>
+        </div>
+      </div>
       <section class="form-section">
         <h5 class="form-subtitle">Informações Adicionais</h5>        
         <div >

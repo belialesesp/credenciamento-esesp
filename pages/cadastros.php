@@ -1,7 +1,5 @@
 <?php
-
 include_once('../components/header.php');
-
 ?>
 
 <style>
@@ -35,36 +33,6 @@ include_once('../components/header.php');
     text-transform: uppercase;
   }
 
-  /* Tabs Styling */
-  .nav-tabs {
-    border-bottom: 3px solid var(--primary-color);
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .nav-tabs .nav-link {
-    color: var(--primary-color);
-    background-color: #fff;
-    border: 2px solid transparent;
-    border-bottom: none;
-    font-weight: 500;
-    padding: 0.75rem 1.5rem;
-    margin-right: 0.5rem;
-    margin-bottom: -3px;
-    transition: all 0.3s ease;
-  }
-
-  .nav-tabs .nav-link:hover {
-    border-color: var(--border-color);
-    background-color: var(--light-bg);
-  }
-
-  .nav-tabs .nav-link.active {
-    color: #fff;
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-  }
-
   /* Form Sections */
   .form-section {
     background: #fff;
@@ -81,6 +49,77 @@ include_once('../components/header.php');
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--secondary-color);
+  }
+
+  /* Role Selection */
+  .role-selector {
+    background: var(--light-bg);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .role-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    background: #fff;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .role-checkbox:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(30, 76, 130, 0.1);
+  }
+
+  .role-checkbox.active {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, rgba(30, 76, 130, 0.05) 0%, rgba(252, 169, 52, 0.05) 100%);
+  }
+
+  .role-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 1rem;
+    cursor: pointer;
+  }
+
+  .role-info {
+    flex: 1;
+  }
+
+  .role-title {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+  }
+
+  .role-description {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  /* Conditional Sections */
+  .conditional-section {
+    display: none;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: #f0f7ff;
+    border-left: 4px solid var(--primary-color);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .conditional-section.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
   }
 
   /* Floating Labels */
@@ -131,25 +170,20 @@ include_once('../components/header.php');
     color: var(--primary-color);
   }
 
-  /* Checkboxes and Radios */
-  .checkbox-group,
-  .radio-group {
+  /* Categories */
+  .category-group {
     padding: 1rem;
-    background-color: var(--light-bg);
-    border-radius: 0.25rem;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
   }
 
-  .form-check {
-    margin-bottom: 0.75rem;
-  }
-
-  .form-check-input {
-    margin-top: 0.25rem;
-  }
-
-  .form-check-label {
-    margin-left: 0.5rem;
-    cursor: pointer;
+  .category-title {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
   }
 
   /* Document Upload Section */
@@ -192,6 +226,16 @@ include_once('../components/header.php');
     font-weight: normal;
   }
 
+  /* Alert Box */
+  .alert-info {
+    background-color: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    color: #004085;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
   /* Buttons */
   .btnF {
     background-color: var(--secondary-color);
@@ -229,6 +273,27 @@ include_once('../components/header.php');
     padding: 1rem;
   }
 
+  /* Clone Sections */
+  .clone-section {
+    border: 2px dashed var(--border-color);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    position: relative;
+  }
+
+  .remove-section {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background-color: var(--danger-color);
+    color: #fff;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+  }
+
   /* Terms Checkbox */
   .terms-section {
     background-color: #fff;
@@ -253,28 +318,7 @@ include_once('../components/header.php');
     line-height: 1.6;
   }
 
-  /* Clone Sections */
-  .clone-section {
-    border: 2px dashed var(--border-color);
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    border-radius: 0.5rem;
-    position: relative;
-  }
-
-  .remove-section {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background-color: var(--danger-color);
-    color: #fff;
-    border: none;
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-  }
-
-  /* Validation Feedback */
+  /* Validation */
   .invalid-feedback {
     display: none;
     color: var(--danger-color);
@@ -285,11 +329,6 @@ include_once('../components/header.php');
   .was-validated .form-control:invalid~.invalid-feedback,
   .was-validated .form-select:invalid~.invalid-feedback {
     display: block;
-  }
-
-  .was-validated .form-control:invalid,
-  .was-validated .form-select:invalid {
-    border-color: var(--danger-color);
   }
 
   /* Loading Overlay */
@@ -324,599 +363,518 @@ include_once('../components/header.php');
   }
 
   @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-
-    100% {
-      transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 
   /* Responsive Design */
   @media (max-width: 768px) {
-    .nav-tabs .nav-link {
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-    }
-
     .main-title {
       font-size: 1.75rem;
     }
-
     .form-section {
       padding: 1rem;
     }
+    .role-checkbox {
+      padding: 0.75rem;
+    }
   }
 </style>
+
 <div class="container">
   <h1 class="main-title">Credenciamento ESESP</h1>
 
-  <!-- Navigation Tabs -->
-  <ul class="nav nav-tabs" id="cadastroTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="cadastro-tab" data-bs-toggle="tab" data-bs-target="#cadastro" type="button" role="tab">
-        <i class="fas fa-chalkboard-teacher"></i> Cadastro
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="docente-tab" data-bs-toggle="tab" data-bs-target="#docente" type="button" role="tab">
-        <i class="fas fa-chalkboard-teacher"></i> Docente
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="docente-pos-tab" data-bs-toggle="tab" data-bs-target="#docente-pos" type="button" role="tab">
-        <i class="fas fa-graduation-cap"></i> Docente Pós-Graduação
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="interprete-tab" data-bs-toggle="tab" data-bs-target="#interprete" type="button" role="tab">
-        <i class="fas fa-hands"></i> Intérprete de Libras
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="tecnico-tab" data-bs-toggle="tab" data-bs-target="#tecnico" type="button" role="tab">
-        <i class="fas fa-tools"></i> Apoio Técnico
-      </button>
-    </li>
-  </ul>
-
-  <!-- Tab Content -->
-  <div class="tab-content" id="cadastroTabContent">
-    <!-- Common Tab -->
-    <div class="tab-pane fade show active" id="cadastro" role="tabpanel">
-      <form id="docenteForm" class="needs-validation" enctype="multipart/form-data" novalidate>
-        <!-- Personal Data Section (Common) -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Dados Pessoais</h5>
-          <div class="row">
-            <div class="did-floating-label-content col-12">
-              <input name="name" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">Nome*</label>
-              <div class="invalid-feedback">Informe seu nome</div>
-            </div>
+  <form id="cadastroForm" class="needs-validation" enctype="multipart/form-data" novalidate>
+    
+    <!-- Role Selection Section -->
+    <section class="form-section">
+      <h5 class="form-subtitle">Selecione as Funções Desejadas</h5>
+      <p class="text-muted mb-3">Você pode selecionar múltiplas funções. Campos específicos aparecerão conforme sua seleção.</p>
+      
+      <div class="role-selector">
+        <div class="role-checkbox" data-role="docente">
+          <input type="checkbox" id="role-docente" name="roles[]" value="docente">
+          <div class="role-info">
+            <div class="role-title">Docente</div>
+            <div class="role-description">Instrutor para cursos e capacitações</div>
           </div>
+        </div>
+
+        <div class="role-checkbox" data-role="docente-pos">
+          <input type="checkbox" id="role-docente-pos" name="roles[]" value="docente-pos">
+          <div class="role-info">
+            <div class="role-title">Docente Pós-Graduação</div>
+            <div class="role-description">Instrutor para cursos de pós-graduação</div>
+          </div>
+        </div>
+
+        <div class="role-checkbox" data-role="interprete">
+          <input type="checkbox" id="role-interprete" name="roles[]" value="interprete">
+          <div class="role-info">
+            <div class="role-title">Intérprete de Libras</div>
+            <div class="role-description">Intérprete de língua brasileira de sinais</div>
+          </div>
+        </div>
+
+        <div class="role-checkbox" data-role="tecnico">
+          <input type="checkbox" id="role-tecnico" name="roles[]" value="tecnico">
+          <div class="role-info">
+            <div class="role-title">Apoio Técnico</div>
+            <div class="role-description">Suporte técnico para eventos e capacitações</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Personal Data Section (Common) -->
+    <section class="form-section">
+      <h5 class="form-subtitle">Dados Pessoais</h5>
+      <div class="row">
+        <div class="did-floating-label-content col-12">
+          <input name="name" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label class="did-floating-label">Nome*</label>
+          <div class="invalid-feedback">Informe seu nome</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="did-floating-label-content col-12 col-md-6">
+          <input name="rg" class="did-floating-input form-control" type="text" placeholder=" " maxlength="12" required />
+          <label class="did-floating-label">Documento de Identidade*</label>
+          <div class="invalid-feedback">Informe um número de documento de identidade</div>
+        </div>
+        <div class="did-floating-label-content col-6 col-md-4">
+          <input name="rgEmissor" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label class="did-floating-label">Órgão emissor*</label>
+          <div class="invalid-feedback">Informe o órgão emissor</div>
+        </div>
+        <div class="did-floating-label-content col-6 col-md-2">
+          <input name="rgUf" class="did-floating-input form-control" type="text" placeholder=" " maxlength="2" required />
+          <label class="did-floating-label">UF*</label>
+          <div class="invalid-feedback">Informe a UF</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="did-floating-label-content col-6">
+          <input name="cpf" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label class="did-floating-label">CPF*</label>
+          <div class="invalid-feedback">Informe um CPF válido</div>
+        </div>
+        <div class="did-floating-label-content col-6">
+          <input name="email" class="did-floating-input form-control" type="email" placeholder=" " required />
+          <label class="did-floating-label">Email*</label>
+          <div class="invalid-feedback">Informe um email válido</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="did-floating-label-content col-12 col-md-6">
+          <input name="address" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label class="did-floating-label">Endereço*</label>
+          <div class="invalid-feedback">Informe seu endereço</div>
+        </div>
+        <div class="did-floating-label-content col-6 col-md-2">
+          <input name="addNumber" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label class="did-floating-label">Nº*</label>
+          <div class="invalid-feedback">Informe o número</div>
+        </div>
+        <div class="did-floating-label-content col-6 col-md-4">
+          <input name="addComplement" class="did-floating-input form-control" type="text" placeholder=" " />
+          <label class="did-floating-label">Complemento</label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="did-floating-label-content col-12 col-md-5">
+          <input name="neighborhood" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label class="did-floating-label">Bairro*</label>
+          <div class="invalid-feedback">Informe seu bairro</div>
+        </div>
+        <div class="did-floating-label-content col-6 col-md-5">
+          <input name="city" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label class="did-floating-label">Cidade*</label>
+          <div class="invalid-feedback">Informe sua cidade</div>
+        </div>
+        <div class="did-floating-label-content col-6 col-md-2">
+          <input name="state" class="did-floating-input form-control" type="text" placeholder=" " maxlength="2" required />
+          <label class="did-floating-label">Estado*</label>
+          <div class="invalid-feedback">Informe seu estado</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="did-floating-label-content col-6">
+          <input name="zipCode" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label class="did-floating-label">CEP*</label>
+          <div class="invalid-feedback">Informe seu CEP</div>
+        </div>
+        <div class="did-floating-label-content col-6">
+          <input name="phone" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label class="did-floating-label">Telefone*</label>
+          <div class="invalid-feedback">Informe um telefone</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Professional Data Section -->
+    <section class="form-section">
+      <h5 class="form-subtitle">Dados Profissionais</h5>
+      <div class="row">
+        <div class="did-floating-label-content col-12">
+          <select name="scholarship" id="scholarship" class="did-floating-select form-select" required>
+            <option value=""></option>
+            <option value="Médio">Ensino médio completo</option>
+            <option value="Superior incompleto">Superior incompleto</option>
+            <option value="Superior completo">Superior completo</option>
+            <option value="Pós-graduação">Pós-graduação</option>
+            <option value="Mestrado">Mestrado</option>
+            <option value="Doutorado">Doutorado</option>
+          </select>
+          <label class="did-floating-label">Escolaridade*</label>
+          <div class="invalid-feedback">Informe seu grau de escolaridade</div>
+        </div>
+      </div>
+      <div id="education-sections">
+        <div class="clone-section">
           <div class="row">
             <div class="did-floating-label-content col-12 col-md-6">
-              <input name="rg" class="did-floating-input form-control" type="text" placeholder=" " maxlength="12" required />
-              <label class="did-floating-label">Documento de Identidade*</label>
-              <div class="invalid-feedback">Informe um número de documento de identidade</div>
+              <input name="course[]" class="did-floating-input form-control" type="text" placeholder=" " required />
+              <label class="did-floating-label">Curso de Formação*</label>
+              <div class="invalid-feedback">Informe o curso</div>
             </div>
-            <div class="did-floating-label-content col-6 col-md-4">
-              <input name="rgEmissor" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">Órgão emissor*</label>
-              <div class="invalid-feedback">Informe o órgão emissor</div>
-            </div>
-            <div class="did-floating-label-content col-6 col-md-2">
-              <input name="rgUf" class="did-floating-input form-control" type="text" placeholder=" " maxlength="2" required />
-              <label class="did-floating-label">UF*</label>
-              <div class="invalid-feedback">Informe a UF</div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="did-floating-label-content col-6">
-              <input name="cpf" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">CPF*</label>
-              <div class="invalid-feedback">Informe um CPF válido</div>
-            </div>
-            <div class="did-floating-label-content col-6">
-              <input name="email" class="did-floating-input form-control" type="email" placeholder=" " required />
-              <label class="did-floating-label">Email*</label>
-              <div class="invalid-feedback">Informe um email válido</div>
-            </div>
-          </div>
-          <div class="row">
             <div class="did-floating-label-content col-12 col-md-6">
-              <input name="address" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">Endereço*</label>
-              <div class="invalid-feedback">Informe seu endereço</div>
-            </div>
-            <div class="did-floating-label-content col-6 col-md-2">
-              <input name="addNumber" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">Nº*</label>
-              <div class="invalid-feedback">Informe o número</div>
-            </div>
-            <div class="did-floating-label-content col-6 col-md-4">
-              <input name="addComplement" class="did-floating-input form-control" type="text" placeholder=" " />
-              <label class="did-floating-label">Complemento</label>
+              <input name="institution[]" class="did-floating-input form-control" type="text" placeholder=" " required />
+              <label class="did-floating-label">Instituição*</label>
+              <div class="invalid-feedback">Informe a instituição</div>
             </div>
           </div>
-          <div class="row">
-            <div class="did-floating-label-content col-12 col-md-5">
-              <input name="neighborhood" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">Bairro*</label>
-              <div class="invalid-feedback">Informe seu bairro</div>
-            </div>
-            <div class="did-floating-label-content col-6 col-md-5">
-              <input name="city" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">Cidade*</label>
-              <div class="invalid-feedback">Informe sua cidade</div>
-            </div>
-            <div class="did-floating-label-content col-6 col-md-2">
-              <input name="state" class="did-floating-input form-control" type="text" placeholder=" " maxlength="2" required />
-              <label class="did-floating-label">Estado*</label>
-              <div class="invalid-feedback">Informe seu estado</div>
-            </div>
+        </div>
+      </div>
+      <button class="btnF add-section-btn" type="button" onclick="addEducationSection()">
+        <i class="fas fa-plus"></i> Adicionar mais formação
+      </button>
+
+      <!-- Docente Categories (shown when Docente is selected) -->
+      <div id="docente-categories" class="conditional-section">
+        <div class="category-group">
+          <div class="category-title">Categorias para Docente</div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="1" id="doc-cat1">
+            <label class="form-check-label" for="doc-cat1">Docente</label>
           </div>
-          <div class="row">
-            <div class="did-floating-label-content col-6">
-              <input name="zipCode" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">CEP*</label>
-              <div class="invalid-feedback">Informe seu CEP</div>
-            </div>
-            <div class="did-floating-label-content col-6">
-              <input name="phone" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">Telefone*</label>
-              <div class="invalid-feedback">Informe um telefone</div>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="2" id="doc-cat2">
+            <label class="form-check-label" for="doc-cat2">Docente Conteudista</label>
           </div>
-        </section>
-
-        <!-- Professional Data Section -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Dados Profissionais</h5>
-          <div class="row">
-            <div class="did-floating-label-content col-12">
-              <select name="scholarship" class="did-floating-select form-select" required>
-                <option value=""></option>
-                <option value="Superior completo">Superior completo</option>
-                <option value="Pós-graduação">Pós-graduação</option>
-                <option value="Mestrado">Mestrado</option>
-                <option value="Doutorado">Doutorado</option>
-              </select>
-              <label class="did-floating-label">Escolaridade*</label>
-              <div class="invalid-feedback">Informe seu grau de escolaridade</div>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="3" id="doc-cat3">
+            <label class="form-check-label" for="doc-cat3">Docente Assistente</label>
           </div>
-          <div id="education-sections">
-            <div class="clone-section">
-              <div class="row">
-                <div class="did-floating-label-content col-12 col-md-6">
-                  <input name="course[]" class="did-floating-input form-control" type="text" placeholder=" " required />
-                  <label class="did-floating-label">Curso de Formação*</label>
-                  <div class="invalid-feedback">Informe o curso</div>
-                </div>
-                <div class="did-floating-label-content col-12 col-md-6">
-                  <input name="institution[]" class="did-floating-input form-control" type="text" placeholder=" " required />
-                  <label class="did-floating-label">Instituição*</label>
-                  <div class="invalid-feedback">Informe a instituição</div>
-                </div>
-              </div>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="4" id="doc-cat4">
+            <label class="form-check-label" for="doc-cat4">Coordenador Técnico</label>
           </div>
-          <button class="btnF add-section-btn" type="button" onclick="addEducationSection()">
-            <i class="fas fa-plus"></i> Adicionar mais
-          </button>
-        </section>
-
-        <!-- Categories Section -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Categoria, Atividades e Serviços</h5>
-          <div class="checkbox-group">
-            <p style="font-weight:500">Selecione as categorias nas quais você deseja se credenciar:</p>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="1" id="docente-pos1">
-              <label class="form-check-label" for="docente-pos1">Docente</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="2" id="docente-pos2">
-              <label class="form-check-label" for="docente-pos2">Docente Conteudista</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="3" id="docente-pos3">
-              <label class="form-check-label" for="docente-pos3">Docente Assistente</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="4" id="docente-pos4">
-              <label class="form-check-label" for="docente-pos4">Coordenador Técnico</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="5" id="docente-pos5">
-              <label class="form-check-label" for="docente-pos5">Conferencista/Palestrante</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="6" id="docente-pos6">
-              <label class="form-check-label" for="docente-pos6">Painelista/Debatedor</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="7" id="docente-pos7">
-              <label class="form-check-label" for="docente-pos7">Moderador</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="8" id="docente-pos8">
-              <label class="form-check-label" for="docente-pos8">Reunião Técnica</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="9" id="docente-pos9">
-              <label class="form-check-label" for="docente-pos9">Assessoramento Técnico</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="10" id="docente-pos10">
-              <label class="form-check-label" for="docente-pos10">Revisão de Texto</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="11" id="docente-pos11">
-              <label class="form-check-label" for="docente-pos11">Entrevista</label>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="5" id="doc-cat5">
+            <label class="form-check-label" for="doc-cat5">Conferencista/Palestrante</label>
           </div>
-        </section>
-
-        <!-- Documents Section with Separate Fields -->
-        <section class="form-section">
-          <h5 class="form-subtitle">
-            <i class="fas fa-file-upload me-2"></i>
-            Documentos
-          </h5>
-          <p class="text-muted mb-4">
-            Envie as documentações pessoais e habilitações requeridas no Edital.
-            Cada documento deve ser enviado separadamente em formato PDF.
-          </p>
-
-          <!-- Personal Documents -->
-          <div class="document-subsection">
-            <h6 class="subsection-title">
-              <i class="fas fa-user me-2"></i>
-              Documentos Pessoais
-            </h6>
-
-            <div class="file-upload-group">
-              <label for="comprovante_residencia" class="file-label">
-                Comprovante de Residência <span class="required-indicator">*</span>
-              </label>
-              <input class="form-control" type="file" id="comprovante_residencia"
-                name="comprovante_residencia" accept="application/pdf" required>
-              <div class="invalid-feedback">Comprovante de residência é obrigatório</div>
-              <div class="form-text">Conta de luz, água, telefone ou similar dos últimos 3 meses</div>
-            </div>
-
-            <div class="file-upload-group">
-              <label for="documento_identificacao" class="file-label">
-                Documento de Identificação oficial com foto e CPF <span class="required-indicator">*</span>
-              </label>
-              <input class="form-control" type="file" id="documento_identificacao"
-                name="documento_identificacao" accept="application/pdf" required>
-              <div class="invalid-feedback">Documento de identificação é obrigatório</div>
-              <div class="form-text">RG, CNH ou outro documento oficial com foto</div>
-            </div>
-
-            <div class="file-upload-group">
-              <label for="titulo_eleitor" class="file-label">
-                Título de Eleitor <span class="required-indicator">*</span>
-              </label>
-              <input class="form-control" type="file" id="titulo_eleitor"
-                name="titulo_eleitor" accept="application/pdf" required>
-              <div class="invalid-feedback">Título de eleitor é obrigatório</div>
-            </div>
-
-            <div class="file-upload-group">
-              <label for="certificado_reservista" class="file-label">
-                Certificado de Reservista <span class="optional-label">(se aplicável)</span>
-              </label>
-              <input class="form-control" type="file" id="certificado_reservista"
-                name="certificado_reservista" accept="application/pdf">
-              <div class="form-text">Obrigatório apenas para candidatos do sexo masculino</div>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="6" id="doc-cat6">
+            <label class="form-check-label" for="doc-cat6">Painelista/Debatedor</label>
           </div>
-
-          <!-- Technical Qualification Documents -->
-          <div class="document-subsection">
-            <h6 class="subsection-title">
-              <i class="fas fa-graduation-cap me-2"></i>
-              Comprovação de Qualificação Técnica
-            </h6>
-
-            <div class="file-upload-group">
-              <label for="formacao_escolar" class="file-label">
-                Formação Escolar <span class="required-indicator">*</span>
-              </label>
-              <input class="form-control" type="file" id="formacao_escolar"
-                name="formacao_escolar" accept="application/pdf" required>
-              <div class="invalid-feedback">Comprovação de formação escolar é obrigatória</div>
-              <div class="form-text">Diploma, certificado ou declaração de conclusão</div>
-            </div>
-
-            <div class="file-upload-group">
-              <label for="experiencia_profissional" class="file-label">
-                Comprovante de experiência profissional <span class="required-indicator">*</span>
-              </label>
-              <input class="form-control" type="file" id="experiencia_profissional"
-                name="experiencia_profissional" accept="application/pdf" required>
-              <div class="invalid-feedback">Comprovante de experiência é obrigatório</div>
-              <div class="form-text">Carteira de trabalho, declaração ou contrato</div>
-            </div>
-
-            <div class="file-upload-group">
-              <label for="publicacoes" class="file-label">
-                Publicações <span class="optional-label">(se houver)</span>
-              </label>
-              <input class="form-control" type="file" id="publicacoes"
-                name="publicacoes" accept="application/pdf">
-              <div class="form-text">Artigos, livros ou outras publicações relevantes</div>
-            </div>
-
-            <div class="file-upload-group">
-              <label for="certificados_cursos" class="file-label">
-                Certificados de cursos <span class="optional-label">(se houver)</span>
-              </label>
-              <input class="form-control" type="file" id="certificados_cursos"
-                name="certificados_cursos" accept="application/pdf">
-              <div class="form-text">Cursos complementares, especializações ou capacitações</div>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="7" id="doc-cat7">
+            <label class="form-check-label" for="doc-cat7">Moderador</label>
           </div>
-
-          <!-- Economic-Financial Qualification -->
-          <div class="document-subsection">
-            <h6 class="subsection-title">
-              <i class="fas fa-file-invoice-dollar me-2"></i>
-              Qualificação Econômico-Financeira
-            </h6>
-
-            <div class="file-upload-group">
-              <label for="pis_pasep" class="file-label">
-                PIS/PASEP <span class="required-indicator">*</span>
-              </label>
-              <input class="form-control" type="file" id="pis_pasep"
-                name="pis_pasep" accept="application/pdf" required>
-              <div class="invalid-feedback">PIS/PASEP é obrigatório</div>
-            </div>
-
-            <div class="file-upload-group">
-              <label for="protocolo_siades" class="file-label">
-                Protocolo SIADES <span class="required-indicator">*</span>
-              </label>
-              <input class="form-control" type="file" id="protocolo_siades"
-                name="protocolo_siades" accept="application/pdf" required>
-              <div class="invalid-feedback">Protocolo SIADES é obrigatório</div>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="8" id="doc-cat8">
+            <label class="form-check-label" for="doc-cat8">Reunião Técnica</label>
           </div>
-        </section>
-
-        <!-- Additional Information -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Informações Adicionais</h5>
-          <div class="radio-group">
-            <p style="font-weight:500">É portador de necessidades especiais?</p>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsYes1" value="yes" required>
-              <label class="form-check-label" for="specialNeedsYes1">Sim</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsNo1" value="no" required>
-              <label class="form-check-label" for="specialNeedsNo1">Não</label>
-            </div>
-            <div class="did-floating-label-content" style="display:none; margin-top: 1rem" id="specialNeedsDetails1">
-              <input name="specialNeedsDetails" class="did-floating-input form-control" type="text" placeholder=" " />
-              <label class="did-floating-label">Especifique*</label>
-              <div class="invalid-feedback">Você deve especificar</div>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="9" id="doc-cat9">
+            <label class="form-check-label" for="doc-cat9">Assessoramento Técnico</label>
           </div>
-        </section>
-
-        <!-- Terms and Conditions -->
-        <section class="terms-section">
-          <div class="box">
-            <input id="terms1" name="terms" type="checkbox" required>
-            <label for="terms1" class="terms-label">Autorizo o tratamento dos meus dados pessoais exclusivamente para os fins do presente edital.</label>
-            <div class="invalid-feedback">O candidato deve autorizar o envio de dados</div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="10" id="doc-cat10">
+            <label class="form-check-label" for="doc-cat10">Revisão de Texto</label>
           </div>
-          <div class="box">
-            <input id="terms2" name="terms2" type="checkbox" required>
-            <label for="terms2" class="terms-label">Declaro que não possuo vínculo de natureza técnica, comercial, econômica, financeira, trabalhista ou civil com dirigente do órgão ou da entidade credenciante ou com agente público que desempenhe função no processo de contratação ou atue na fiscalização ou na gestão do contrato, ou que deles seja cônjuge, companheiro ou parente em linha reta, colateral ou por afinidade, até o terceiro grau.</label>
-            <div class="invalid-feedback">Campo obrigatório</div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="11" id="doc-cat11">
+            <label class="form-check-label" for="doc-cat11">Entrevista</label>
           </div>
-        </section>
+        </div>
+      </div>
 
-        <button type="submit" class="btnF form-btn">
-          <i class="fas fa-paper-plane"></i> Enviar Formulário
-        </button>
-      </form>
-    </div>
-
-    <!-- Docente Pós-Graduação Tab -->
-    <div class="tab-pane fade" id="docente-pos" role="tabpanel">
-      <form id="docentePosForm" class="needs-validation" enctype="multipart/form-data" novalidate>
-        <!-- Personal Data Section (same structure as above) -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Dados Pessoais</h5>
-          <!-- Copy same personal data fields from docente tab -->
-          <div class="row">
-            <div class="did-floating-label-content col-12">
-              <input name="name" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">Nome*</label>
-              <div class="invalid-feedback">Informe seu nome</div>
-            </div>
+      <!-- Docente Pós Categories (shown when Docente Pós is selected) -->
+      <div id="docente-pos-categories" class="conditional-section">
+        <div class="category-group">
+          <div class="category-title">Categorias para Docente Pós-Graduação</div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_pos_categories[]" value="1" id="pos-cat1">
+            <label class="form-check-label" for="pos-cat1">Docente</label>
           </div>
-          <!-- Include all other personal data fields... -->
-        </section>
-
-        <!-- Professional Data with Disciplines -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Dados Profissionais</h5>
-          <div class="row">
-            <div class="did-floating-label-content col-12">
-              <select name="scholarship" class="did-floating-select form-select" required>
-                <option value=""></option>
-                <option value="Pós-graduação">Pós-graduação</option>
-                <option value="Mestrado">Mestrado</option>
-                <option value="Doutorado">Doutorado</option>
-                <option value="Pós-doutorado">Pós-doutorado</option>
-              </select>
-              <label class="did-floating-label">Escolaridade*</label>
-              <div class="invalid-feedback">Informe seu grau de escolaridade</div>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_pos_categories[]" value="2" id="pos-cat2">
+            <label class="form-check-label" for="pos-cat2">Docente Conteudista</label>
           </div>
-
-          <h6 class="subsection-title mt-4">Disciplinas</h6>
-          <div id="disciplines-sections">
-            <div class="clone-section">
-              <div class="row">
-                <div class="did-floating-label-content col-12">
-                  <input name="discipline[]" class="did-floating-input form-control" type="text" placeholder=" " required />
-                  <label class="did-floating-label">Nome da Disciplina*</label>
-                  <div class="invalid-feedback">Informe a disciplina</div>
-                </div>
-              </div>
-            </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="docente_pos_categories[]" value="9" id="pos-cat3">
+            <label class="form-check-label" for="pos-cat3">Assessoramento Técnico</label>
           </div>
-          <button class="btnF add-section-btn" type="button" onclick="addDisciplineSection()">
-            <i class="fas fa-plus"></i> Adicionar mais disciplinas
-          </button>
-        </section>
+        </div>
+        
+      </div>
 
-        <!-- Categories for Pós-Graduação -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Categoria, Atividades e Serviços</h5>
-          <div class="checkbox-group">
-            <p style="font-weight:500">Selecione as categorias nas quais você deseja se credenciar:</p>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="1" id="pos-doc1">
-              <label class="form-check-label" for="pos-doc1">Docente</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="2" id="pos-doc2">
-              <label class="form-check-label" for="pos-doc2">Docente Conteudista</label>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" name="position[]" value="9" id="pos-doc3">
-              <label class="form-check-label" for="pos-doc3">Assessoramento Técnico</label>
-            </div>
-          </div>
-        </section>
+      <!-- Intérprete Requirements (shown when Intérprete is selected) -->
+      <div id="interprete-requirements" class="conditional-section">
+        <div class="alert-info">
+          <h6><i class="fas fa-info-circle"></i> Requisitos para Intérprete de Libras</h6>
+          <p>Para atuar como Intérprete de Libras, você precisará fornecer:</p>
+          <ul>
+            <li>Certificação específica em Língua Brasileira de Sinais (Libras)</li>
+            <li>Comprovação de experiência profissional em interpretação de Libras</li>
+            <li>Certificado de proficiência em Libras (Prolibras ou similar)</li>
+          </ul>
+        </div>
+        <div class="did-floating-label-content">
+          <textarea name="interprete_experience" class="did-floating-input form-control interprete-field" 
+                    placeholder=" " rows="4"></textarea>
+          <label class="did-floating-label">Descreva sua experiência em Libras</label>
+        </div>
+      </div>
+    </section>
 
-        <!-- Documents Section (unified) -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Documentos</h5>
-          <p>Envie as documentações pessoais e habilitações requeridas no Edital</p>
-          <div class="file-upload-group">
-            <input class="form-control" type="file" id="documents_pos" name="documents" accept="application/pdf" required>
-            <div class="invalid-feedback">Documentos de comprovação obrigatório</div>
-            <div class="form-text">*Apenas documentos unificados em formato de pdf serão aceitos</div>
-          </div>
-        </section>
+    <!-- Documents Section -->
+    <section class="form-section">
+      <h5 class="form-subtitle">
+        <i class="fas fa-file-upload me-2"></i>
+        Documentos
+      </h5>
+      <p class="text-muted mb-4">
+        Envie as documentações pessoais e habilitações requeridas no Edital.
+        Cada documento deve ser enviado separadamente em formato PDF.
+      </p>
 
-        <!-- Additional Information and Terms -->
-        <!-- Copy from docente tab with unique IDs -->
+      <!-- Personal Documents (Common) -->
+      <div class="document-subsection">
+        <h6 class="subsection-title">
+          <i class="fas fa-user me-2"></i>
+          Documentos Pessoais (Obrigatórios para todos)
+        </h6>
 
-        <button type="submit" class="btnF form-btn">
-          <i class="fas fa-paper-plane"></i> Enviar Formulário
-        </button>
-      </form>
-    </div>
+        <div class="file-upload-group">
+          <label for="comprovante_residencia" class="file-label">
+            Comprovante de Residência <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="comprovante_residencia"
+            name="comprovante_residencia" accept="application/pdf" required>
+          <div class="invalid-feedback">Comprovante de residência é obrigatório</div>
+          <div class="form-text">Conta de luz, água, telefone ou similar dos últimos 3 meses</div>
+        </div>
 
-    <!-- Intérprete de Libras Tab -->
-    <div class="tab-pane fade" id="interprete" role="tabpanel">
-      <form id="interpreteForm" class="needs-validation" enctype="multipart/form-data" novalidate>
-        <!-- Personal Data Section -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Dados Pessoais</h5>
-          <!-- Include all personal data fields -->
-        </section>
+        <div class="file-upload-group">
+          <label for="documento_identificacao" class="file-label">
+            Documento de Identificação oficial com foto e CPF <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="documento_identificacao"
+            name="documento_identificacao" accept="application/pdf" required>
+          <div class="invalid-feedback">Documento de identificação é obrigatório</div>
+          <div class="form-text">RG, CNH ou outro documento oficial com foto</div>
+        </div>
 
-        <!-- Professional Data for Intérprete -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Dados Profissionais</h5>
-          <div class="row">
-            <div class="did-floating-label-content col-12">
-              <select name="scholarship" class="did-floating-select form-select" required>
-                <option value=""></option>
-                <option value="Médio">Ensino médio completo</option>
-                <option value="Superior incompleto">Ensino superior incompleto</option>
-                <option value="Superior completo">Ensino superior completo</option>
-              </select>
-              <label class="did-floating-label">Escolaridade*</label>
-              <div class="invalid-feedback">Informe seu grau de escolaridade</div>
-            </div>
-          </div>
-        </section>
+        <div class="file-upload-group">
+          <label for="titulo_eleitor" class="file-label">
+            Título de Eleitor <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="titulo_eleitor"
+            name="titulo_eleitor" accept="application/pdf" required>
+          <div class="invalid-feedback">Título de eleitor é obrigatório</div>
+        </div>
 
-        <!-- Documents Section -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Documentos</h5>
-          <p>Envie as documentações pessoais e habilitações requeridas no Edital</p>
-          <div class="file-upload-group">
-            <label for="documents_interprete" class="file-label">Documento de comprovação*</label>
-            <input class="form-control" type="file" id="documents_interprete" name="documents" accept="application/pdf" required>
-            <div class="invalid-feedback">Documentos de comprovação obrigatório</div>
-            <div class="form-text">*Apenas documentos unificados em formato de pdf serão aceitos</div>
-          </div>
-        </section>
+        <div class="file-upload-group">
+          <label for="certificado_reservista" class="file-label">
+            Certificado de Reservista <span class="optional-label">(se aplicável)</span>
+          </label>
+          <input class="form-control" type="file" id="certificado_reservista"
+            name="certificado_reservista" accept="application/pdf">
+        </div>
 
-        <!-- Additional Information and Terms -->
-        <!-- Copy structure with unique IDs -->
+        <div class="file-upload-group">
+          <label for="pis_pasep" class="file-label">
+            PIS/PASEP <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="pis_pasep"
+            name="pis_pasep" accept="application/pdf" required>
+          <div class="invalid-feedback">PIS/PASEP é obrigatório</div>
+        </div>
 
-        <button type="submit" class="btnF form-btn">
-          <i class="fas fa-paper-plane"></i> Enviar Formulário
-        </button>
-      </form>
-    </div>
+        <div class="file-upload-group">
+          <label for="protocolo_siades" class="file-label">
+            Protocolo SIADES <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="protocolo_siades"
+            name="protocolo_siades" accept="application/pdf" required>
+          <div class="invalid-feedback">Protocolo SIADES é obrigatório</div>
+        </div>
+      </div>
 
-    <!-- Apoio Técnico Tab -->
-    <div class="tab-pane fade" id="tecnico" role="tabpanel">
-      <form id="tecnicoForm" class="needs-validation" enctype="multipart/form-data" novalidate>
-        <!-- Personal Data Section -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Dados Pessoais</h5>
-          <!-- Include all personal data fields -->
-        </section>
+      <!-- Technical Qualification Documents (shown for Docente roles) -->
+      <div id="docente-documents" class="document-subsection conditional-section">
+        <h6 class="subsection-title">
+          <i class="fas fa-graduation-cap me-2"></i>
+          Comprovação de Qualificação Técnica - Docente
+        </h6>
 
-        <!-- Professional Data for Técnico -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Dados Profissionais</h5>
-          <div class="row">
-            <div class="did-floating-label-content col-12">
-              <select name="scholarship" class="did-floating-select form-select" required>
-                <option value=""></option>
-                <option value="Médio">Ensino médio completo</option>
-                <option value="Superior incompleto">Ensino superior incompleto</option>
-                <option value="Superior completo">Ensino superior completo</option>
-              </select>
-              <label class="did-floating-label">Escolaridade*</label>
-              <div class="invalid-feedback">Informe seu grau de escolaridade</div>
-            </div>
-          </div>
-        </section>
+        <div class="file-upload-group">
+          <label for="formacao_escolar_docente" class="file-label">
+            Formação Escolar <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control docente-doc-field" type="file" id="formacao_escolar_docente"
+            name="formacao_escolar_docente" accept="application/pdf">
+          <div class="invalid-feedback">Comprovação de formação escolar é obrigatória</div>
+          <div class="form-text">Diploma, certificado ou declaração de conclusão</div>
+        </div>
 
-        <!-- Documents Section -->
-        <section class="form-section">
-          <h5 class="form-subtitle">Documentos</h5>
-          <p>Envie as documentações pessoais e habilitações requeridas no Edital</p>
-          <div class="file-upload-group">
-            <label for="documents_tecnico" class="file-label">Documento de comprovação*</label>
-            <input class="form-control" type="file" id="documents_tecnico" name="documents" accept="application/pdf" required>
-            <div class="invalid-feedback">Documentos de comprovação obrigatório</div>
-            <div class="form-text">*Apenas documentos unificados em formato de pdf serão aceitos</div>
-          </div>
-        </section>
+        <div class="file-upload-group">
+          <label for="experiencia_profissional_docente" class="file-label">
+            Comprovante de experiência profissional <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control docente-doc-field" type="file" id="experiencia_profissional_docente"
+            name="experiencia_profissional_docente" accept="application/pdf">
+          <div class="invalid-feedback">Comprovante de experiência é obrigatório</div>
+          <div class="form-text">Carteira de trabalho, declaração ou contrato</div>
+        </div>
 
-        <!-- Additional Information and Terms -->
-        <!-- Copy structure with unique IDs -->
+        <div class="file-upload-group">
+          <label for="publicacoes" class="file-label">
+            Publicações <span class="optional-label">(se houver)</span>
+          </label>
+          <input class="form-control" type="file" id="publicacoes"
+            name="publicacoes" accept="application/pdf">
+          <div class="form-text">Artigos, livros ou outras publicações relevantes</div>
+        </div>
 
-        <button type="submit" class="btnF form-btn">
-          <i class="fas fa-paper-plane"></i> Enviar Formulário
-        </button>
-      </form>
-    </div>
-  </div>
+        <div class="file-upload-group">
+          <label for="certificados_cursos" class="file-label">
+            Certificados de cursos <span class="optional-label">(se houver)</span>
+          </label>
+          <input class="form-control" type="file" id="certificados_cursos"
+            name="certificados_cursos" accept="application/pdf">
+          <div class="form-text">Cursos complementares, especializações ou capacitações</div>
+        </div>
+      </div>
+
+      <!-- Intérprete Documents (shown when Intérprete is selected) -->
+      <div id="interprete-documents" class="document-subsection conditional-section">
+        <h6 class="subsection-title">
+          <i class="fas fa-hands me-2"></i>
+          Documentação Específica - Intérprete de Libras
+        </h6>
+
+        <div class="file-upload-group">
+          <label for="certificacao_libras" class="file-label">
+            Certificação em Libras <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control interprete-doc-field" type="file" id="certificacao_libras"
+            name="certificacao_libras" accept="application/pdf">
+          <div class="invalid-feedback">Certificação em Libras é obrigatória</div>
+          <div class="form-text">Prolibras ou certificação equivalente</div>
+        </div>
+
+        <div class="file-upload-group">
+          <label for="experiencia_libras" class="file-label">
+            Comprovante de experiência em interpretação de Libras <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control interprete-doc-field" type="file" id="experiencia_libras"
+            name="experiencia_libras" accept="application/pdf">
+          <div class="invalid-feedback">Comprovante de experiência é obrigatório</div>
+        </div>
+      </div>
+
+      <!-- Economic-Financial Qualification (Common) -->
+      <div class="document-subsection">
+        <h6 class="subsection-title">
+          <i class="fas fa-file-invoice-dollar me-2"></i>
+          Qualificação Econômico-Financeira e Regularidade Fiscal
+        </h6>
+
+        <div class="file-upload-group">
+          <label for="certidao_estadual" class="file-label">
+            Certidão Negativa Estadual <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="certidao_estadual"
+            name="certidao_estadual" accept="application/pdf" required>
+          <div class="invalid-feedback">Certidão Negativa Estadual é obrigatória</div>
+          <div class="form-text">Certidão de regularidade com a Fazenda Estadual pode ser emitida <a href="https://sefaz.es.gov.br/emissao-de-certidoes" target="_blank">aqui</a></div>
+        </div>
+
+        <div class="file-upload-group">
+          <label for="certidao_municipal" class="file-label">
+            Certidão Negativa Municipal <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="certidao_municipal"
+            name="certidao_municipal" accept="application/pdf" required>
+          <div class="invalid-feedback">Certidão Negativa Municipal é obrigatória</div>
+          <div class="form-text">Certidão de regularidade com a Fazenda Municipal</div>
+        </div>
+
+        <div class="file-upload-group">
+          <label for="certidao_federal" class="file-label">
+            Certidão Negativa Federal <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="certidao_federal"
+            name="certidao_federal" accept="application/pdf" required>
+          <div class="invalid-feedback">Certidão Negativa Federal é obrigatória</div>
+          <div class="form-text">Certidão de regularidade com a Fazenda Federal pode ser emitida <a href="https://servicos.receitafederal.gov.br/servico/certidoes/#/home" target="_blank">aqui</a></div>
+        </div>
+
+        <div class="file-upload-group">
+          <label for="certidao_conjunta" class="file-label">
+            Certidão Conjunta PGFN e RFB do Tribunal de Justiça <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control" type="file" id="certidao_conjunta"
+            name="certidao_conjunta" accept="application/pdf" required>
+          <div class="invalid-feedback">Certidão Conjunta PGFN e RFB é obrigatória</div>
+          <div class="form-text">Certidão de regularidade com a Receita Federal e PGFN pode ser emitida <a href="https://servicos.receitafederal.gov.br/servico/certidoes/#/home" target="_blank">aqui</a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Additional Information -->
+    <section class="form-section">
+      <h5 class="form-subtitle">Informações Adicionais</h5>
+      <div class="radio-group">
+        <p style="font-weight:500">É portador de necessidades especiais?</p>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsYes" value="yes" required>
+          <label class="form-check-label" for="specialNeedsYes">Sim</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsNo" value="no" required>
+          <label class="form-check-label" for="specialNeedsNo">Não</label>
+        </div>
+        <div class="did-floating-label-content" style="display:none; margin-top: 1rem" id="specialNeedsDetails">
+          <input name="specialNeedsDetails" class="did-floating-input form-control" type="text" placeholder=" " />
+          <label class="did-floating-label">Especifique*</label>
+          <div class="invalid-feedback">Você deve especificar</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Terms and Conditions -->
+    <section class="terms-section">
+      <div class="box">
+        <input id="terms1" name="terms" type="checkbox" required>
+        <label for="terms1" class="terms-label">Autorizo o tratamento dos meus dados pessoais exclusivamente para os fins do presente edital.</label>
+        <div class="invalid-feedback">O candidato deve autorizar o envio de dados</div>
+      </div>
+      <div class="box">
+        <input id="terms2" name="terms2" type="checkbox" required>
+        <label for="terms2" class="terms-label">Declaro que não possuo vínculo de natureza técnica, comercial, econômica, financeira, trabalhista ou civil com dirigente do órgão ou da entidade credenciante ou com agente público que desempenhe função no processo de contratação ou atue na fiscalização ou na gestão do contrato, ou que deles seja cônjuge, companheiro ou parente em linha reta, colateral ou por afinidade, até o terceiro grau.</label>
+        <div class="invalid-feedback">Campo obrigatório</div>
+      </div>
+    </section>
+
+    <button type="submit" class="btnF form-btn">
+      <i class="fas fa-paper-plane"></i> Enviar Formulário
+    </button>
+  </form>
 
   <!-- Loading Overlay -->
   <div id="loadingOverlay" class="loading-overlay" style="display: none;">
@@ -932,10 +890,144 @@ include_once('../components/header.php');
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+// Role checkbox management
+document.addEventListener('DOMContentLoaded', function() {
+  const roleCheckboxes = document.querySelectorAll('input[name="roles[]"]');
+  const scholarshipSelect = document.getElementById('scholarship');
+  
+  // Role-specific elements
+  const docenteCategories = document.getElementById('docente-categories');
+  const docentePosCategories = document.getElementById('docente-pos-categories');
+  const interpreteRequirements = document.getElementById('interprete-requirements');
+  const docenteDocuments = document.getElementById('docente-documents');
+  const interpreteDocuments = document.getElementById('interprete-documents');
+  
+  // Handle role checkbox changes
+  roleCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const roleCard = this.closest('.role-checkbox');
+      const role = this.value;
+      
+      // Toggle active class on card
+      if (this.checked) {
+        roleCard.classList.add('active');
+      } else {
+        roleCard.classList.remove('active');
+      }
+      
+      // Show/hide conditional sections
+      handleRoleChange();
+    });
+  });
+  
+  function handleRoleChange() {
+    const isDocente = document.getElementById('role-docente').checked;
+    const isDocentePos = document.getElementById('role-docente-pos').checked;
+    const isInterprete = document.getElementById('role-interprete').checked;
+    const isTecnico = document.getElementById('role-tecnico').checked;
+    
+    // Handle Docente sections
+    if (isDocente || isDocentePos) {
+      docenteDocuments.classList.add('show');
+      docenteDocuments.querySelectorAll('.docente-doc-field').forEach(field => {
+        field.setAttribute('required', '');
+      });
+      
+      if (isDocente && !isDocentePos) {
+        docenteCategories.classList.add('show');
+        docentePosCategories.classList.remove('show');
+      } else if (isDocentePos && !isDocente) {
+        docentePosCategories.classList.add('show');
+        docenteCategories.classList.remove('show');
+        // Make discipline fields required
+        document.querySelectorAll('.discipline-input').forEach(field => {
+          field.setAttribute('required', '');
+        });
+      } else if (isDocente && isDocentePos) {
+        docenteCategories.classList.add('show');
+        docentePosCategories.classList.add('show');
+        // Make discipline fields required
+        document.querySelectorAll('.discipline-input').forEach(field => {
+          field.setAttribute('required', '');
+        });
+      }
+    } else {
+      docenteCategories.classList.remove('show');
+      docentePosCategories.classList.remove('show');
+      docenteDocuments.classList.remove('show');
+      docenteDocuments.querySelectorAll('.docente-doc-field').forEach(field => {
+        field.removeAttribute('required');
+      });
+      document.querySelectorAll('.discipline-input').forEach(field => {
+        field.removeAttribute('required');
+      });
+    }
+    
+    // Handle Intérprete sections
+    if (isInterprete) {
+      interpreteRequirements.classList.add('show');
+      interpreteDocuments.classList.add('show');
+      interpreteDocuments.querySelectorAll('.interprete-doc-field').forEach(field => {
+        field.setAttribute('required', '');
+      });
+      document.querySelectorAll('.interprete-field').forEach(field => {
+        field.setAttribute('required', '');
+      });
+    } else {
+      interpreteRequirements.classList.remove('show');
+      interpreteDocuments.classList.remove('show');
+      interpreteDocuments.querySelectorAll('.interprete-doc-field').forEach(field => {
+        field.removeAttribute('required');
+      });
+      document.querySelectorAll('.interprete-field').forEach(field => {
+        field.removeAttribute('required');
+      });
+    }
+    
+    // Update scholarship options based on roles
+    updateScholarshipOptions();
+  }
+  
+  function updateScholarshipOptions() {
+    const isDocentePos = document.getElementById('role-docente-pos').checked;
+    const isInterprete = document.getElementById('role-interprete').checked;
+    const isTecnico = document.getElementById('role-tecnico').checked;
+    
+    // Reset options
+    scholarshipSelect.innerHTML = '<option value=""></option>';
+    
+    if (isDocentePos) {
+      // Pós-graduação requires higher education
+      scholarshipSelect.innerHTML += `
+        <option value="Pós-graduação">Pós-graduação</option>
+        <option value="Mestrado">Mestrado</option>
+        <option value="Doutorado">Doutorado</option>
+      `;
+    } else if (isInterprete || isTecnico) {
+      // Intérprete and Técnico can have lower education levels
+      scholarshipSelect.innerHTML += `
+        <option value="Médio">Ensino médio completo</option>
+        <option value="Superior incompleto">Superior incompleto</option>
+        <option value="Superior completo">Superior completo</option>
+        <option value="Pós-graduação">Pós-graduação</option>
+        <option value="Mestrado">Mestrado</option>
+        <option value="Doutorado">Doutorado</option>
+      `;
+    } else {
+      // Default options
+      scholarshipSelect.innerHTML += `
+        <option value="Superior completo">Superior completo</option>
+        <option value="Pós-graduação">Pós-graduação</option>
+        <option value="Mestrado">Mestrado</option>
+        <option value="Doutorado">Doutorado</option>
+      `;
+    }
+  }
+  
   // Handle special needs radio buttons
   document.querySelectorAll('input[name="specialNeeds"]').forEach(radio => {
     radio.addEventListener('change', function() {
-      const detailsContainer = this.closest('.radio-group').querySelector('[id^="specialNeedsDetails"]');
+      const detailsContainer = document.getElementById('specialNeedsDetails');
       if (detailsContainer) {
         detailsContainer.style.display = this.value === 'yes' ? 'block' : 'none';
         const input = detailsContainer.querySelector('input');
@@ -948,148 +1040,169 @@ include_once('../components/header.php');
       }
     });
   });
+});
 
-  // Add Education Section
-  function addEducationSection() {
-    const container = document.getElementById('education-sections');
-    const sections = container.querySelectorAll('.clone-section');
-    const newSection = sections[0].cloneNode(true);
-
-    // Clear input values
-    newSection.querySelectorAll('input').forEach(input => {
-      input.value = '';
-    });
-
-    // Add remove button if it's not the first section
-    if (sections.length > 0) {
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'remove-section';
-      removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
-      removeBtn.onclick = function() {
-        newSection.remove();
-      };
-      newSection.appendChild(removeBtn);
-    }
-
-    container.appendChild(newSection);
-  }
-
-  // Add Discipline Section
-  function addDisciplineSection() {
-    const container = document.getElementById('disciplines-sections');
-    const sections = container.querySelectorAll('.clone-section');
-    const newSection = sections[0].cloneNode(true);
-
-    // Clear input values
-    newSection.querySelectorAll('input').forEach(input => {
-      input.value = '';
-    });
-
-    // Add remove button
-    if (sections.length > 0) {
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'remove-section';
-      removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
-      removeBtn.onclick = function() {
-        newSection.remove();
-      };
-      newSection.appendChild(removeBtn);
-    }
-
-    container.appendChild(newSection);
-  }
-
-  // Form Validation
-  document.querySelectorAll('.needs-validation').forEach(form => {
-    form.addEventListener('submit', function(event) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      if (form.checkValidity()) {
-        // Show loading overlay
-        document.getElementById('loadingOverlay').style.display = 'flex';
-
-        // Here you would normally submit the form
-        // For demo purposes, we'll just hide the overlay after 2 seconds
-        setTimeout(() => {
-          document.getElementById('loadingOverlay').style.display = 'none';
-          alert('Formulário enviado com sucesso!');
-          form.reset();
-          form.classList.remove('was-validated');
-        }, 2000);
-      }
-
-      form.classList.add('was-validated');
-    }, false);
+// Add Education Section
+function addEducationSection() {
+  const container = document.getElementById('education-sections');
+  const sections = container.querySelectorAll('.clone-section');
+  const newSection = sections[0].cloneNode(true);
+  
+  // Clear input values
+  newSection.querySelectorAll('input').forEach(input => {
+    input.value = '';
   });
-
-  // CPF Mask
-  function applyCPFMask(input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-
-    if (value.length > 9) {
-      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    } else if (value.length > 6) {
-      value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-    } else if (value.length > 3) {
-      value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
-    }
-
-    input.value = value;
+  
+  // Add remove button if it's not the first section
+  if (sections.length > 0) {
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'remove-section';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
+    removeBtn.onclick = function() {
+      newSection.remove();
+    };
+    newSection.appendChild(removeBtn);
   }
+  
+  container.appendChild(newSection);
+}
 
-  // Phone Mask
-  function applyPhoneMask(input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-
-    if (value.length > 6) {
-      if (value.length === 11) {
-        value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-      } else {
-        value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-      }
-    } else if (value.length > 2) {
-      value = value.replace(/(\d{2})(\d+)/, '($1) $2');
+// Add Discipline Section
+function addDisciplineSection() {
+  const container = document.getElementById('disciplines-sections');
+  const sections = container.querySelectorAll('.clone-section');
+  const newSection = sections[0].cloneNode(true);
+  
+  // Clear input values
+  newSection.querySelectorAll('input').forEach(input => {
+    input.value = '';
+    input.classList.add('discipline-input');
+    // If docente-pos is checked, make it required
+    if (document.getElementById('role-docente-pos').checked) {
+      input.setAttribute('required', '');
     }
-
-    input.value = value;
-  }
-
-  // CEP Mask
-  function applyCEPMask(input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value.length > 8) value = value.slice(0, 8);
-
-    if (value.length > 5) {
-      value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
-    }
-
-    input.value = value;
-  }
-
-  // Apply masks to inputs
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('input[name="cpf"]').forEach(input => {
-      input.addEventListener('input', () => applyCPFMask(input));
-    });
-
-    document.querySelectorAll('input[name="phone"]').forEach(input => {
-      input.addEventListener('input', () => applyPhoneMask(input));
-    });
-
-    document.querySelectorAll('input[name="zipCode"]').forEach(input => {
-      input.addEventListener('input', () => applyCEPMask(input));
-    });
   });
+  
+  // Add remove button
+  if (sections.length > 0) {
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'remove-section';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
+    removeBtn.onclick = function() {
+      newSection.remove();
+    };
+    newSection.appendChild(removeBtn);
+  }
+  
+  container.appendChild(newSection);
+}
+
+// Form Validation and Submission
+document.getElementById('cadastroForm').addEventListener('submit', function(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  // Check if at least one role is selected
+  const rolesSelected = document.querySelectorAll('input[name="roles[]"]:checked').length > 0;
+  
+  if (!rolesSelected) {
+    alert('Por favor, selecione pelo menos uma função.');
+    return;
+  }
+  
+  if (this.checkValidity()) {
+    // Show loading overlay
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    
+    // Prepare form data
+    const formData = new FormData(this);
+    
+    // Log form data for debugging
+    console.log('Form Data:');
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+    
+    // Here you would normally submit the form via AJAX
+    // For demo purposes, we'll just hide the overlay after 2 seconds
+    setTimeout(() => {
+      document.getElementById('loadingOverlay').style.display = 'none';
+      alert('Formulário enviado com sucesso!');
+      this.reset();
+      this.classList.remove('was-validated');
+      // Reset conditional sections
+      document.querySelectorAll('.conditional-section').forEach(section => {
+        section.classList.remove('show');
+      });
+      document.querySelectorAll('.role-checkbox').forEach(card => {
+        card.classList.remove('active');
+      });
+    }, 2000);
+  }
+  
+  this.classList.add('was-validated');
+});
+
+// Input Masks
+function applyCPFMask(input) {
+  let value = input.value.replace(/\D/g, '');
+  if (value.length > 11) value = value.slice(0, 11);
+  
+  if (value.length > 9) {
+    value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  } else if (value.length > 6) {
+    value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
+  } else if (value.length > 3) {
+    value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
+  }
+  
+  input.value = value;
+}
+
+function applyPhoneMask(input) {
+  let value = input.value.replace(/\D/g, '');
+  if (value.length > 11) value = value.slice(0, 11);
+  
+  if (value.length > 6) {
+    if (value.length === 11) {
+      value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    } else {
+      value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+  } else if (value.length > 2) {
+    value = value.replace(/(\d{2})(\d+)/, '($1) $2');
+  }
+  
+  input.value = value;
+}
+
+function applyCEPMask(input) {
+  let value = input.value.replace(/\D/g, '');
+  if (value.length > 8) value = value.slice(0, 8);
+  
+  if (value.length > 5) {
+    value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+  }
+  
+  input.value = value;
+}
+
+// Apply masks to inputs
+document.querySelectorAll('input[name="cpf"]').forEach(input => {
+  input.addEventListener('input', () => applyCPFMask(input));
+});
+
+document.querySelectorAll('input[name="phone"]').forEach(input => {
+  input.addEventListener('input', () => applyPhoneMask(input));
+});
+
+document.querySelectorAll('input[name="zipCode"]').forEach(input => {
+  input.addEventListener('input', () => applyCEPMask(input));
+});
 </script>
 
-
 <?php
-
 include_once('../components/footer.php');
-
 ?>
