@@ -363,8 +363,13 @@ include_once('../components/header.php');
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   /* Responsive Design */
@@ -372,9 +377,11 @@ include_once('../components/header.php');
     .main-title {
       font-size: 1.75rem;
     }
+
     .form-section {
       padding: 1rem;
     }
+
     .role-checkbox {
       padding: 0.75rem;
     }
@@ -385,12 +392,12 @@ include_once('../components/header.php');
   <h1 class="main-title">Credenciamento ESESP</h1>
 
   <form id="cadastroForm" class="needs-validation" enctype="multipart/form-data" novalidate>
-    
+
     <!-- Role Selection Section -->
     <section class="form-section">
       <h5 class="form-subtitle">Selecione as Funções Desejadas</h5>
       <p class="text-muted mb-3">Você pode selecionar múltiplas funções. Campos específicos aparecerão conforme sua seleção.</p>
-      
+
       <div class="role-selector">
         <div class="role-checkbox" data-role="docente">
           <input type="checkbox" id="role-docente" name="roles[]" value="docente">
@@ -511,7 +518,28 @@ include_once('../components/header.php');
         </div>
       </div>
     </section>
-
+    <!-- Conta Bancária -->
+    <section class="form-section">
+      <h5 class="form-subtitle">Conta Bancária (para recebimento via TED)</h5>
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label for="codigo_banco" class="form-label">Código do Banco</label>
+          <input type="text" class="form-control" id="codigo_banco" name="codigo_banco">
+        </div>
+        <div class="col-md-3">
+          <label for="nome_banco" class="form-label">Nome do Banco</label>
+          <input type="text" class="form-control" id="nome_banco" name="nome_banco">
+        </div>
+        <div class="col-md-3">
+          <label for="agencia" class="form-label">Agência</label>
+          <input type="text" class="form-control" id="agencia" name="agencia">
+        </div>
+        <div class="col-md-3">
+          <label for="conta" class="form-label">Conta</label>
+          <input type="text" class="form-control" id="conta" name="conta">
+        </div>
+      </div>
+    </section>
     <!-- Professional Data Section -->
     <section class="form-section">
       <h5 class="form-subtitle">Dados Profissionais</h5>
@@ -618,7 +646,7 @@ include_once('../components/header.php');
             <label class="form-check-label" for="pos-cat3">Assessoramento Técnico</label>
           </div>
         </div>
-        
+
       </div>
 
       <!-- Intérprete Requirements (shown when Intérprete is selected) -->
@@ -633,8 +661,8 @@ include_once('../components/header.php');
           </ul>
         </div>
         <div class="did-floating-label-content">
-          <textarea name="interprete_experience" class="did-floating-input form-control interprete-field" 
-                    placeholder=" " rows="4"></textarea>
+          <textarea name="interprete_experience" class="did-floating-input form-control interprete-field"
+            placeholder=" " rows="4"></textarea>
           <label class="did-floating-label">Descreva sua experiência em Libras</label>
         </div>
       </div>
@@ -890,122 +918,111 @@ include_once('../components/header.php');
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-// Role checkbox management
-document.addEventListener('DOMContentLoaded', function() {
-  const roleCheckboxes = document.querySelectorAll('input[name="roles[]"]');
-  const scholarshipSelect = document.getElementById('scholarship');
-  
-  // Role-specific elements
-  const docenteCategories = document.getElementById('docente-categories');
-  const docentePosCategories = document.getElementById('docente-pos-categories');
-  const interpreteRequirements = document.getElementById('interprete-requirements');
-  const docenteDocuments = document.getElementById('docente-documents');
-  const interpreteDocuments = document.getElementById('interprete-documents');
-  
-  // Handle role checkbox changes
-  roleCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-      const roleCard = this.closest('.role-checkbox');
-      const role = this.value;
-      
-      // Toggle active class on card
-      if (this.checked) {
-        roleCard.classList.add('active');
-      } else {
-        roleCard.classList.remove('active');
-      }
-      
-      // Show/hide conditional sections
-      handleRoleChange();
+  // Role checkbox management
+  document.addEventListener('DOMContentLoaded', function() {
+    const roleCheckboxes = document.querySelectorAll('input[name="roles[]"]');
+    const scholarshipSelect = document.getElementById('scholarship');
+
+    // Role-specific elements
+    const docenteCategories = document.getElementById('docente-categories');
+    const docentePosCategories = document.getElementById('docente-pos-categories');
+    const interpreteRequirements = document.getElementById('interprete-requirements');
+    const docenteDocuments = document.getElementById('docente-documents');
+    const interpreteDocuments = document.getElementById('interprete-documents');
+
+    // Handle role checkbox changes
+    roleCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const roleCard = this.closest('.role-checkbox');
+        const role = this.value;
+
+        // Toggle active class on card
+        if (this.checked) {
+          roleCard.classList.add('active');
+        } else {
+          roleCard.classList.remove('active');
+        }
+
+        // Show/hide conditional sections
+        handleRoleChange();
+      });
     });
-  });
-  
-  function handleRoleChange() {
-    const isDocente = document.getElementById('role-docente').checked;
-    const isDocentePos = document.getElementById('role-docente-pos').checked;
-    const isInterprete = document.getElementById('role-interprete').checked;
-    const isTecnico = document.getElementById('role-tecnico').checked;
-    
-    // Handle Docente sections
-    if (isDocente || isDocentePos) {
-      docenteDocuments.classList.add('show');
-      docenteDocuments.querySelectorAll('.docente-doc-field').forEach(field => {
-        field.setAttribute('required', '');
-      });
-      
-      if (isDocente && !isDocentePos) {
-        docenteCategories.classList.add('show');
-        docentePosCategories.classList.remove('show');
-      } else if (isDocentePos && !isDocente) {
-        docentePosCategories.classList.add('show');
-        docenteCategories.classList.remove('show');
-        // Make discipline fields required
-        document.querySelectorAll('.discipline-input').forEach(field => {
+
+    function handleRoleChange() {
+      const isDocente = document.getElementById('role-docente').checked;
+      const isDocentePos = document.getElementById('role-docente-pos').checked;
+      const isInterprete = document.getElementById('role-interprete').checked;
+      const isTecnico = document.getElementById('role-tecnico').checked;
+
+      // Handle Docente sections
+      if (isDocente || isDocentePos) {
+        docenteDocuments.classList.add('show');
+        docenteDocuments.querySelectorAll('.docente-doc-field').forEach(field => {
           field.setAttribute('required', '');
         });
-      } else if (isDocente && isDocentePos) {
-        docenteCategories.classList.add('show');
-        docentePosCategories.classList.add('show');
-        // Make discipline fields required
-        document.querySelectorAll('.discipline-input').forEach(field => {
-          field.setAttribute('required', '');
+
+        if (isDocente && !isDocentePos) {
+          docenteCategories.classList.add('show');
+          docentePosCategories.classList.remove('show');
+        } else if (isDocentePos && !isDocente) {
+          docentePosCategories.classList.add('show');
+          docenteCategories.classList.remove('show');
+        } else if (isDocente && isDocentePos) {
+          docenteCategories.classList.add('show');
+          docentePosCategories.classList.add('show');
+        }
+      } else {
+        docenteCategories.classList.remove('show');
+        docentePosCategories.classList.remove('show');
+        docenteDocuments.classList.remove('show');
+        docenteDocuments.querySelectorAll('.docente-doc-field').forEach(field => {
+          field.removeAttribute('required');
         });
       }
-    } else {
-      docenteCategories.classList.remove('show');
-      docentePosCategories.classList.remove('show');
-      docenteDocuments.classList.remove('show');
-      docenteDocuments.querySelectorAll('.docente-doc-field').forEach(field => {
-        field.removeAttribute('required');
-      });
-      document.querySelectorAll('.discipline-input').forEach(field => {
-        field.removeAttribute('required');
-      });
+
+      // Handle Intérprete sections
+      if (isInterprete) {
+        interpreteRequirements.classList.add('show');
+        interpreteDocuments.classList.add('show');
+        interpreteDocuments.querySelectorAll('.interprete-doc-field').forEach(field => {
+          field.setAttribute('required', '');
+        });
+        document.querySelectorAll('.interprete-field').forEach(field => {
+          field.setAttribute('required', '');
+        });
+      } else {
+        interpreteRequirements.classList.remove('show');
+        interpreteDocuments.classList.remove('show');
+        interpreteDocuments.querySelectorAll('.interprete-doc-field').forEach(field => {
+          field.removeAttribute('required');
+        });
+        document.querySelectorAll('.interprete-field').forEach(field => {
+          field.removeAttribute('required');
+        });
+      }
+
+      // Update scholarship options based on roles
+      updateScholarshipOptions();
     }
-    
-    // Handle Intérprete sections
-    if (isInterprete) {
-      interpreteRequirements.classList.add('show');
-      interpreteDocuments.classList.add('show');
-      interpreteDocuments.querySelectorAll('.interprete-doc-field').forEach(field => {
-        field.setAttribute('required', '');
-      });
-      document.querySelectorAll('.interprete-field').forEach(field => {
-        field.setAttribute('required', '');
-      });
-    } else {
-      interpreteRequirements.classList.remove('show');
-      interpreteDocuments.classList.remove('show');
-      interpreteDocuments.querySelectorAll('.interprete-doc-field').forEach(field => {
-        field.removeAttribute('required');
-      });
-      document.querySelectorAll('.interprete-field').forEach(field => {
-        field.removeAttribute('required');
-      });
-    }
-    
-    // Update scholarship options based on roles
-    updateScholarshipOptions();
-  }
-  
-  function updateScholarshipOptions() {
-    const isDocentePos = document.getElementById('role-docente-pos').checked;
-    const isInterprete = document.getElementById('role-interprete').checked;
-    const isTecnico = document.getElementById('role-tecnico').checked;
-    
-    // Reset options
-    scholarshipSelect.innerHTML = '<option value=""></option>';
-    
-    if (isDocentePos) {
-      // Pós-graduação requires higher education
-      scholarshipSelect.innerHTML += `
+
+    function updateScholarshipOptions() {
+      const isDocentePos = document.getElementById('role-docente-pos').checked;
+      const isInterprete = document.getElementById('role-interprete').checked;
+      const isTecnico = document.getElementById('role-tecnico').checked;
+
+      // Reset options
+      scholarshipSelect.innerHTML = '<option value=""></option>';
+
+      if (isDocentePos) {
+        // Pós-graduação requires higher education
+        scholarshipSelect.innerHTML += `
         <option value="Pós-graduação">Pós-graduação</option>
         <option value="Mestrado">Mestrado</option>
         <option value="Doutorado">Doutorado</option>
       `;
-    } else if (isInterprete || isTecnico) {
-      // Intérprete and Técnico can have lower education levels
-      scholarshipSelect.innerHTML += `
+      } else if (isInterprete || isTecnico) {
+        // Intérprete and Técnico can have lower education levels
+        scholarshipSelect.innerHTML += `
         <option value="Médio">Ensino médio completo</option>
         <option value="Superior incompleto">Superior incompleto</option>
         <option value="Superior completo">Superior completo</option>
@@ -1013,194 +1030,163 @@ document.addEventListener('DOMContentLoaded', function() {
         <option value="Mestrado">Mestrado</option>
         <option value="Doutorado">Doutorado</option>
       `;
-    } else {
-      // Default options
-      scholarshipSelect.innerHTML += `
+      } else {
+        // Default options
+        scholarshipSelect.innerHTML += `
         <option value="Superior completo">Superior completo</option>
         <option value="Pós-graduação">Pós-graduação</option>
         <option value="Mestrado">Mestrado</option>
         <option value="Doutorado">Doutorado</option>
       `;
-    }
-  }
-  
-  // Handle special needs radio buttons
-  document.querySelectorAll('input[name="specialNeeds"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      const detailsContainer = document.getElementById('specialNeedsDetails');
-      if (detailsContainer) {
-        detailsContainer.style.display = this.value === 'yes' ? 'block' : 'none';
-        const input = detailsContainer.querySelector('input');
-        if (this.value === 'yes') {
-          input.setAttribute('required', '');
-        } else {
-          input.removeAttribute('required');
-          input.value = '';
-        }
       }
+    }
+
+    // Handle special needs radio buttons
+    document.querySelectorAll('input[name="specialNeeds"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const detailsContainer = document.getElementById('specialNeedsDetails');
+        if (detailsContainer) {
+          detailsContainer.style.display = this.value === 'yes' ? 'block' : 'none';
+          const input = detailsContainer.querySelector('input');
+          if (this.value === 'yes') {
+            input.setAttribute('required', '');
+          } else {
+            input.removeAttribute('required');
+            input.value = '';
+          }
+        }
+      });
     });
   });
-});
 
-// Add Education Section
-function addEducationSection() {
-  const container = document.getElementById('education-sections');
-  const sections = container.querySelectorAll('.clone-section');
-  const newSection = sections[0].cloneNode(true);
-  
-  // Clear input values
-  newSection.querySelectorAll('input').forEach(input => {
-    input.value = '';
+  // Add Education Section
+  function addEducationSection() {
+    const container = document.getElementById('education-sections');
+    const sections = container.querySelectorAll('.clone-section');
+    const newSection = sections[0].cloneNode(true);
+
+    // Clear input values
+    newSection.querySelectorAll('input').forEach(input => {
+      input.value = '';
+    });
+
+    // Add remove button if it's not the first section
+    if (sections.length > 0) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'remove-section';
+      removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
+      removeBtn.onclick = function() {
+        newSection.remove();
+      };
+      newSection.appendChild(removeBtn);
+    }
+
+    container.appendChild(newSection);
+  }
+
+  // Form Validation and Submission
+  document.getElementById('cadastroForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Check if at least one role is selected
+    const rolesSelected = document.querySelectorAll('input[name="roles[]"]:checked').length > 0;
+
+    if (!rolesSelected) {
+      alert('Por favor, selecione pelo menos uma função.');
+      return;
+    }
+
+    if (this.checkValidity()) {
+      // Show loading overlay
+      document.getElementById('loadingOverlay').style.display = 'flex';
+
+      // Prepare form data
+      const formData = new FormData(this);
+
+      // Log form data for debugging
+      console.log('Form Data:');
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      // Here you would normally submit the form via AJAX
+      // For demo purposes, we'll just hide the overlay after 2 seconds
+      setTimeout(() => {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        alert('Formulário enviado com sucesso!');
+        this.reset();
+        this.classList.remove('was-validated');
+        // Reset conditional sections
+        document.querySelectorAll('.conditional-section').forEach(section => {
+          section.classList.remove('show');
+        });
+        document.querySelectorAll('.role-checkbox').forEach(card => {
+          card.classList.remove('active');
+        });
+      }, 2000);
+    }
+
+    this.classList.add('was-validated');
   });
-  
-  // Add remove button if it's not the first section
-  if (sections.length > 0) {
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'remove-section';
-    removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
-    removeBtn.onclick = function() {
-      newSection.remove();
-    };
-    newSection.appendChild(removeBtn);
-  }
-  
-  container.appendChild(newSection);
-}
 
-// Add Discipline Section
-function addDisciplineSection() {
-  const container = document.getElementById('disciplines-sections');
-  const sections = container.querySelectorAll('.clone-section');
-  const newSection = sections[0].cloneNode(true);
-  
-  // Clear input values
-  newSection.querySelectorAll('input').forEach(input => {
-    input.value = '';
-    input.classList.add('discipline-input');
-    // If docente-pos is checked, make it required
-    if (document.getElementById('role-docente-pos').checked) {
-      input.setAttribute('required', '');
+  // Input Masks
+  function applyCPFMask(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+
+    if (value.length > 9) {
+      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    } else if (value.length > 6) {
+      value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
+    } else if (value.length > 3) {
+      value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
     }
+
+    input.value = value;
+  }
+
+  function applyPhoneMask(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+
+    if (value.length > 6) {
+      if (value.length === 11) {
+        value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+      } else {
+        value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+      }
+    } else if (value.length > 2) {
+      value = value.replace(/(\d{2})(\d+)/, '($1) $2');
+    }
+
+    input.value = value;
+  }
+
+  function applyCEPMask(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 8) value = value.slice(0, 8);
+
+    if (value.length > 5) {
+      value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+    }
+
+    input.value = value;
+  }
+
+  // Apply masks to inputs
+  document.querySelectorAll('input[name="cpf"]').forEach(input => {
+    input.addEventListener('input', () => applyCPFMask(input));
   });
-  
-  // Add remove button
-  if (sections.length > 0) {
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'remove-section';
-    removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
-    removeBtn.onclick = function() {
-      newSection.remove();
-    };
-    newSection.appendChild(removeBtn);
-  }
-  
-  container.appendChild(newSection);
-}
 
-// Form Validation and Submission
-document.getElementById('cadastroForm').addEventListener('submit', function(event) {
-  event.preventDefault();
-  event.stopPropagation();
-  
-  // Check if at least one role is selected
-  const rolesSelected = document.querySelectorAll('input[name="roles[]"]:checked').length > 0;
-  
-  if (!rolesSelected) {
-    alert('Por favor, selecione pelo menos uma função.');
-    return;
-  }
-  
-  if (this.checkValidity()) {
-    // Show loading overlay
-    document.getElementById('loadingOverlay').style.display = 'flex';
-    
-    // Prepare form data
-    const formData = new FormData(this);
-    
-    // Log form data for debugging
-    console.log('Form Data:');
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
-    
-    // Here you would normally submit the form via AJAX
-    // For demo purposes, we'll just hide the overlay after 2 seconds
-    setTimeout(() => {
-      document.getElementById('loadingOverlay').style.display = 'none';
-      alert('Formulário enviado com sucesso!');
-      this.reset();
-      this.classList.remove('was-validated');
-      // Reset conditional sections
-      document.querySelectorAll('.conditional-section').forEach(section => {
-        section.classList.remove('show');
-      });
-      document.querySelectorAll('.role-checkbox').forEach(card => {
-        card.classList.remove('active');
-      });
-    }, 2000);
-  }
-  
-  this.classList.add('was-validated');
-});
+  document.querySelectorAll('input[name="phone"]').forEach(input => {
+    input.addEventListener('input', () => applyPhoneMask(input));
+  });
 
-// Input Masks
-function applyCPFMask(input) {
-  let value = input.value.replace(/\D/g, '');
-  if (value.length > 11) value = value.slice(0, 11);
-  
-  if (value.length > 9) {
-    value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  } else if (value.length > 6) {
-    value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-  } else if (value.length > 3) {
-    value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
-  }
-  
-  input.value = value;
-}
-
-function applyPhoneMask(input) {
-  let value = input.value.replace(/\D/g, '');
-  if (value.length > 11) value = value.slice(0, 11);
-  
-  if (value.length > 6) {
-    if (value.length === 11) {
-      value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    } else {
-      value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-    }
-  } else if (value.length > 2) {
-    value = value.replace(/(\d{2})(\d+)/, '($1) $2');
-  }
-  
-  input.value = value;
-}
-
-function applyCEPMask(input) {
-  let value = input.value.replace(/\D/g, '');
-  if (value.length > 8) value = value.slice(0, 8);
-  
-  if (value.length > 5) {
-    value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
-  }
-  
-  input.value = value;
-}
-
-// Apply masks to inputs
-document.querySelectorAll('input[name="cpf"]').forEach(input => {
-  input.addEventListener('input', () => applyCPFMask(input));
-});
-
-document.querySelectorAll('input[name="phone"]').forEach(input => {
-  input.addEventListener('input', () => applyPhoneMask(input));
-});
-
-document.querySelectorAll('input[name="zipCode"]').forEach(input => {
-  input.addEventListener('input', () => applyCEPMask(input));
-});
+  document.querySelectorAll('input[name="zipCode"]').forEach(input => {
+    input.addEventListener('input', () => applyCEPMask(input));
+  });
 </script>
 
 <?php
