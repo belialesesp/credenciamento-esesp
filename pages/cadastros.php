@@ -391,8 +391,8 @@ include_once('../components/header.php');
 <div class="container">
   <h1 class="main-title">Credenciamento ESESP</h1>
 
-  <form id="cadastroForm" class="needs-validation" enctype="multipart/form-data" novalidate>
-
+  <!-- Change the form tag to point to the process script -->
+  <form id="cadastroForm" class="needs-validation" enctype="multipart/form-data" novalidate action="../process/process_registration.php" method="POST">
     <!-- Role Selection Section -->
     <section class="form-section">
       <h5 class="form-subtitle">Selecione as Funções Desejadas</h5>
@@ -445,18 +445,16 @@ include_once('../components/header.php');
       </div>
       <div class="row">
         <div class="did-floating-label-content col-12 col-md-6">
-          <input name="rg" class="did-floating-input form-control" type="text" placeholder=" " maxlength="12" required />
+          <input name="document_number" class="did-floating-input form-control" type="text" placeholder=" " maxlength="12" required />
           <label class="did-floating-label">Documento de Identidade*</label>
           <div class="invalid-feedback">Informe um número de documento de identidade</div>
         </div>
         <div class="did-floating-label-content col-6 col-md-4">
-          <input name="rgEmissor" class="did-floating-input form-control" type="text" placeholder=" " required />
-          <label class="did-floating-label">Órgão emissor*</label>
+          <input name="document_emissor" class="did-floating-input form-control" type="text" placeholder=" " required /> <label class="did-floating-label">Órgão emissor*</label>
           <div class="invalid-feedback">Informe o órgão emissor</div>
         </div>
         <div class="did-floating-label-content col-6 col-md-2">
-          <input name="rgUf" class="did-floating-input form-control" type="text" placeholder=" " maxlength="2" required />
-          <label class="did-floating-label">UF*</label>
+          <input name="document_uf" class="did-floating-input form-control" type="text" placeholder=" " maxlength="2" required /> <label class="did-floating-label">UF*</label>
           <div class="invalid-feedback">Informe a UF</div>
         </div>
       </div>
@@ -466,26 +464,34 @@ include_once('../components/header.php');
           <label class="did-floating-label">CPF*</label>
           <div class="invalid-feedback">Informe um CPF válido</div>
         </div>
+        <!-- Add this in the Personal Data section after the CPF field -->
+        <div class="did-floating-label-content col-6" style="display: none;">
+          <input name="password" class="did-floating-input form-control" type="password" value="<?php echo isset($_POST['cpf']) ? $_POST['cpf'] : ''; ?>" />
+          <label class="did-floating-label">Senha (inicialmente o CPF)</label>
+        </div>
         <div class="did-floating-label-content col-6">
           <input name="email" class="did-floating-input form-control" type="email" placeholder=" " required />
           <label class="did-floating-label">Email*</label>
           <div class="invalid-feedback">Informe um email válido</div>
         </div>
+
+        <div class="did-floating-label-content col-6">
+          <input name="birth_date" class="did-floating-input form-control" type="date" placeholder=" " required />
+          <label class="did-floating-label">Data de Nascimento*</label>
+          <div class="invalid-feedback">Informe sua data de nascimento</div>
+        </div>
       </div>
       <div class="row">
         <div class="did-floating-label-content col-12 col-md-6">
-          <input name="address" class="did-floating-input form-control" type="text" placeholder=" " required />
-          <label class="did-floating-label">Endereço*</label>
+          <input name="street" class="did-floating-input form-control" type="text" placeholder=" " required /> <label class="did-floating-label">Endereço*</label>
           <div class="invalid-feedback">Informe seu endereço</div>
         </div>
         <div class="did-floating-label-content col-6 col-md-2">
-          <input name="addNumber" class="did-floating-input form-control" type="text" placeholder=" " required />
-          <label class="did-floating-label">Nº*</label>
+          <input name="number" class="did-floating-input form-control" type="text" placeholder=" " required /> <label class="did-floating-label">Nº*</label>
           <div class="invalid-feedback">Informe o número</div>
         </div>
         <div class="did-floating-label-content col-6 col-md-4">
-          <input name="addComplement" class="did-floating-input form-control" type="text" placeholder=" " />
-          <label class="did-floating-label">Complemento</label>
+          <input name="complement" class="did-floating-input form-control" type="text" placeholder=" " /> <label class="did-floating-label">Complemento</label>
         </div>
       </div>
       <div class="row">
@@ -507,8 +513,7 @@ include_once('../components/header.php');
       </div>
       <div class="row">
         <div class="did-floating-label-content col-6">
-          <input name="zipCode" class="did-floating-input form-control" type="text" placeholder=" " required />
-          <label class="did-floating-label">CEP*</label>
+          <input name="zip_code" class="did-floating-input form-control" type="text" placeholder=" " required /> <label class="did-floating-label">CEP*</label>
           <div class="invalid-feedback">Informe seu CEP</div>
         </div>
         <div class="did-floating-label-content col-6">
@@ -545,7 +550,7 @@ include_once('../components/header.php');
       <h5 class="form-subtitle">Dados Profissionais</h5>
       <div class="row">
         <div class="did-floating-label-content col-12">
-          <select name="scholarship" id="scholarship" class="did-floating-select form-select" required>
+          <select name="degree[]" class="did-floating-select form-select" required>
             <option value=""></option>
             <option value="Médio">Ensino médio completo</option>
             <option value="Superior incompleto">Superior incompleto</option>
@@ -562,8 +567,7 @@ include_once('../components/header.php');
         <div class="clone-section">
           <div class="row">
             <div class="did-floating-label-content col-12 col-md-6">
-              <input name="course[]" class="did-floating-input form-control" type="text" placeholder=" " required />
-              <label class="did-floating-label">Curso de Formação*</label>
+              <input name="course_name[]" class="did-floating-input form-control" type="text" placeholder=" " required /> <label class="did-floating-label">Curso de Formação*</label>
               <div class="invalid-feedback">Informe o curso</div>
             </div>
             <div class="did-floating-label-content col-12 col-md-6">
@@ -659,11 +663,6 @@ include_once('../components/header.php');
             <li>Comprovação de experiência profissional em interpretação de Libras</li>
             <li>Certificado de proficiência em Libras (Prolibras ou similar)</li>
           </ul>
-        </div>
-        <div class="did-floating-label-content">
-          <textarea name="interprete_experience" class="did-floating-input form-control interprete-field"
-            placeholder=" " rows="4"></textarea>
-          <label class="did-floating-label">Descreva sua experiência em Libras</label>
         </div>
       </div>
     </section>
@@ -787,7 +786,33 @@ include_once('../components/header.php');
           <div class="form-text">Cursos complementares, especializações ou capacitações</div>
         </div>
       </div>
+      <!-- Técnico Documents (shown when Técnico is selected) -->
+      <div id="tecnico-documents" class="document-subsection conditional-section">
+        <h6 class="subsection-title">
+          <i class="fas fa-hands me-2"></i>
+          Comprovação de Qualificação Técnica
+        </h6>
 
+        <div class="file-upload-group">
+          <label for="formacao_escolar_tecnico" class="file-label">
+            Formação Escolar <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control tecnico-doc-field" type="file" id="formacao_escolar_tecnico"
+            name="formacao_escolar_tecnico" accept="application/pdf">
+          <div class="invalid-feedback">Comprovação de formação escolar é obrigatória</div>
+          <div class="form-text">Diploma, certificado ou declaração de conclusão</div>
+        </div>
+
+        <div class="file-upload-group">
+          <label for="experiencia_profissional_tecnico" class="file-label">
+            Comprovante de experiência profissional <span class="required-indicator">*</span>
+          </label>
+          <input class="form-control tecnico-doc-field" type="file" id="experiencia_profissional_tecnico"
+            name="experiencia_profissional_tecnico" accept="application/pdf">
+          <div class="invalid-feedback">Comprovante de experiência é obrigatório</div>
+          <div class="form-text">Carteira de trabalho, declaração ou contrato</div>
+        </div>
+      </div>
       <!-- Intérprete Documents (shown when Intérprete is selected) -->
       <div id="interprete-documents" class="document-subsection conditional-section">
         <h6 class="subsection-title">
@@ -843,16 +868,6 @@ include_once('../components/header.php');
         </div>
 
         <div class="file-upload-group">
-          <label for="certidao_federal" class="file-label">
-            Certidão Negativa Federal <span class="required-indicator">*</span>
-          </label>
-          <input class="form-control" type="file" id="certidao_federal"
-            name="certidao_federal" accept="application/pdf" required>
-          <div class="invalid-feedback">Certidão Negativa Federal é obrigatória</div>
-          <div class="form-text">Certidão de regularidade com a Fazenda Federal pode ser emitida <a href="https://servicos.receitafederal.gov.br/servico/certidoes/#/home" target="_blank">aqui</a></div>
-        </div>
-
-        <div class="file-upload-group">
           <label for="certidao_conjunta" class="file-label">
             Certidão Conjunta PGFN e RFB do Tribunal de Justiça <span class="required-indicator">*</span>
           </label>
@@ -870,15 +885,15 @@ include_once('../components/header.php');
       <div class="radio-group">
         <p style="font-weight:500">É portador de necessidades especiais?</p>
         <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsYes" value="yes" required>
+          <input class="form-check-input" type="radio" name="special_needs" id="specialNeedsYes" value="yes" required>
           <label class="form-check-label" for="specialNeedsYes">Sim</label>
         </div>
         <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsNo" value="no" required>
+          <input class="form-check-input" type="radio" name="special_needs" id="specialNeedsNo" value="no" required>
           <label class="form-check-label" for="specialNeedsNo">Não</label>
         </div>
         <div class="did-floating-label-content" style="display:none; margin-top: 1rem" id="specialNeedsDetails">
-          <input name="specialNeedsDetails" class="did-floating-input form-control" type="text" placeholder=" " />
+          <input name="special_needs_details" class="did-floating-input form-control" type="text" placeholder=" " />
           <label class="did-floating-label">Especifique*</label>
           <div class="invalid-feedback">Você deve especificar</div>
         </div>
@@ -916,6 +931,10 @@ include_once('../components/header.php');
 
 <!-- Bootstrap Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- SweetAlert2 for notifications -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
   // Role checkbox management
@@ -929,6 +948,7 @@ include_once('../components/header.php');
     const interpreteRequirements = document.getElementById('interprete-requirements');
     const docenteDocuments = document.getElementById('docente-documents');
     const interpreteDocuments = document.getElementById('interprete-documents');
+    const tecnicoDocuments = document.getElementById('tecnico-documents');
 
     // Handle role checkbox changes
     roleCheckboxes.forEach(checkbox => {
@@ -1000,7 +1020,20 @@ include_once('../components/header.php');
           field.removeAttribute('required');
         });
       }
-
+      
+      // Handle Técnico sections
+      if (isTecnico) {
+        tecnicoDocuments.classList.add('show');
+        tecnicoDocuments.querySelectorAll('.tecnico-doc-field').forEach(field => {
+          field.setAttribute('required', '');
+        });
+      } else {
+        tecnicoDocuments.classList.remove('show');
+        tecnicoDocuments.querySelectorAll('.tecnico-doc-field').forEach(field => {
+          field.removeAttribute('required');
+        });
+      }
+      
       // Update scholarship options based on roles
       updateScholarshipOptions();
     }
@@ -1016,179 +1049,66 @@ include_once('../components/header.php');
       if (isDocentePos) {
         // Pós-graduação requires higher education
         scholarshipSelect.innerHTML += `
-        <option value="Pós-graduação">Pós-graduação</option>
-        <option value="Mestrado">Mestrado</option>
-        <option value="Doutorado">Doutorado</option>
-      `;
+          <option value="Pós-graduação">Pós-graduação</option>
+          <option value="Mestrado">Mestrado</option>
+          <option value="Doutorado">Doutorado</option>
+        `;
       } else if (isInterprete || isTecnico) {
         // Intérprete and Técnico can have lower education levels
         scholarshipSelect.innerHTML += `
-        <option value="Médio">Ensino médio completo</option>
-        <option value="Superior incompleto">Superior incompleto</option>
-        <option value="Superior completo">Superior completo</option>
-        <option value="Pós-graduação">Pós-graduação</option>
-        <option value="Mestrado">Mestrado</option>
-        <option value="Doutorado">Doutorado</option>
-      `;
+          <option value="Médio">Ensino médio completo</option>
+          <option value="Superior incompleto">Superior incompleto</option>
+          <option value="Superior completo">Superior completo</option>
+          <option value="Pós-graduação">Pós-graduação</option>
+          <option value="Mestrado">Mestrado</option>
+          <option value="Doutorado">Doutorado</option>
+        `;
       } else {
         // Default options
         scholarshipSelect.innerHTML += `
-        <option value="Superior completo">Superior completo</option>
-        <option value="Pós-graduação">Pós-graduação</option>
-        <option value="Mestrado">Mestrado</option>
-        <option value="Doutorado">Doutorado</option>
-      `;
+          <option value="Superior completo">Superior completo</option>
+          <option value="Pós-graduação">Pós-graduação</option>
+          <option value="Mestrado">Mestrado</option>
+          <option value="Doutorado">Doutorado</option>
+        `;
       }
     }
 
-    // Handle special needs radio buttons
-    document.querySelectorAll('input[name="specialNeeds"]').forEach(radio => {
-      radio.addEventListener('change', function() {
-        const detailsContainer = document.getElementById('specialNeedsDetails');
-        if (detailsContainer) {
-          detailsContainer.style.display = this.value === 'yes' ? 'block' : 'none';
-          const input = detailsContainer.querySelector('input');
-          if (this.value === 'yes') {
-            input.setAttribute('required', '');
-          } else {
-            input.removeAttribute('required');
-            input.value = '';
-          }
+    // Custom validation before form submission
+    // Note: The actual form submission is handled by form-handler.js
+    const cadastroForm = document.getElementById('cadastroForm');
+    if (cadastroForm) {
+      // Add class to identify this form for form-handler.js
+      cadastroForm.classList.add('needs-validation');
+      
+      // Add custom validation for role selection
+      cadastroForm.addEventListener('submit', function(event) {
+        // Check if at least one role is selected
+        const rolesSelected = document.querySelectorAll('input[name="roles[]"]:checked').length > 0;
+        
+        if (!rolesSelected) {
+          event.preventDefault();
+          event.stopPropagation();
+          alert('Por favor, selecione pelo menos uma função.');
+          return false;
         }
-      });
-    });
-  });
 
-  // Add Education Section
-  function addEducationSection() {
-    const container = document.getElementById('education-sections');
-    const sections = container.querySelectorAll('.clone-section');
-    const newSection = sections[0].cloneNode(true);
-
-    // Clear input values
-    newSection.querySelectorAll('input').forEach(input => {
-      input.value = '';
-    });
-
-    // Add remove button if it's not the first section
-    if (sections.length > 0) {
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'remove-section';
-      removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
-      removeBtn.onclick = function() {
-        newSection.remove();
-      };
-      newSection.appendChild(removeBtn);
+        // Set password value to CPF before submission
+        const cpfField = document.querySelector('input[name="cpf"]');
+        const passwordField = document.querySelector('input[name="password"]');
+        if (cpfField && passwordField) {
+          // Clean CPF (remove formatting) for password
+          const cleanCpf = cpfField.value.replace(/\D/g, '');
+          passwordField.value = cleanCpf;
+        }
+        
+        // Let form-handler.js handle the actual submission
+      }, true); // Use capture phase to run before form-handler.js
     }
-
-    container.appendChild(newSection);
-  }
-
-  // Form Validation and Submission
-  document.getElementById('cadastroForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Check if at least one role is selected
-    const rolesSelected = document.querySelectorAll('input[name="roles[]"]:checked').length > 0;
-
-    if (!rolesSelected) {
-      alert('Por favor, selecione pelo menos uma função.');
-      return;
-    }
-
-    if (this.checkValidity()) {
-      // Show loading overlay
-      document.getElementById('loadingOverlay').style.display = 'flex';
-
-      // Prepare form data
-      const formData = new FormData(this);
-
-      // Log form data for debugging
-      console.log('Form Data:');
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
-      // Here you would normally submit the form via AJAX
-      // For demo purposes, we'll just hide the overlay after 2 seconds
-      setTimeout(() => {
-        document.getElementById('loadingOverlay').style.display = 'none';
-        alert('Formulário enviado com sucesso!');
-        this.reset();
-        this.classList.remove('was-validated');
-        // Reset conditional sections
-        document.querySelectorAll('.conditional-section').forEach(section => {
-          section.classList.remove('show');
-        });
-        document.querySelectorAll('.role-checkbox').forEach(card => {
-          card.classList.remove('active');
-        });
-      }, 2000);
-    }
-
-    this.classList.add('was-validated');
-  });
-
-  // Input Masks
-  function applyCPFMask(input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-
-    if (value.length > 9) {
-      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    } else if (value.length > 6) {
-      value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-    } else if (value.length > 3) {
-      value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
-    }
-
-    input.value = value;
-  }
-
-  function applyPhoneMask(input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-
-    if (value.length > 6) {
-      if (value.length === 11) {
-        value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-      } else {
-        value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-      }
-    } else if (value.length > 2) {
-      value = value.replace(/(\d{2})(\d+)/, '($1) $2');
-    }
-
-    input.value = value;
-  }
-
-  function applyCEPMask(input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value.length > 8) value = value.slice(0, 8);
-
-    if (value.length > 5) {
-      value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
-    }
-
-    input.value = value;
-  }
-
-  // Apply masks to inputs
-  document.querySelectorAll('input[name="cpf"]').forEach(input => {
-    input.addEventListener('input', () => applyCPFMask(input));
-  });
-
-  document.querySelectorAll('input[name="phone"]').forEach(input => {
-    input.addEventListener('input', () => applyPhoneMask(input));
-  });
-
-  document.querySelectorAll('input[name="zipCode"]').forEach(input => {
-    input.addEventListener('input', () => applyCEPMask(input));
   });
 </script>
-
+<!-- Your form handler script -->
+<script src="js/form-handler.js"></script>
 <?php
 include_once('../components/footer.php');
 ?>
