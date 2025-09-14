@@ -51,21 +51,24 @@ $documentMapping = [
         'name' => 'Protocolo SIADES'
     ],
 
-    // Docente Documents
-    'formacao_escolar_docente' => [
+    // UNIFIED Professional Qualification Documents
+    // These now work for Docente, Docente-Pos, AND Técnico
+    'formacao_escolar' => [
         'type' => 'qualification',
         'id' => 7,
-        'required' => false, // Will be required if docente role is selected
+        'required' => false, // Will be required based on role selection
         'name' => 'Formação Escolar',
-        'roles' => ['docente', 'docente-pos']
+        'roles' => ['docente', 'docente-pos', 'tecnico'] // Now includes tecnico
     ],
-    'experiencia_profissional_docente' => [
+    'experiencia_profissional' => [
         'type' => 'qualification',
         'id' => 8,
         'required' => false,
         'name' => 'Experiência Profissional',
-        'roles' => ['docente', 'docente-pos']
+        'roles' => ['docente', 'docente-pos', 'tecnico'] // Now includes tecnico
     ],
+
+    // Optional documents for Docente roles only
     'publicacoes' => [
         'type' => 'qualification',
         'id' => 9,
@@ -81,7 +84,7 @@ $documentMapping = [
         'roles' => ['docente', 'docente-pos']
     ],
 
-    // Intérprete Documents
+    // Intérprete-specific Documents (unchanged)
     'certificacao_libras' => [
         'type' => 'qualification',
         'id' => 11,
@@ -96,29 +99,48 @@ $documentMapping = [
         'name' => 'Experiência em Libras',
         'roles' => ['interprete']
     ],
-
-    // Financial Documents
-    'certidao_estadual' => [
-        'type' => 'financial',
+    'certificado_prolibras' => [
+        'type' => 'qualification',
         'id' => 13,
-        'required' => true,
-        'name' => 'Certidão Negativa Estadual'
+        'required' => false,
+        'name' => 'Certificado Prolibras',
+        'roles' => ['interprete']
     ],
-    'certidao_municipal' => [
+
+    // Financial Documents (unchanged)
+    'certidao_federal' => [
         'type' => 'financial',
         'id' => 14,
         'required' => true,
-        'name' => 'Certidão Negativa Municipal'
+        'name' => 'Certidão Federal'
     ],
-    'certidao_federal' => [
+    'certidao_trabalhista' => [
         'type' => 'financial',
         'id' => 15,
         'required' => true,
-        'name' => 'Certidão Negativa Federal'
+        'name' => 'Certidão Trabalhista'
+    ],
+    'certidao_estadual' => [
+        'type' => 'financial',
+        'id' => 16,
+        'required' => true,
+        'name' => 'Certidão Estadual'
+    ],
+    'certidao_municipal' => [
+        'type' => 'financial',
+        'id' => 17,
+        'required' => true,
+        'name' => 'Certidão Municipal'
+    ],
+    'certidao_fgts' => [
+        'type' => 'financial',
+        'id' => 18,
+        'required' => true,
+        'name' => 'Certidão FGTS'
     ],
     'certidao_conjunta' => [
         'type' => 'financial',
-        'id' => 16,
+        'id' => 19,
         'required' => true,
         'name' => 'Certidão Conjunta PGFN e RFB'
     ]
@@ -158,22 +180,22 @@ try {
     $existingUser = $stmt->fetch();
 
     if ($existingUser) {
-    // Clear any output
-    while (ob_get_level()) {
-        ob_end_clean();
+        // Clear any output
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Send direct JSON response
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'CPF já cadastrado no sistema. Redirecionando para login...',
+            'already_registered' => true,
+            'redirect_url' => '../pages/login.php',
+            'user_name' => isset($existingUser['name']) ? $existingUser['name'] : 'usuário'
+        ]);
+        exit();
     }
-    
-    // Send direct JSON response
-    header('Content-Type: application/json');
-    echo json_encode([
-        'success' => false,
-        'message' => 'CPF já cadastrado no sistema. Redirecionando para login...',
-        'already_registered' => true,
-        'redirect_url' => '../pages/login.php',
-        'user_name' => isset($existingUser['name']) ? $existingUser['name'] : 'usuário'
-    ]);
-    exit();
-}
 
     // Process special needs
     $specialNeeds = (isset($_POST['special_needs']) && $_POST['special_needs'] === 'yes') ? 'Sim' : 'Não';
