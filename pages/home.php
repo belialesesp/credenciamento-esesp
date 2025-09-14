@@ -1,5 +1,5 @@
 <?php
-// pages/home.php - Updated dashboard with role-based content
+// pages/home.php
 require_once '../init.php';
 
 // Check if user is logged in
@@ -71,8 +71,8 @@ try {
             <div class="alert alert-info">
                 <strong>Bem-vindo(a), <?= htmlspecialchars($user_name) ?>!</strong><br>
                 <?php if (!empty($user_roles)): ?>
-                    Suas funções: 
-                    <?php 
+                    Suas funções:
+                    <?php
                     $roleNames = [
                         'admin' => 'Administrador',
                         'docente' => 'Docente',
@@ -80,7 +80,7 @@ try {
                         'tecnico' => 'Técnico',
                         'interprete' => 'Intérprete'
                     ];
-                    $displayRoles = array_map(function($role) use ($roleNames) {
+                    $displayRoles = array_map(function ($role) use ($roleNames) {
                         return $roleNames[$role] ?? $role;
                     }, $user_roles);
                     echo implode(', ', $displayRoles);
@@ -209,7 +209,16 @@ try {
                     <ul class="nav nav-tabs" id="profileTabs" role="tablist">
                         <?php foreach ($user_roles as $index => $role): ?>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link <?= $index === 0 ? 'active' : '' ?>" id="<?= $role ?>-tab" data-bs-toggle="tab" data-bs-target="#<?= $role ?>" type="button" role="tab" aria-controls="<?= $role ?>" aria-selected="<?= $index === 0 ? 'true' : 'false' ?>">
+                                <button class="nav-link <?= $index === 0 ? 'active' : '' ?>"
+                                    id="<?= $role ?>-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#<?= $role ?>"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="<?= $role ?>"
+                                    aria-selected="<?= $index === 0 ? 'true' : 'false' ?>"
+                                    data-role="<?= $role ?>"
+                                    data-user-id="<?= $user_id ?>">
                                     <?= translateUserType($role) ?>
                                 </button>
                             </li>
@@ -218,29 +227,16 @@ try {
 
                     <div class="tab-content p-3 border border-top-0 rounded-bottom" id="profileTabsContent">
                         <?php foreach ($user_roles as $index => $role): ?>
-                            <div class="tab-pane fade <?= $index === 0 ? 'show active' : '' ?>" id="<?= $role ?>" role="tabpanel" aria-labelledby="<?= $role ?>-tab">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <p>Visualize e edite suas informações específicas para a função de <?= translateUserType($role) ?>.</p>
-                                    <?php
-                                    $profile_link = '';
-                                    switch ($role) {
-                                        case 'docente':
-                                            $profile_link = 'docente.php?id=' . $user_id;
-                                            break;
-                                        case 'docente_pos':
-                                            $profile_link = 'docente-pos.php?id=' . $user_id;
-                                            break;
-                                        case 'tecnico':
-                                            $profile_link = 'tecnico.php?id=' . $user_id;
-                                            break;
-                                        case 'interprete':
-                                            $profile_link = 'interprete.php?id=' . $user_id;
-                                            break;
-                                        default:
-                                            $profile_link = 'profile.php?id=' . $user_id;
-                                    }
-                                    ?>
-                                    <a href="<?= $profile_link ?>" class="btn btn-primary">Acessar Perfil Completo</a>
+                            <div class="tab-pane fade <?= $index === 0 ? 'show active' : '' ?>"
+                                id="<?= $role ?>"
+                                role="tabpanel"
+                                aria-labelledby="<?= $role ?>-tab">
+                                <!-- Loading spinner -->
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Carregando...</span>
+                                    </div>
+                                    <p class="mt-2">Carregando informações do perfil...</p>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -531,6 +527,91 @@ try {
         }
     }
 
+    // Function to load profile content via AJAX
+    function loadProfileContent(role, userId) {
+        // Determine the correct endpoint based on role
+        let endpoint = '';
+        let roleName = '';
+
+        switch (role) {
+            case 'docente':
+                endpoint = `docente.php?id=${userId}&ajax=1`;
+                roleName = 'Docente';
+                break;
+            case 'docente_pos':
+            case 'docente-pos': // Handle both formats
+                endpoint = `docente-pos.php?id=${userId}&ajax=1`;
+                roleName = 'Docente Pós-Graduação';
+                break;
+            case 'tecnico':
+                endpoint = `tecnico.php?id=${userId}&ajax=1`;
+                roleName = 'Técnico';
+                break;
+            case 'interprete':
+                endpoint = `interprete.php?id=${userId}&ajax=1`;
+                roleName = 'Intérprete';
+                break;
+            default:
+                // Show message for unassigned role
+                const tabContent = document.getElementById(role);
+                if (tabContent) {
+                    tabContent.innerHTML = `
+                    <div class="alert alert-info">
+                        <h5>Função Não Atribuída</h5>
+                        <p>Você ainda não possui um perfil ativo para esta função.</p>
+                        <p>Para solicitar acesso a esta função, utilize a seção "Solicitar Novas Funções" abaixo.</p>
+                    </div>
+                `;
+                }
+                return;
+        }
+
+        // Get the target tab content element
+        const tabContent = document.getElementById(role);
+
+        if (!tabContent) {
+            console.error(`Tab content element with ID '${role}' not found`);
+            return;
+        }
+
+        // Show loading state
+        tabContent.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-2">Carregando informações do perfil de ${roleName}...</p>
+        </div>
+    `;
+
+        // Fetch the profile content
+        fetch(endpoint)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar o perfil');
+                }
+                return response.text();
+            })
+            .then(data => {
+                tabContent.innerHTML = data;
+
+                // Reinitialize any scripts that might be needed
+                if (typeof initProfileScripts === 'function') {
+                    initProfileScripts();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                tabContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5>Erro ao carregar o perfil</h5>
+                    <p>Não foi possível carregar as informações do perfil. Por favor, tente novamente.</p>
+                    <a href="${endpoint.replace('&ajax=1', '')}" class="btn btn-primary">Acessar Perfil Completo</a>
+                </div>
+            `;
+            });
+    }
+
     // Handle document replacement modal
     const replaceDocumentModal = document.getElementById('replaceDocumentModal');
     if (replaceDocumentModal) {
@@ -545,10 +626,29 @@ try {
         });
     }
 
-    // Handle role checkbox changes
+    // Initialize when DOM is fully loaded
     document.addEventListener('DOMContentLoaded', function() {
-        const roleCheckboxes = document.querySelectorAll('#applyRolesForm input[type="checkbox"]');
+        // Load the initial active tab content
+        const activeTab = document.querySelector('#profileTabs .nav-link.active');
+        if (activeTab) {
+            const role = activeTab.getAttribute('data-role');
+            const userId = activeTab.getAttribute('data-user-id');
+            // Add a small delay to ensure tabs are properly initialized
+            setTimeout(() => loadProfileContent(role, userId), 100);
+        }
 
+        // Add event listeners for tab changes
+        const tabEls = document.querySelectorAll('#profileTabs .nav-link');
+        tabEls.forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function(e) {
+                const role = e.target.getAttribute('data-role');
+                const userId = e.target.getAttribute('data-user-id');
+                loadProfileContent(role, userId);
+            });
+        });
+
+        // Handle role checkbox changes
+        const roleCheckboxes = document.querySelectorAll('#applyRolesForm input[type="checkbox"]');
         roleCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const roleCard = this.closest('.role-checkbox');
@@ -564,7 +664,6 @@ try {
 
         // Handle role application form
         const applyRolesForm = document.getElementById('applyRolesForm');
-
         if (applyRolesForm) {
             applyRolesForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -627,12 +726,6 @@ try {
                     submitButton.disabled = false;
                 }
             });
-        }
-    });
-    // Initialize role application form handler
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof handleRoleApplication === 'function') {
-            handleRoleApplication();
         }
     });
 </script>
