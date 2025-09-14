@@ -5,56 +5,93 @@
  * Updated to handle redirects after successful registration
  */
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
     // Get all registration forms
     const forms = document.querySelectorAll('.needs-validation');
-
+    
     forms.forEach(form => {
-        form.addEventListener('submit', async function (event) {
+        form.addEventListener('submit', async function(event) {
             event.preventDefault();
             event.stopPropagation();
-
+            
             // Check form validity
             if (!form.checkValidity()) {
                 form.classList.add('was-validated');
                 return;
             }
-
+            
             // Show loading overlay
             showLoading(true);
-
+            
             try {
                 // Create FormData object
                 const formData = new FormData(form);
-
+                
                 // Add form type identifier
                 const formId = form.id;
                 formData.append('form_type', formId);
-
+                
                 // Send to server
-                const response = await fetch('process/process_registration.php', {
+                const response = await fetch('../process/process_registration.php', {
                     method: 'POST',
                     body: formData
                 });
-
-                const result = await response.json();
-
+                
+                // Parse JSON response
+                let result;
+                try {
+                    const responseText = await response.text();
+                    console.log('Response received:', responseText); // Debug log
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Failed to parse response:', parseError);
+                    throw new Error('Invalid response from server');
+                }
+                
                 if (result.success) {
-                    if (result.redirect_url) {
-                        window.location.href = result.redirect_url;
-                    } else if (result.redirect) {
-                        window.location.href = result.redirect;
-                    } else {
-                        window.location.href = 'login.php';
-                    }
-                } else {
-                    // Show error message
+                    // Show success message
                     Swal.fire({
-                        icon: 'error',
-                        title: 'Erro no Cadastro',
+                        icon: 'success',
+                        title: 'Cadastro Realizado!',
                         text: result.message,
-                        confirmButtonColor: '#dc3545'
+                        confirmButtonColor: '#1e4c82',
+                        confirmButtonText: 'Continuar',
+                        allowOutsideClick: false
+                    }).then(() => {
+                        // Check for redirect URL in response
+                        if (result.redirect_url) {
+                            // Redirect to the profile page
+                            window.location.href = result.redirect_url;
+                        } else if (result.redirect) {
+                            // Fallback to old redirect property
+                            window.location.href = result.redirect;
+                        } else {
+                            // Default redirect to login if no specific redirect provided
+                            window.location.href = 'login.php';
+                        }
                     });
+                } else {
+                    // Check if user is already registered
+                    if (result.already_registered) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Usuário já cadastrado',
+                            text: `Olá ${result.user_name || 'usuário'}! Você já está cadastrado no sistema.`,
+                            confirmButtonColor: '#1e4c82',
+                            confirmButtonText: 'Ir para Login',
+                            allowOutsideClick: false
+                        }).then(() => {
+                            window.location.href = result.redirect_url || 'login.php';
+                        });
+                    } else {
+                        // Show regular error message
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro no Cadastro',
+                            text: result.message,
+                            confirmButtonColor: '#dc3545'
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -69,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
-
+    
     // Setup other handlers
     setupFileValidation();
     applyInputMasks();
@@ -79,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Show/Hide loading overlay
 function showLoading(show) {
     let overlay = document.getElementById('loadingOverlay');
-
+    
     if (!overlay && show) {
         // Create overlay if it doesn't exist
         overlay = document.createElement('div');
@@ -117,7 +154,7 @@ function showLoading(show) {
                 <p class="upload-progress">Processando documentos...</p>
             </div>
         `;
-
+        
         // Add spinner animation
         const style = document.createElement('style');
         style.textContent = `
@@ -127,10 +164,10 @@ function showLoading(show) {
             }
         `;
         document.head.appendChild(style);
-
+        
         document.body.appendChild(overlay);
     }
-
+    
     if (overlay) {
         overlay.style.display = show ? 'flex' : 'none';
     }
@@ -139,11 +176,11 @@ function showLoading(show) {
 // File validation
 function setupFileValidation() {
     const fileInputs = document.querySelectorAll('input[type="file"]');
-
+    
     fileInputs.forEach(input => {
-        input.addEventListener('change', function () {
+        input.addEventListener('change', function() {
             const file = this.files[0];
-
+            
             if (file) {
                 // Check file type (PDF only)
                 if (file.type !== 'application/pdf') {
@@ -156,7 +193,7 @@ function setupFileValidation() {
                     });
                     return;
                 }
-
+                
                 // Check file size (max 10MB)
                 const maxSize = 10 * 1024 * 1024; // 10MB in bytes
                 if (file.size > maxSize) {
@@ -169,7 +206,7 @@ function setupFileValidation() {
                     });
                     return;
                 }
-
+                
                 // Show file name as feedback
                 const label = this.closest('.file-upload-group')?.querySelector('.file-label');
                 if (label) {
@@ -185,11 +222,11 @@ function setupFileValidation() {
                         `;
                         label.appendChild(indicator);
                     }
-
-                    const fileName = file.name.length > 30
-                        ? file.name.substring(0, 27) + '...'
+                    
+                    const fileName = file.name.length > 30 
+                        ? file.name.substring(0, 27) + '...' 
                         : file.name;
-
+                    
                     const fileSize = (file.size / 1024).toFixed(1);
                     indicator.innerHTML = `✔ ${fileName} (${fileSize} KB)`;
                 }
@@ -202,10 +239,10 @@ function setupFileValidation() {
 function applyInputMasks() {
     // CPF Mask
     document.querySelectorAll('input[name="cpf"]').forEach(input => {
-        input.addEventListener('input', function () {
+        input.addEventListener('input', function() {
             let value = this.value.replace(/\D/g, '');
             if (value.length > 11) value = value.slice(0, 11);
-
+            
             if (value.length > 9) {
                 value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
             } else if (value.length > 6) {
@@ -213,17 +250,17 @@ function applyInputMasks() {
             } else if (value.length > 3) {
                 value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
             }
-
+            
             this.value = value;
         });
     });
-
+    
     // Phone Mask
     document.querySelectorAll('input[name="phone"]').forEach(input => {
-        input.addEventListener('input', function () {
+        input.addEventListener('input', function() {
             let value = this.value.replace(/\D/g, '');
             if (value.length > 11) value = value.slice(0, 11);
-
+            
             if (value.length > 6) {
                 if (value.length === 11) {
                     value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
@@ -233,21 +270,21 @@ function applyInputMasks() {
             } else if (value.length > 2) {
                 value = value.replace(/(\d{2})(\d+)/, '($1) $2');
             }
-
+            
             this.value = value;
         });
     });
-
+    
     // CEP Mask
     document.querySelectorAll('input[name="zipCode"]').forEach(input => {
-        input.addEventListener('input', function () {
+        input.addEventListener('input', function() {
             let value = this.value.replace(/\D/g, '');
             if (value.length > 8) value = value.slice(0, 8);
-
+            
             if (value.length > 5) {
                 value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
             }
-
+            
             this.value = value;
         });
     });
@@ -256,7 +293,7 @@ function applyInputMasks() {
 // Handle special needs radio buttons
 function handleSpecialNeeds() {
     document.querySelectorAll('input[name="specialNeeds"]').forEach(radio => {
-        radio.addEventListener('change', function () {
+        radio.addEventListener('change', function() {
             const detailsContainer = this.closest('.radio-group')?.querySelector('[id^="specialNeedsDetails"]');
             if (detailsContainer) {
                 detailsContainer.style.display = this.value === 'yes' ? 'block' : 'none';
@@ -275,57 +312,57 @@ function handleSpecialNeeds() {
 }
 
 // Add Education Section dynamically
-window.addEducationSection = function () {
+window.addEducationSection = function() {
     const container = document.getElementById('education-sections');
     if (!container) return;
-
+    
     const sections = container.querySelectorAll('.clone-section');
     const newSection = sections[0].cloneNode(true);
-
+    
     // Clear input values
     newSection.querySelectorAll('input').forEach(input => {
         input.value = '';
     });
-
+    
     // Add remove button if it's not the first section
     if (sections.length > 0) {
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'remove-section';
         removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
-        removeBtn.onclick = function () {
+        removeBtn.onclick = function() {
             newSection.remove();
         };
         newSection.appendChild(removeBtn);
     }
-
+    
     container.appendChild(newSection);
 };
 
 // Add Discipline Section dynamically
-window.addDisciplineSection = function () {
+window.addDisciplineSection = function() {
     const container = document.getElementById('disciplines-sections');
     if (!container) return;
-
+    
     const sections = container.querySelectorAll('.clone-section');
     const newSection = sections[0].cloneNode(true);
-
+    
     // Clear input values
     newSection.querySelectorAll('input').forEach(input => {
         input.value = '';
     });
-
+    
     // Add remove button
     if (sections.length > 0) {
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'remove-section';
         removeBtn.innerHTML = '<i class="fas fa-times"></i> Remover';
-        removeBtn.onclick = function () {
+        removeBtn.onclick = function() {
             newSection.remove();
         };
         newSection.appendChild(removeBtn);
     }
-
+    
     container.appendChild(newSection);
 };

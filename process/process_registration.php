@@ -152,38 +152,46 @@ try {
     // Clean CPF for database storage
     $cpfClean = preg_replace('/\D/', '', $cpf);
 
-    // Check if user exists
-    $stmt = $pdo->prepare("SELECT id FROM user WHERE cpf = :cpf");
+    // Check if user exists - FIXED: Now selecting name field too
+    $stmt = $pdo->prepare("SELECT id, name FROM user WHERE cpf = :cpf");
     $stmt->execute([':cpf' => $cpfClean]);
     $existingUser = $stmt->fetch();
-    if ($existingUser) {
-        // User already exists - redirect to login
-        $pdo->commit(); // Commit any pending transaction
 
-        // Send response with login redirect
-        sendResponse(false, 'CPF já cadastrado no sistema. Redirecionando para login...', [
-            'already_registered' => true,
-            'redirect_url' => '../pages/login.php',
-            'user_name' => $existingUser['name']
-        ]);
+    if ($existingUser) {
+    // Clear any output
+    while (ob_get_level()) {
+        ob_end_clean();
     }
+    
+    // Send direct JSON response
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'message' => 'CPF já cadastrado no sistema. Redirecionando para login...',
+        'already_registered' => true,
+        'redirect_url' => '../pages/login.php',
+        'user_name' => isset($existingUser['name']) ? $existingUser['name'] : 'usuário'
+    ]);
+    exit();
+}
+
+    // Process special needs
     $specialNeeds = (isset($_POST['special_needs']) && $_POST['special_needs'] === 'yes') ? 'Sim' : 'Não';
 
     // Process bank account details
-    $bankCode = $_POST['codigo_banco'] ?? null;
-    $bankName = $_POST['nome_banco'] ?? null;
-    $agency = $_POST['agencia'] ?? null;
-    $account = $_POST['conta'] ?? null;
+    $bankCode = isset($_POST['codigo_banco']) ? $_POST['codigo_banco'] : null;
+    $bankName = isset($_POST['nome_banco']) ? $_POST['nome_banco'] : null;
+    $agency = isset($_POST['agencia']) ? $_POST['agencia'] : null;
+    $account = isset($_POST['conta']) ? $_POST['conta'] : null;
     $conta_bancaria = "Banco: $bankName ($bankCode), Agência: $agency, Conta: $account";
 
-
-    // Prepare user data
-    $name = $_POST['name'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $phone = $_POST['phone'] ?? '';
+    // Prepare user data with proper isset checks
+    $name = isset($_POST['name']) ? $_POST['name'] : '';
+    $email = isset($_POST['email']) ? $_POST['email'] : '';
+    $phone = isset($_POST['phone']) ? $_POST['phone'] : '';
 
     // Hash the password (using CPF as default password)
-    $password = password_hash($cpfClean, PASSWORD_DEFAULT);
+    $passwordHash = password_hash($cpfClean, PASSWORD_DEFAULT);
 
     // Create new user
     $stmt = $pdo->prepare("
