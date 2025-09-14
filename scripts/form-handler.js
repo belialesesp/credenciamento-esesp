@@ -1,5 +1,5 @@
 /**
- * File: /js/form-handler.js
+ * File: /scripts/form-handler.js
  * 
  * This file handles form submission for cadastros.php
  * Updated to handle redirects after successful registration
@@ -31,8 +31,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const formId = form.id;
                 formData.append('form_type', formId);
                 
+                // Determine the correct path based on form action or default
+                let actionUrl = '../process/process_registration.php';
+                if (form.action && form.action.includes('process_registration.php')) {
+                    actionUrl = form.action;
+                }
+                
                 // Send to server
-                const response = await fetch('../process/process_registration.php', {
+                const response = await fetch(actionUrl, {
                     method: 'POST',
                     body: formData
                 });
@@ -60,19 +66,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     }).then(() => {
                         // Check for redirect URL in response
                         if (result.redirect_url) {
-                            // Redirect to the profile page
                             window.location.href = result.redirect_url;
                         } else if (result.redirect) {
-                            // Fallback to old redirect property
                             window.location.href = result.redirect;
                         } else {
-                            // Default redirect to login if no specific redirect provided
-                            window.location.href = 'login.php';
+                            window.location.href = '../pages/login.php';
                         }
                     });
                 } else {
                     // Check if user is already registered
-                    if (result.already_registered) {
+                    if (result.already_registered === true) {
                         Swal.fire({
                             icon: 'info',
                             title: 'Usuário já cadastrado',
@@ -81,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             confirmButtonText: 'Ir para Login',
                             allowOutsideClick: false
                         }).then(() => {
-                            window.location.href = result.redirect_url || 'login.php';
+                            window.location.href = result.redirect_url || '../pages/login.php';
                         });
                     } else {
                         // Show regular error message
@@ -292,9 +295,9 @@ function applyInputMasks() {
 
 // Handle special needs radio buttons
 function handleSpecialNeeds() {
-    document.querySelectorAll('input[name="specialNeeds"]').forEach(radio => {
+    document.querySelectorAll('input[name="specialNeeds"], input[name="special_needs"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            const detailsContainer = this.closest('.radio-group')?.querySelector('[id^="specialNeedsDetails"]');
+            const detailsContainer = document.getElementById('specialNeedsDetails');
             if (detailsContainer) {
                 detailsContainer.style.display = this.value === 'yes' ? 'block' : 'none';
                 const input = detailsContainer.querySelector('input');

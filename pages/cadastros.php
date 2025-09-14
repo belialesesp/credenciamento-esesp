@@ -1020,7 +1020,7 @@ include_once('../components/header.php');
           field.removeAttribute('required');
         });
       }
-      
+
       // Handle Técnico sections
       if (isTecnico) {
         tecnicoDocuments.classList.add('show');
@@ -1033,7 +1033,7 @@ include_once('../components/header.php');
           field.removeAttribute('required');
         });
       }
-      
+
       // Update scholarship options based on roles
       updateScholarshipOptions();
     }
@@ -1080,12 +1080,12 @@ include_once('../components/header.php');
     if (cadastroForm) {
       // Add class to identify this form for form-handler.js
       cadastroForm.classList.add('needs-validation');
-      
+
       // Add custom validation for role selection
       cadastroForm.addEventListener('submit', function(event) {
         // Check if at least one role is selected
         const rolesSelected = document.querySelectorAll('input[name="roles[]"]:checked').length > 0;
-        
+
         if (!rolesSelected) {
           event.preventDefault();
           event.stopPropagation();
@@ -1101,147 +1101,15 @@ include_once('../components/header.php');
           const cleanCpf = cpfField.value.replace(/\D/g, '');
           passwordField.value = cleanCpf;
         }
-        
+
         // Let form-handler.js handle the actual submission
       }, true); // Use capture phase to run before form-handler.js
     }
   });
 </script>
-<!-- Add this at the bottom of cadastros.php, right before </body> -->
 
-<!-- Make sure these scripts are loaded in this order -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-// Temporary inline script to handle form submission
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, looking for forms...');
-    
-    // Find the registration form
-    const form = document.getElementById('cadastroForm') || document.querySelector('.needs-validation');
-    
-    if (form) {
-        console.log('Form found:', form.id);
-        
-        // Remove any existing submit handlers
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        
-        // Add our handler
-        newForm.addEventListener('submit', async function(event) {
-            console.log('Form submit intercepted');
-            event.preventDefault();
-            event.stopPropagation();
-            
-            // Check validity
-            if (!newForm.checkValidity()) {
-                newForm.classList.add('was-validated');
-                return;
-            }
-            
-            // Check if at least one role is selected
-            const rolesSelected = document.querySelectorAll('input[name="roles[]"]:checked').length > 0;
-            
-            if (!rolesSelected) {
-                alert('Por favor, selecione pelo menos uma função.');
-                return;
-            }
-            
-            // Set password to CPF if needed
-            const cpfField = document.querySelector('input[name="cpf"]');
-            const passwordField = document.querySelector('input[name="password"]');
-            if (cpfField && passwordField) {
-                const cleanCpf = cpfField.value.replace(/\D/g, '');
-                passwordField.value = cleanCpf;
-            }
-            
-            console.log('Sending form data...');
-            
-            // Create loading element
-            const loadingDiv = document.createElement('div');
-            loadingDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
-            loadingDiv.innerHTML = '<div style="background:white;padding:20px;border-radius:5px">Processando...</div>';
-            document.body.appendChild(loadingDiv);
-            
-            try {
-                const formData = new FormData(newForm);
-                formData.append('form_type', newForm.id || 'cadastroForm');
-                
-                const response = await fetch('process/process_registration.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const responseText = await response.text();
-                console.log('Response received:', responseText);
-                
-                let result;
-                try {
-                    result = JSON.parse(responseText);
-                    console.log('Parsed result:', result);
-                } catch (parseError) {
-                    console.error('Parse error:', parseError);
-                    alert('Erro ao processar resposta do servidor:\n' + responseText);
-                    return;
-                }
-                
-                // Remove loading
-                loadingDiv.remove();
-                
-                if (result.success) {
-                    console.log('Success! Redirecting...');
-                    await Swal.fire({
-                        icon: 'success',
-                        title: 'Cadastro Realizado!',
-                        text: result.message,
-                        confirmButtonText: 'Continuar',
-                        allowOutsideClick: false
-                    });
-                    
-                    if (result.redirect_url) {
-                        window.location.href = result.redirect_url;
-                    } else {
-                        window.location.href = '../pages/login.php';
-                    }
-                } else if (result.already_registered === true) {
-                    console.log('Already registered! Showing message...');
-                    await Swal.fire({
-                        icon: 'info',
-                        title: 'Usuário já cadastrado',
-                        text: `Olá ${result.user_name}! Você já está cadastrado no sistema.`,
-                        confirmButtonText: 'Ir para Login',
-                        allowOutsideClick: false
-                    });
-                    
-                    // Redirect to login
-                    window.location.href = result.redirect_url || '../pages/login.php';
-                } else {
-                    console.log('Error:', result.message);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro',
-                        text: result.message
-                    });
-                }
-                
-            } catch (error) {
-                console.error('Fetch error:', error);
-                loadingDiv.remove();
-                alert('Erro de conexão: ' + error.message);
-            }
-        });
-        
-        console.log('Form handler attached successfully');
-    } else {
-        console.error('Form not found!');
-    }
-});
-</script>
-
-<!-- Comment out or remove the external form-handler.js temporarily -->
-<!-- <script src="js/form-handler.js"></script> -->
 <!-- Your form handler script -->
-<!-- <script src="js/form-handler.js"></script> -->
+<script src="../scripts/form-handler.js"></script>
 <?php
 include_once('../components/footer.php');
 ?>
