@@ -10,19 +10,19 @@ if (!isset($_SESSION['user_id'])) {
 
 include_once('../components/header.php');
 
-// Get user roles from database instead of user_type
-$user_roles = [];
+// Get user roles from database
 $user_name = $_SESSION['user_name'] ?? 'Usuário';
 $user_id = $_SESSION['user_id'] ?? null;
 
 // Fetch user roles from user_roles table
+$user_roles = [];
 if ($user_id) {
     try {
         $stmt = $conn->prepare("SELECT role FROM user_roles WHERE user_id = ?");
         $stmt->execute([$user_id]);
         $user_roles = $stmt->fetchAll(PDO::FETCH_COLUMN);
     } catch (Exception $e) {
-        // Handle error or set default empty array
+        error_log("Error fetching user roles: " . $e->getMessage());
         $user_roles = [];
     }
 }
@@ -71,9 +71,22 @@ try {
             <div class="alert alert-info">
                 <strong>Bem-vindo(a), <?= htmlspecialchars($user_name) ?>!</strong><br>
                 <?php if (!empty($user_roles)): ?>
-                    Tipo(s) de usuário: <?= implode(', ', array_map('translateUserType', $user_roles)) ?>
+                    Suas funções: 
+                    <?php 
+                    $roleNames = [
+                        'admin' => 'Administrador',
+                        'docente' => 'Docente',
+                        'docente-pos' => 'Docente Pós-Graduação',
+                        'tecnico' => 'Técnico',
+                        'interprete' => 'Intérprete'
+                    ];
+                    $displayRoles = array_map(function($role) use ($roleNames) {
+                        return $roleNames[$role] ?? $role;
+                    }, $user_roles);
+                    echo implode(', ', $displayRoles);
+                    ?>
                 <?php else: ?>
-                    Tipo de usuário: Não definido
+                    Você ainda não possui funções atribuídas.
                 <?php endif; ?>
             </div>
         </div>

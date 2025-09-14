@@ -362,6 +362,60 @@ include_once('../components/header.php');
     margin: 0 auto 1rem;
   }
 
+  .radio-div {
+    position: relative;
+    margin-right: 1rem;
+  }
+
+  .radio-div .form-check-input {
+    cursor: pointer;
+  }
+
+  .radio-div .check {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    height: 20px;
+    width: 20px;
+    background-color: #fff;
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .radio-div .form-check-input:checked~.check {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+
+  .radio-div .form-check-input:checked~.check:after {
+    content: "";
+    position: absolute;
+    display: block;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+  }
+
+  .radio-div .terms-label {
+    margin-left: 0.5rem;
+    cursor: pointer;
+  }
+
+  #specialNeedsDetailsContainer {
+    transition: opacity 0.3s ease;
+  }
+.docente-only-fields {
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border-color);
+}
   @keyframes spin {
     0% {
       transform: rotate(0deg);
@@ -582,77 +636,6 @@ include_once('../components/header.php');
         <i class="fas fa-plus"></i> Adicionar mais formação
       </button>
 
-      <!-- Docente Categories (shown when Docente is selected) -->
-      <div id="docente-categories" class="conditional-section">
-        <div class="category-group">
-          <div class="category-title">Categorias para Docente</div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="1" id="doc-cat1">
-            <label class="form-check-label" for="doc-cat1">Docente</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="2" id="doc-cat2">
-            <label class="form-check-label" for="doc-cat2">Docente Conteudista</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="3" id="doc-cat3">
-            <label class="form-check-label" for="doc-cat3">Docente Assistente</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="4" id="doc-cat4">
-            <label class="form-check-label" for="doc-cat4">Coordenador Técnico</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="5" id="doc-cat5">
-            <label class="form-check-label" for="doc-cat5">Conferencista/Palestrante</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="6" id="doc-cat6">
-            <label class="form-check-label" for="doc-cat6">Painelista/Debatedor</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="7" id="doc-cat7">
-            <label class="form-check-label" for="doc-cat7">Moderador</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="8" id="doc-cat8">
-            <label class="form-check-label" for="doc-cat8">Reunião Técnica</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="9" id="doc-cat9">
-            <label class="form-check-label" for="doc-cat9">Assessoramento Técnico</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="10" id="doc-cat10">
-            <label class="form-check-label" for="doc-cat10">Revisão de Texto</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_categories[]" value="11" id="doc-cat11">
-            <label class="form-check-label" for="doc-cat11">Entrevista</label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Docente Pós Categories (shown when Docente Pós is selected) -->
-      <div id="docente-pos-categories" class="conditional-section">
-        <div class="category-group">
-          <div class="category-title">Categorias para Docente Pós-Graduação</div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_pos_categories[]" value="1" id="pos-cat1">
-            <label class="form-check-label" for="pos-cat1">Docente</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_pos_categories[]" value="2" id="pos-cat2">
-            <label class="form-check-label" for="pos-cat2">Docente Conteudista</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" name="docente_pos_categories[]" value="9" id="pos-cat3">
-            <label class="form-check-label" for="pos-cat3">Assessoramento Técnico</label>
-          </div>
-        </div>
-
-      </div>
-
       <!-- Intérprete Requirements (shown when Intérprete is selected) -->
       <div id="interprete-requirements" class="conditional-section">
         <div class="alert-info">
@@ -741,78 +724,55 @@ include_once('../components/header.php');
         </div>
       </div>
 
-      <!-- Technical Qualification Documents (shown for Docente roles) -->
-      <div id="docente-documents" class="document-subsection conditional-section">
+      <!-- Unified Professional Qualification Documents (shown for Docente, Docente Pos, or Técnico) -->
+      <div id="professional-documents" class="document-subsection conditional-section">
         <h6 class="subsection-title">
           <i class="fas fa-graduation-cap me-2"></i>
-          Comprovação de Qualificação Técnica - Docente
-        </h6>
-
-        <div class="file-upload-group">
-          <label for="formacao_escolar_docente" class="file-label">
-            Formação Escolar <span class="required-indicator">*</span>
-          </label>
-          <input class="form-control docente-doc-field" type="file" id="formacao_escolar_docente"
-            name="formacao_escolar_docente" accept="application/pdf">
-          <div class="invalid-feedback">Comprovação de formação escolar é obrigatória</div>
-          <div class="form-text">Diploma, certificado ou declaração de conclusão</div>
-        </div>
-
-        <div class="file-upload-group">
-          <label for="experiencia_profissional_docente" class="file-label">
-            Comprovante de experiência profissional <span class="required-indicator">*</span>
-          </label>
-          <input class="form-control docente-doc-field" type="file" id="experiencia_profissional_docente"
-            name="experiencia_profissional_docente" accept="application/pdf">
-          <div class="invalid-feedback">Comprovante de experiência é obrigatório</div>
-          <div class="form-text">Carteira de trabalho, declaração ou contrato</div>
-        </div>
-
-        <div class="file-upload-group">
-          <label for="publicacoes" class="file-label">
-            Publicações <span class="optional-label">(se houver)</span>
-          </label>
-          <input class="form-control" type="file" id="publicacoes"
-            name="publicacoes" accept="application/pdf">
-          <div class="form-text">Artigos, livros ou outras publicações relevantes</div>
-        </div>
-
-        <div class="file-upload-group">
-          <label for="certificados_cursos" class="file-label">
-            Certificados de cursos <span class="optional-label">(se houver)</span>
-          </label>
-          <input class="form-control" type="file" id="certificados_cursos"
-            name="certificados_cursos" accept="application/pdf">
-          <div class="form-text">Cursos complementares, especializações ou capacitações</div>
-        </div>
-      </div>
-      <!-- Técnico Documents (shown when Técnico is selected) -->
-      <div id="tecnico-documents" class="document-subsection conditional-section">
-        <h6 class="subsection-title">
-          <i class="fas fa-hands me-2"></i>
           Comprovação de Qualificação Técnica
         </h6>
 
         <div class="file-upload-group">
-          <label for="formacao_escolar_tecnico" class="file-label">
+          <label for="formacao_escolar" class="file-label">
             Formação Escolar <span class="required-indicator">*</span>
           </label>
-          <input class="form-control tecnico-doc-field" type="file" id="formacao_escolar_tecnico"
-            name="formacao_escolar_tecnico" accept="application/pdf">
+          <input class="form-control professional-doc-field" type="file" id="formacao_escolar"
+            name="formacao_escolar" accept="application/pdf">
           <div class="invalid-feedback">Comprovação de formação escolar é obrigatória</div>
           <div class="form-text">Diploma, certificado ou declaração de conclusão</div>
         </div>
 
         <div class="file-upload-group">
-          <label for="experiencia_profissional_tecnico" class="file-label">
+          <label for="experiencia_profissional" class="file-label">
             Comprovante de experiência profissional <span class="required-indicator">*</span>
           </label>
-          <input class="form-control tecnico-doc-field" type="file" id="experiencia_profissional_tecnico"
-            name="experiencia_profissional_tecnico" accept="application/pdf">
+          <input class="form-control professional-doc-field" type="file" id="experiencia_profissional"
+            name="experiencia_profissional" accept="application/pdf">
           <div class="invalid-feedback">Comprovante de experiência é obrigatório</div>
           <div class="form-text">Carteira de trabalho, declaração ou contrato</div>
         </div>
+
+        <!-- Optional fields for Docente roles -->
+        <div class="docente-only-fields">
+          <div class="file-upload-group">
+            <label for="publicacoes" class="file-label">
+              Publicações <span class="optional-label">(se houver)</span>
+            </label>
+            <input class="form-control" type="file" id="publicacoes"
+              name="publicacoes" accept="application/pdf">
+            <div class="form-text">Artigos, livros ou outras publicações relevantes</div>
+          </div>
+
+          <div class="file-upload-group">
+            <label for="certificados_cursos" class="file-label">
+              Certificados de cursos <span class="optional-label">(se houver)</span>
+            </label>
+            <input class="form-control" type="file" id="certificados_cursos"
+              name="certificados_cursos" accept="application/pdf">
+            <div class="form-text">Cursos complementares, especializações ou capacitações</div>
+          </div>
+        </div>
       </div>
+
       <!-- Intérprete Documents (shown when Intérprete is selected) -->
       <div id="interprete-documents" class="document-subsection conditional-section">
         <h6 class="subsection-title">
@@ -882,19 +842,21 @@ include_once('../components/header.php');
     <!-- Additional Information -->
     <section class="form-section">
       <h5 class="form-subtitle">Informações Adicionais</h5>
-      <div class="radio-group">
-        <p style="font-weight:500">É portador de necessidades especiais?</p>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="special_needs" id="specialNeedsYes" value="yes" required>
-          <label class="form-check-label" for="specialNeedsYes">Sim</label>
+      <div>
+        <p style="font-weight: 500;">É portador de necessidades especiais?</p>
+        <div class="form-check form-check-inline radio-div">
+          <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsYes" value="yes" onclick="showSpecialNeeds(true)" required>
+          <span class="check"></span>
+          <label class="form-check-label terms-label" for="specialNeedsYes">Sim</label>
         </div>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="special_needs" id="specialNeedsNo" value="no" required>
-          <label class="form-check-label" for="specialNeedsNo">Não</label>
+        <div class="form-check form-check-inline radio-div">
+          <input class="form-check-input" type="radio" name="specialNeeds" id="specialNeedsNo" value="no" onclick="showSpecialNeeds(false)" required>
+          <span class="check"></span>
+          <label class="form-check-label terms-label" for="specialNeedsNo">Não</label>
         </div>
-        <div class="did-floating-label-content" style="display:none; margin-top: 1rem" id="specialNeedsDetails">
-          <input name="special_needs_details" class="did-floating-input form-control" type="text" placeholder=" " />
-          <label class="did-floating-label">Especifique*</label>
+        <div class="did-floating-label-content" style="display:none; margin-top: 10px" id="specialNeedsDetailsContainer">
+          <input name="specialNeedsDetails" id="specialNeedsDetails" class="did-floating-input form-control" type="text" placeholder=" " required />
+          <label for="specialNeedsDetails" class="did-floating-label">Especifique*</label>
           <div class="invalid-feedback">Você deve especificar</div>
         </div>
       </div>
@@ -943,12 +905,10 @@ include_once('../components/header.php');
     const scholarshipSelect = document.getElementById('scholarship');
 
     // Role-specific elements
-    const docenteCategories = document.getElementById('docente-categories');
-    const docentePosCategories = document.getElementById('docente-pos-categories');
     const interpreteRequirements = document.getElementById('interprete-requirements');
-    const docenteDocuments = document.getElementById('docente-documents');
+    const professionalDocuments = document.getElementById('professional-documents');
     const interpreteDocuments = document.getElementById('interprete-documents');
-    const tecnicoDocuments = document.getElementById('tecnico-documents');
+    const docenteOnlyFields = document.querySelector('.docente-only-fields');
 
     // Handle role checkbox changes
     roleCheckboxes.forEach(checkbox => {
@@ -974,28 +934,24 @@ include_once('../components/header.php');
       const isInterprete = document.getElementById('role-interprete').checked;
       const isTecnico = document.getElementById('role-tecnico').checked;
 
-      // Handle Docente sections
-      if (isDocente || isDocentePos) {
-        docenteDocuments.classList.add('show');
-        docenteDocuments.querySelectorAll('.docente-doc-field').forEach(field => {
+      // Handle Professional Documents (unified for Docente, Docente Pos, and Técnico)
+      if (isDocente || isDocentePos || isTecnico) {
+        professionalDocuments.classList.add('show');
+        professionalDocuments.querySelectorAll('.professional-doc-field').forEach(field => {
           field.setAttribute('required', '');
         });
 
-        if (isDocente && !isDocentePos) {
-          docenteCategories.classList.add('show');
-          docentePosCategories.classList.remove('show');
-        } else if (isDocentePos && !isDocente) {
-          docentePosCategories.classList.add('show');
-          docenteCategories.classList.remove('show');
-        } else if (isDocente && isDocentePos) {
-          docenteCategories.classList.add('show');
-          docentePosCategories.classList.add('show');
+        // Show optional fields only for Docente roles
+        if (docenteOnlyFields) {
+          if (isDocente || isDocentePos) {
+            docenteOnlyFields.style.display = 'block';
+          } else {
+            docenteOnlyFields.style.display = 'none';
+          }
         }
       } else {
-        docenteCategories.classList.remove('show');
-        docentePosCategories.classList.remove('show');
-        docenteDocuments.classList.remove('show');
-        docenteDocuments.querySelectorAll('.docente-doc-field').forEach(field => {
+        professionalDocuments.classList.remove('show');
+        professionalDocuments.querySelectorAll('.professional-doc-field').forEach(field => {
           field.removeAttribute('required');
         });
       }
@@ -1017,19 +973,6 @@ include_once('../components/header.php');
           field.removeAttribute('required');
         });
         document.querySelectorAll('.interprete-field').forEach(field => {
-          field.removeAttribute('required');
-        });
-      }
-
-      // Handle Técnico sections
-      if (isTecnico) {
-        tecnicoDocuments.classList.add('show');
-        tecnicoDocuments.querySelectorAll('.tecnico-doc-field').forEach(field => {
-          field.setAttribute('required', '');
-        });
-      } else {
-        tecnicoDocuments.classList.remove('show');
-        tecnicoDocuments.querySelectorAll('.tecnico-doc-field').forEach(field => {
           field.removeAttribute('required');
         });
       }
@@ -1106,6 +1049,20 @@ include_once('../components/header.php');
       }, true); // Use capture phase to run before form-handler.js
     }
   });
+
+  function showSpecialNeeds(show) {
+    const inputContainer = document.getElementById("specialNeedsDetailsContainer");
+    const inputField = document.getElementById("specialNeedsDetails");
+
+    if (show) {
+      inputContainer.style.display = "block";
+      inputField.setAttribute("required", "required");
+    } else {
+      inputContainer.style.display = "none";
+      inputField.removeAttribute("required");
+      inputField.value = "";
+    }
+  }
 </script>
 
 <!-- Your form handler script -->
