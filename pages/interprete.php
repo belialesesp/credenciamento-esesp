@@ -1,5 +1,5 @@
 <?php
-// pages/interprete.php - Complete version with authentication
+// pages/interprete.php
 
 require_once '../backend/classes/database.class.php';
 

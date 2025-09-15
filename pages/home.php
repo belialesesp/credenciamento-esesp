@@ -529,6 +529,11 @@ try {
 
     // Function to load profile content via AJAX
     function loadProfileContent(role, userId) {
+        // Normalize role name
+        if (role === 'docente-pos') {
+            role = 'docente_pos';
+        }
+
         // Determine the correct endpoint based on role
         let endpoint = '';
         let roleName = '';
@@ -539,7 +544,6 @@ try {
                 roleName = 'Docente';
                 break;
             case 'docente_pos':
-            case 'docente-pos': // Handle both formats
                 endpoint = `docente-pos.php?id=${userId}&ajax=1`;
                 roleName = 'Docente Pós-Graduação';
                 break;
@@ -552,7 +556,7 @@ try {
                 roleName = 'Intérprete';
                 break;
             default:
-                // Show message for unassigned role
+                console.error(`Unknown role: ${role}`);
                 const tabContent = document.getElementById(role);
                 if (tabContent) {
                     tabContent.innerHTML = `
@@ -566,9 +570,7 @@ try {
                 return;
         }
 
-        // Get the target tab content element
         const tabContent = document.getElementById(role);
-
         if (!tabContent) {
             console.error(`Tab content element with ID '${role}' not found`);
             return;
@@ -584,31 +586,86 @@ try {
         </div>
     `;
 
-        // Fetch the profile content
-        fetch(endpoint)
+        // Add timestamp to prevent caching
+        endpoint = `${endpoint}&t=${Date.now()}`;
+
+        // Fetch the profile content with better error handling
+        fetch(endpoint, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin' // Important for maintaining session
+            })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Erro ao carregar o perfil');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.text();
             })
             .then(data => {
+                // Check if session expired
+                if (data.includes('Sessão expirada')) {
+                    tabContent.innerHTML = `
+                <div class="alert alert-warning">
+                    <h5>Sessão Expirada</h5>
+                    <p>Sua sessão expirou. Por favor, faça login novamente.</p>
+                    <a href="login.php" class="btn btn-primary">Fazer Login</a>
+                </div>
+            `;
+                    return;
+                }
+
+                // Check for access denied
+                if (data.includes('Acesso não autorizado')) {
+                    tabContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5>Acesso Negado</h5>
+                    <p>Você não tem permissão para visualizar este perfil.</p>
+                    <p>Certifique-se de que você tem a role correta atribuída.</p>
+                </div>
+            `;
+                    return;
+                }
+
+                // Success - display the content
                 tabContent.innerHTML = data;
 
-                // Reinitialize any scripts that might be needed
+                // Reinitialize any necessary scripts
                 if (typeof initProfileScripts === 'function') {
                     initProfileScripts();
                 }
+
+                // Re-bind form submission if password form exists
+                const passwordForm = tabContent.querySelector('form[action*="process_change_password.php"]');
+                if (passwordForm) {
+                    passwordForm.addEventListener('submit', function(e) {
+                        const newPass = this.querySelector('#new_password').value;
+                        const confirmPass = this.querySelector('#confirm_password').value;
+
+                        if (newPass !== confirmPass) {
+                            e.preventDefault();
+                            alert('As senhas não coincidem!');
+                            return false;
+                        }
+                    });
+                }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error loading profile:', error);
                 tabContent.innerHTML = `
-                <div class="alert alert-danger">
-                    <h5>Erro ao carregar o perfil</h5>
-                    <p>Não foi possível carregar as informações do perfil. Por favor, tente novamente.</p>
-                    <a href="${endpoint.replace('&ajax=1', '')}" class="btn btn-primary">Acessar Perfil Completo</a>
-                </div>
-            `;
+            <div class="alert alert-danger">
+                <h5>Erro ao carregar o perfil</h5>
+                <p>Não foi possível carregar as informações do perfil.</p>
+                <p>Erro: ${error.message}</p>
+                <button class="btn btn-primary mt-2" onclick="loadProfileContent('${role}', ${userId})">
+                    Tentar Novamente
+                </button>
+                <a href="${endpoint.replace('&ajax=1', '').replace(/&t=\d+/, '')}" class="btn btn-secondary mt-2 ms-2">
+                    Abrir Página Completa
+                </a>
+            </div>
+        `;
             });
     }
 
