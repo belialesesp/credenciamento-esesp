@@ -69,18 +69,18 @@ if (!$stmt->fetch()) {
 // Check access permissions - FIXED VERSION
 $is_own_profile = false;
 if ($is_admin) {
-    // Admin can access any profile
-    $is_own_profile = false;
+  // Admin can access any profile
+  $is_own_profile = false;
 } elseif (hasRole('docente') && $_SESSION['user_id'] == $requested_id) {
-    // User with 'docente' role viewing their own profile
-    $is_own_profile = true;
+  // User with 'docente' role viewing their own profile
+  $is_own_profile = true;
 } elseif ($_SESSION['user_id'] == $requested_id) {
-    // Any user viewing their own profile (backward compatibility)
-    $is_own_profile = true;
+  // Any user viewing their own profile (backward compatibility)
+  $is_own_profile = true;
 } else {
-    // Not authorized
-    if ($is_ajax_request) {
-        echo '<div class="alert alert-danger">
+  // Not authorized
+  if ($is_ajax_request) {
+    echo '<div class="alert alert-danger">
                 <h5>Acesso não autorizado</h5>
                 <p>Você não tem permissão para visualizar este perfil.</p>
                 <p>Possíveis razões:</p>
@@ -97,11 +97,11 @@ if ($is_admin) {
                     É Admin: ' . ($is_admin ? 'Sim' : 'Não') . '
                 </small>
               </div>';
-        exit();
-    } else {
-        header('Location: home.php');
-        exit();
-    }
+    exit();
+  } else {
+    header('Location: home.php');
+    exit();
+  }
 }
 
 // Use existing connection
@@ -166,15 +166,7 @@ try {
   $dateF = $date->format('d/m/Y H:i');
 
   // Format filepath
-  $path = '';
-  if ($file_path) {
-    $string = $file_path;
-    $position = strpos($string, "docentes");
-    if ($position !== false) {
-      $start = $position + strlen("docentes/");
-      $path = substr($string, $start);
-    }
-  }
+  $path = $file_path;
 } catch (Exception $e) {
   if ($is_ajax_request) {
     echo '<div class="alert alert-danger">Erro ao carregar dados do docente: ' . htmlspecialchars($e->getMessage()) . '</div>';
@@ -198,13 +190,6 @@ if ($is_ajax_request) {
   // Start output buffering to capture the content
   ob_start();
 ?>
-
-  <?php if ($is_own_profile): ?>
-    <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
-      <span>Bem-vindo(a) ao seu perfil, <?= titleCase($name) ?>!</span>
-      <a href="../auth/logout.php" class="btn btn-danger btn-sm">Sair</a>
-    </div>
-  <?php endif; ?>
 
   <?php if ($is_admin): ?>
     <a href="docentes.php" class="back-link">Voltar</a>
@@ -375,14 +360,14 @@ if ($is_ajax_request) {
   <div class="info-section">
     <h3>Documentos</h3>
     <?php if (!empty($path)): ?>
-      <a href="../backend/documentos/docentes/<?= $path ?>" target="_blank">Download</a>
+      <a href="../<?= $path ?>" target="_blank">Download</a>
     <?php else: ?>
       <p>Nenhum documento disponível.</p>
       <?php if ($is_admin): ?>
         <div class="text-muted small">
           <div>Debug Info:</div>
           <div>Full Path: <?= htmlspecialchars($teacher->file_path ?? 'NULL') ?></div>
-          <div>File Exists: <?= file_exists($teacher->file_path) ? 'Yes' : 'No' ?></div>
+          <div>File Exists: <?= file_exists('../' . $teacher->file_path) ? 'Yes' : 'No' ?></div>
         </div>
       <?php endif; ?>
     <?php endif; ?>
@@ -478,12 +463,6 @@ if ($is_ajax_request) {
 ?>
 
   <div class="container container-user">
-    <?php if ($is_own_profile): ?>
-      <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
-        <span>Bem-vindo(a) ao seu perfil, <?= titleCase($name) ?>!</span>
-        <a href="../auth/logout.php" class="btn btn-danger btn-sm">Sair</a>
-      </div>
-    <?php endif; ?>
 
     <?php if ($is_admin): ?>
       <a href="docentes.php" class="back-link">Voltar</a>
@@ -655,14 +634,14 @@ if ($is_ajax_request) {
     <div class="info-section">
       <h3>Documentos</h3>
       <?php if (!empty($path)): ?>
-        <a href="../backend/documentos/docentes/<?= $path ?>" target="_blank">Download</a>
+        <a href="../<?= $path ?>" target="_blank">Download</a>
       <?php else: ?>
         <p>Nenhum documento disponível.</p>
         <?php if ($is_admin): ?>
           <div class="text-muted small">
             <div>Debug Info:</div>
             <div>Full Path: <?= htmlspecialchars($teacher->file_path ?? 'NULL') ?></div>
-            <div>File Exists: <?= file_exists($teacher->file_path) ? 'Yes' : 'No' ?></div>
+            <div>File Exists: <?= file_exists('../' . $teacher->file_path) ? 'Yes' : 'No' ?></div>
           </div>
         <?php endif; ?>
       <?php endif; ?>

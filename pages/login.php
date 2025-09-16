@@ -140,16 +140,24 @@ require_once '../components/header.php';
 <?php require_once '../components/footer.php'; ?>
 
 <script>
+  // Define admin users for client-side validation
+  const adminUsers = ['credenciamento', 'gese', 'pedagogico'];
+  
   // CPF Mask with special case for admin
   document.getElementById('cpf').addEventListener('input', function(e) {
     let value = e.target.value;
-
-    // Allow 'credenciamento' for admin login
-    if (value.toLowerCase().startsWith('credenciamento')) {
+    
+    // Check if input matches any admin username (case-insensitive)
+    const isAdminInput = adminUsers.some(user => 
+      value.toLowerCase().includes(user.toLowerCase())
+    );
+    
+    // Allow admin input without formatting
+    if (isAdminInput) {
       return;
     }
-
-    // Regular CPF formatting
+    
+    // Regular CPF formatting for numeric input
     value = value.replace(/\D/g, '');
     if (value.length <= 11) {
       value = value.replace(/(\d{3})(\d)/, '$1.$2');
@@ -157,6 +165,36 @@ require_once '../components/header.php';
       value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     }
     e.target.value = value;
+  });
+
+  // Update form validation to allow both CPF and admin usernames
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const cpfInput = document.getElementById('cpf');
+    const value = cpfInput.value.trim();
+    
+    // Check if input is empty
+    if (!value) {
+      e.preventDefault();
+      cpfInput.focus();
+      alert('Por favor, informe seu CPF ou usuário administrativo');
+      return;
+    }
+    
+    // For admin users, we don't need CPF validation
+    const isAdminInput = adminUsers.some(user => 
+      value.toLowerCase().includes(user.toLowerCase())
+    );
+    
+    if (!isAdminInput) {
+      // Validate CPF format for non-admin users
+      const cleanCpf = value.replace(/\D/g, '');
+      if (cleanCpf.length !== 11) {
+        e.preventDefault();
+        cpfInput.focus();
+        alert('CPF deve conter 11 dígitos numéricos');
+        return;
+      }
+    }
   });
 
   function togglePassword(fieldId) {
