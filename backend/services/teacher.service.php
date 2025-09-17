@@ -1,5 +1,5 @@
 <?php
-// backend/services/teacher.service.php
+// backend/services/teacher.service.php - CORRECTED WITH PROPER TABLE NAMES
 
 require_once __DIR__ . '/../classes/address.class.php';
 require_once __DIR__ . '/../classes/discipline.class.php';
@@ -19,36 +19,37 @@ class TeacherService
     function getTeacher($user_id)
     {
         $sql = "
-    SELECT
-        u.id,
-        u.name,
-        u.email,
-        u.special_needs,
-        u.document_number,
-        u.document_emissor,
-        u.document_uf,
-        u.phone,
-        u.cpf,
-        u.created_at,
-        u.enabled,
-        u.street,
-        u.city,
-        u.state,
-        u.zip_code as zip,
-        u.complement,
-        u.number,
-        u.neighborhood,
-        d.path AS file_path
-    FROM
-        user AS u
-    INNER JOIN
-        user_roles AS ur ON ur.user_id = u.id
-    LEFT JOIN
-        documents AS d ON d.user_id = u.id
-    WHERE 
-        u.id = :user_id
-        AND ur.role IN ('docente', 'docente_pos')
-";
+            SELECT
+                u.id,
+                u.name,
+                u.email,
+                u.special_needs,
+                u.document_number,
+                u.document_emissor,
+                u.document_uf,
+                u.phone,
+                u.cpf,
+                u.created_at,
+                u.enabled,
+                u.street,
+                u.city,
+                u.state,
+                u.zip_code as zip,
+                u.complement,
+                u.number,
+                u.neighborhood,
+                d.path AS file_path
+            FROM
+                user AS u
+            INNER JOIN
+                user_roles AS ur ON ur.user_id = u.id
+            LEFT JOIN
+                documents AS d ON d.user_id = u.id
+            WHERE 
+                u.id = :user_id
+                AND ur.role IN ('docente', 'docente_pos')
+        ";
+        
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
         $stmt->execute();
@@ -100,128 +101,107 @@ class TeacherService
 
     function getTeacherDisciplines($user_id)
     {
-
         $sql = "
             SELECT
                 d.id AS discipline_id,
                 d.name AS discipline_name,
-                es.name AS estacao_name,
-                ex.name AS eixo_name,
+                eixo.name AS eixo_name,
+                est.name AS estacao_name,
                 dt.enabled AS discipline_status,
-                dt.called_at AS discipline_called_at,
-                GROUP_CONCAT(DISTINCT m.id ORDER BY m.id SEPARATOR ',') AS module_ids,
-                GROUP_CONCAT(DISTINCT m.name ORDER BY m.id SEPARATOR '|') AS module_names
+                dt.called_at AS discipline_called_at
             FROM 
                 disciplinas AS d
             LEFT JOIN 
-                estacao AS es ON es.id = d.estacao_id
+                estacao AS est ON est.id = d.estacao_id
             LEFT JOIN 
-                eixo AS ex ON ex.id = es.eixo_id
+                eixo ON eixo.id = est.eixo_id
             LEFT JOIN 
                 teacher_disciplines AS dt ON dt.discipline_id = d.id AND dt.user_id = :user_id
-            LEFT JOIN (
-                module AS m
-                INNER JOIN teacher_module AS tm ON tm.module_id = m.id AND tm.user_id = :user_id
-            ) ON m.discipline_id = d.id
             WHERE 
-                EXISTS (SELECT 1 FROM teacher_disciplines AS dt2 WHERE dt2.discipline_id = d.id AND dt2.user_id = :user_id)
-                OR EXISTS (SELECT 1 FROM teacher_module AS tm2 
-                   INNER JOIN module AS m2 ON tm2.module_id = m2.id 
-                   WHERE m2.discipline_id = d.id AND tm2.user_id = :user_id)
-            GROUP BY d.id, d.name, es.name, ex.name, dt.enabled, dt.called_at
-            ORDER BY ex.name, es.name, d.name
+                EXISTS (SELECT 1 FROM teacher_disciplines WHERE discipline_id = d.id AND user_id = :user_id)
+            GROUP BY d.id
         ";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
-
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+        
         $disciplines = [];
-
-        foreach ($results as $result) {
+        
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            // Get modules for this discipline
+            $module_sql = "
+                SELECT 
+                    m.name AS module_name 
+                FROM 
+                    module AS m
+                INNER JOIN 
+                    teacher_module AS tm ON tm.module_id = m.id
+                WHERE 
+                    tm.user_id = :user_id 
+                    AND m.discipline_id = :discipline_id
+            ";
+            
+            $module_stmt = $this->db->prepare($module_sql);
+            $module_stmt->bindParam(':user_id', $user_id);
+            $module_stmt->bindParam(':discipline_id', $row["discipline_id"]);
+            $module_stmt->execute();
+            
             $modules = [];
-            if (!empty($result['module_names'])) {
-                if (strpos($result['module_names'], '|') !== false) {
-                    $modules = explode('|', $result['module_names']);
-                } else {
-                    $modules = [$result['module_names']];
-                }
+            while ($module_row = $module_stmt->fetch(PDO::FETCH_ASSOC)) {
+                $modules[] = $module_row["module_name"];
             }
-
-            $disciplines[] = new Discipline(
-                $result["discipline_id"],
-                $result["discipline_name"],
-                $result["eixo_name"],
-                $result["estacao_name"],
+            
+            // Create discipline object with current structure
+            $discipline = new Discipline(
+                $row["discipline_id"],
+                $row["discipline_name"],
+                $row["eixo_name"] ?? '',
+                $row["estacao_name"] ?? '',
                 $modules,
-                $result["discipline_status"]
+                $row["discipline_status"],
+                $row["discipline_called_at"] ?? null
             );
+            
+            $disciplines[] = $discipline;
         }
-
+        
         return $disciplines;
-    }
-
-    function getTeacherLectures($user_id)
-    {
-        $sql = "
-            SELECT 
-                l.id AS lecture_id,
-                l.name AS lecture_name,
-                l.details AS lecture_details
-            FROM 
-                lecture AS l
-            WHERE 
-                l.user_id = :user_id
-        ";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
-        $stmt->execute();
-
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $lectures = [];
-
-        foreach ($results as $result) {
-            $lectures[] = new Lecture(
-                $result["lecture_name"],
-                $result["lecture_details"]
-            );
-        }
-
-        return $lectures;
     }
 
     function getTeacherEducation($user_id)
     {
+        // CORRECTED: Using education_degree table instead of education
         $sql = "
-            SELECT 
-                e.id as id, 
-                e.course_name as name, 
-                e.degree as degree, 
-                e.institution as institution 
-            FROM 
-                education_degree as e 
-            WHERE e.user_id = :user_id
+            SELECT
+                ed.id,
+                ed.course_name,
+                ed.degree,
+                ed.institution,
+                ed.graduation_year,
+                ed.created_at,
+                ed.updated_at
+            FROM
+                education_degree AS ed
+            WHERE
+                ed.user_id = :user_id
         ";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
 
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         $educations = [];
-
-        foreach ($results as $result) {
-            $educations[] = new Education(
-                $result["id"],
-                $result["name"],
-                $result["degree"],
-                $result["institution"]
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            // Using the Education class constructor
+            // Note: The Education class expects (id, name, degree, institution)
+            $education = new Education(
+                $row["id"],
+                $row["course_name"],  // course_name is the "name"
+                $row["degree"],
+                $row["institution"]
             );
+            $educations[] = $education;
         }
 
         return $educations;
@@ -230,48 +210,60 @@ class TeacherService
     function getTeacherActivities($user_id)
     {
         $sql = "
-            SELECT 
-                a.name as name
-            FROM 
-                activities as a
-            LEFT JOIN
-                teacher_activities ta ON ta.activity_id = a.id
-            WHERE ta.user_id = :user_id
+            SELECT
+                a.id,
+                a.name
+            FROM
+                activities AS a
+            INNER JOIN
+                teacher_activities AS ta ON ta.activity_id = a.id
+            WHERE
+                ta.user_id = :user_id
         ";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
 
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         $activities = [];
-
-        foreach ($results as $result) {
-            $activities[] = $result;
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $activities[] = [
+                'id' => $row["id"],
+                'name' => $row["name"]
+            ];
         }
 
         return $activities;
     }
 
-    function updateStatus($user_id, $status)
+    function getTeacherLectures($user_id)
     {
         $sql = "
-            UPDATE user 
-            SET enabled = :status
-            WHERE id = :id 
-            AND EXISTS (SELECT 1 FROM user_roles WHERE user_id = :id AND role IN ('docente', 'docente_pos'))
+            SELECT
+                l.id,
+                l.name,
+                l.details
+            FROM
+                lecture AS l
+            WHERE
+                l.user_id = :user_id
         ";
 
-        $query_run = $this->db->prepare($sql);
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->execute();
 
-        $data = [
-            ':status' => $status,
-            ':id' => $user_id
-        ];
+        $lectures = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $lecture = new Lecture(
+                $row["id"],
+                $row["name"],
+                $row["details"]
+            );
+            $lectures[] = $lecture;
+        }
 
-        $query_execute = $query_run->execute($data);
-
-        return $query_execute;
+        return $lectures;
     }
 }
+?>

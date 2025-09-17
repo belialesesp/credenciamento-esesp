@@ -195,3 +195,27 @@ h3 {
     padding: 8px 16px;
     font-size: 14px;
 }
+.evaluation-status {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.discipline-actions label {
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.discipline-actions .btn {
+    font-size: 0.85rem;
+}
+
+.badge {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+}
+
+.alert-info {
+    font-size: 0.9rem;
+    padding: 10px;
+}
