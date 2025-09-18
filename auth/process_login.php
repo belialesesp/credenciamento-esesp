@@ -1,5 +1,5 @@
 <?php
-// auth/process_login.php - Updated to work with roles system
+// auth/process_login.php
 session_start();
 require_once '../backend/classes/database.class.php';
 
@@ -8,7 +8,7 @@ function processUnifiedLogin($cpf, $password)
     $response = [
         'success' => false,
         'message' => '',
-        'redirect' => ''
+        'redirect' => '../pages/login.php'
     ];
 
     try {
@@ -83,33 +83,7 @@ function processUnifiedLogin($cpf, $password)
 
         $response['success'] = true;
         $response['message'] = 'Login realizado com sucesso!';
-
-        // Determine redirect based on primary role
-        $primaryRole = getPrimaryRole($roles);
-
-        switch ($primaryRole) {
-            case 'admin':
-                $response['redirect'] = '../pages/home.php';
-                break;
-            case 'docente':
-                $response['redirect'] = '../pages/docente.php?id=' . $user['id'];
-                break;
-            case 'docente_pos':
-                $response['redirect'] = '../pages/docente-pos.php?id=' . $user['id'];
-                break;
-            case 'tecnico':
-                $response['redirect'] = file_exists('../pages/tecnico.php')
-                    ? '../pages/tecnico.php?id=' . $user['id']
-                    : '../pages/home.php';
-                break;
-            case 'interprete':
-                $response['redirect'] = file_exists('../pages/interprete.php')
-                    ? '../pages/interprete.php?id=' . $user['id']
-                    : '../pages/home.php';
-                break;
-            default:
-                $response['redirect'] = '../pages/home.php';
-        }
+        $response['redirect'] = '../pages/home.php'; // ✅ Always redirect to home.php
 
         // Update last login timestamp
         $updateStmt = $conn->prepare("UPDATE user SET called_at = NOW() WHERE id = ?");
@@ -124,6 +98,7 @@ function processUnifiedLogin($cpf, $password)
 
     return $response;
 }
+
 
 /**
  * Get primary role for routing decisions

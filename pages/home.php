@@ -511,23 +511,6 @@ try {
 </style>
 
 <script>
-    // Function to toggle password visibility
-    function togglePassword(fieldId) {
-        const field = document.getElementById(fieldId);
-        const icon = document.getElementById(fieldId + '_icon');
-
-        if (field.type === 'password') {
-            field.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            field.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
-    }
-
-    // Function to load profile content via AJAX
     function loadProfileContent(role, userId) {
         // Normalize role name
         if (role === 'docente-pos') {
@@ -560,12 +543,12 @@ try {
                 const tabContent = document.getElementById(role);
                 if (tabContent) {
                     tabContent.innerHTML = `
-                    <div class="alert alert-info">
-                        <h5>Função Não Atribuída</h5>
-                        <p>Você ainda não possui um perfil ativo para esta função.</p>
-                        <p>Para solicitar acesso a esta função, utilize a seção "Solicitar Novas Funções" abaixo.</p>
-                    </div>
-                `;
+                        <div class="alert alert-info">
+                            <h5>Função Não Atribuída</h5>
+                            <p>Você ainda não possui um perfil ativo para esta função.</p>
+                            <p>Para solicitar acesso a esta função, utilize a seção "Solicitar Novas Funções" abaixo.</p>
+                        </div>
+                    `;
                 }
                 return;
         }
@@ -578,13 +561,13 @@ try {
 
         // Show loading state
         tabContent.innerHTML = `
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Carregando...</span>
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2">Carregando informações do perfil de ${roleName}...</p>
             </div>
-            <p class="mt-2">Carregando informações do perfil de ${roleName}...</p>
-        </div>
-    `;
+        `;
 
         // Add timestamp to prevent caching
         endpoint = `${endpoint}&t=${Date.now()}`;
@@ -607,24 +590,24 @@ try {
                 // Check if session expired
                 if (data.includes('Sessão expirada')) {
                     tabContent.innerHTML = `
-                <div class="alert alert-warning">
-                    <h5>Sessão Expirada</h5>
-                    <p>Sua sessão expirou. Por favor, faça login novamente.</p>
-                    <a href="login.php" class="btn btn-primary">Fazer Login</a>
-                </div>
-            `;
+                    <div class="alert alert-warning">
+                        <h5>Sessão Expirada</h5>
+                        <p>Sua sessão expirou. Por favor, faça login novamente.</p>
+                        <a href="login.php" class="btn btn-primary">Fazer Login</a>
+                    </div>
+                `;
                     return;
                 }
 
                 // Check for access denied
                 if (data.includes('Acesso não autorizado')) {
                     tabContent.innerHTML = `
-                <div class="alert alert-danger">
-                    <h5>Acesso Negado</h5>
-                    <p>Você não tem permissão para visualizar este perfil.</p>
-                    <p>Certifique-se de que você tem a role correta atribuída.</p>
-                </div>
-            `;
+                    <div class="alert alert-danger">
+                        <h5>Acesso Negado</h5>
+                        <p>Você não tem permissão para visualizar este perfil.</p>
+                        <p>Certifique-se de que você tem a role correta atribuída.</p>
+                    </div>
+                `;
                     return;
                 }
 
@@ -654,22 +637,97 @@ try {
             .catch(error => {
                 console.error('Error loading profile:', error);
                 tabContent.innerHTML = `
-            <div class="alert alert-danger">
-                <h5>Erro ao carregar o perfil</h5>
-                <p>Não foi possível carregar as informações do perfil.</p>
-                <p>Erro: ${error.message}</p>
-                <button class="btn btn-primary mt-2" onclick="loadProfileContent('${role}', ${userId})">
-                    Tentar Novamente
-                </button>
-                <a href="${endpoint.replace('&ajax=1', '').replace(/&t=\d+/, '')}" class="btn btn-secondary mt-2 ms-2">
-                    Abrir Página Completa
-                </a>
-            </div>
-        `;
+                <div class="alert alert-danger">
+                    <h5>Erro ao carregar o perfil</h5>
+                    <p>Não foi possível carregar as informações do perfil.</p>
+                    <p>Erro: ${error.message}</p>
+                    <button class="btn btn-primary mt-2" onclick="loadProfileContent('${role}', ${userId})">
+                        Tentar Novamente
+                    </button>
+                    <a href="${endpoint.replace('&ajax=1', '').replace(/&t=\d+/, '')}" class="btn btn-secondary mt-2 ms-2">
+                        Abrir Página Completa
+                    </a>
+                </div>
+            `;
             });
     }
 
-    // Handle document replacement modal
+    // Initialize when DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // IMPORTANT: Load the initial active tab content automatically
+        const activeTab = document.querySelector('#profileTabs .nav-link.active');
+        if (activeTab) {
+            const role = activeTab.getAttribute('data-role');
+            const userId = activeTab.getAttribute('data-user-id');
+
+            // Immediately load the content for the active tab
+            if (role && userId) {
+                console.log(`Loading initial tab content for role: ${role}, userId: ${userId}`);
+                loadProfileContent(role, userId);
+            }
+        } else {
+            // If no tabs are found but we have profile content areas, check for them
+            const profileContainers = document.querySelectorAll('[role="tabpanel"]');
+            if (profileContainers.length > 0) {
+                // Find the first visible/active tab panel
+                const firstActivePanel = document.querySelector('.tab-pane.show.active');
+                if (firstActivePanel) {
+                    const panelId = firstActivePanel.id;
+                    const correspondingTab = document.querySelector(`[data-role="${panelId}"]`);
+                    if (correspondingTab) {
+                        const role = correspondingTab.getAttribute('data-role');
+                        const userId = correspondingTab.getAttribute('data-user-id');
+                        if (role && userId) {
+                            console.log(`Loading content for first active panel: ${role}`);
+                            loadProfileContent(role, userId);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Add event listeners for tab changes
+        const tabEls = document.querySelectorAll('#profileTabs .nav-link');
+        tabEls.forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function(e) {
+                const role = e.target.getAttribute('data-role');
+                const userId = e.target.getAttribute('data-user-id');
+                if (role && userId) {
+                    console.log(`Tab changed, loading content for role: ${role}`);
+                    loadProfileContent(role, userId);
+                }
+            });
+        });
+
+        // Also handle clicks on tabs directly (backup)
+        tabEls.forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                // Wait a bit for Bootstrap to handle the tab switch
+                setTimeout(() => {
+                    if (this.classList.contains('active')) {
+                        const role = this.getAttribute('data-role');
+                        const userId = this.getAttribute('data-user-id');
+                        // Check if content is already loaded
+                        const tabContent = document.getElementById(role);
+                        if (tabContent && tabContent.querySelector('.spinner-border')) {
+                            // Content is still loading, don't reload
+                            return;
+                        }
+                        if (tabContent && !tabContent.querySelector('.user-content') &&
+                            !tabContent.querySelector('.alert')) {
+                            // Content area is empty, load it
+                            if (role && userId) {
+                                console.log(`Loading content on click for role: ${role}`);
+                                loadProfileContent(role, userId);
+                            }
+                        }
+                    }
+                }, 100);
+            });
+        });
+    });
+
+    // Handle document replacement modal (if it exists)
     const replaceDocumentModal = document.getElementById('replaceDocumentModal');
     if (replaceDocumentModal) {
         replaceDocumentModal.addEventListener('show.bs.modal', function(event) {
@@ -681,6 +739,22 @@ try {
             modal.querySelector('#replace_doc_id').value = docId;
             modal.querySelector('#document_name').value = docName;
         });
+    }
+
+    // Toggle password visibility
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const icon = document.getElementById(fieldId + '_icon');
+
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            field.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
     }
 
     // Initialize when DOM is fully loaded
@@ -786,6 +860,5 @@ try {
         }
     });
 </script>
-<!-- Your form handler script -->
 <script src="../scripts/form-handler.js"></script>
 <?php include_once('../components/footer.php'); ?>
