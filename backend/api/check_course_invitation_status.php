@@ -82,7 +82,7 @@ try {
             ];
         }
     } else {
-        // FIXED: Course invitation status check with better logic
+        // MODIFIED: Course invitation status check WITHOUT 24-hour restriction
         $teacherType = $isPostgraduate === 'true' ? 'postgraduate' : 'regular';
 
         error_log("DEBUG: Checking course invitations for course_id: $courseId, teacher_type: $teacherType");
@@ -105,27 +105,21 @@ try {
 
         // 2. Get all CURRENTLY pending invitations (not expired)
         $stmt = $conn->prepare("
-    SELECT user_id, 
-           TIMESTAMPDIFF(HOUR, created_at, NOW()) as hours_passed,
-           created_at,
-           expires_at,
-           status,
-           id
-    FROM course_invitations 
-    WHERE course_id = :course_id 
-    AND teacher_type = :teacher_type
-    AND status = 'pending'
-    AND (expires_at IS NULL OR expires_at > NOW())
-    ORDER BY created_at ASC
-");
+            SELECT user_id, 
+                   TIMESTAMPDIFF(HOUR, created_at, NOW()) as hours_passed,
+                   created_at,
+                   expires_at,
+                   status,
+                   id
+            FROM course_invitations 
+            WHERE course_id = :course_id 
+            AND teacher_type = :teacher_type
+            AND status = 'pending'
+            AND (expires_at IS NULL OR expires_at > NOW())
+            ORDER BY created_at ASC
+        ");
         $stmt->execute([':course_id' => $courseId, ':teacher_type' => $teacherType]);
         $pendingInvitations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // DEBUG: Log each pending invitation
-        error_log("DEBUG: Raw pending invitations from database:");
-        foreach ($pendingInvitations as $invitation) {
-            error_log("Invitation ID: {$invitation['id']}, user_id: {$invitation['user_id']} (type: " . gettype($invitation['user_id']) . "), status: {$invitation['status']}");
-        }
 
         // Convert to integers and filter out any invalid IDs
         $pendingTeacherIds = [];
@@ -140,7 +134,6 @@ try {
 
         error_log("DEBUG: Final pending teacher IDs: " . json_encode($pendingTeacherIds));
 
-
         // 3. Get all expired teacher IDs (for frontend display)
         $stmt = $conn->prepare("
             SELECT DISTINCT user_id 
@@ -152,7 +145,7 @@ try {
         $stmt->execute([':course_id' => $courseId, ':teacher_type' => $teacherType]);
         $expiredTeachers = array_map('intval', array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'user_id'));
 
-        // 4. Get last invitation created_at (for 24-hour rule calculation)
+        // 4. Get last invitation created_at (for informational purposes only)
         $stmt = $conn->prepare("
             SELECT created_at 
             FROM course_invitations 
@@ -164,7 +157,7 @@ try {
         $stmt->execute([':course_id' => $courseId, ':teacher_type' => $teacherType]);
         $lastInvitationCreatedAt = $stmt->fetchColumn();
 
-        // 5. Calculate hours since last invitation (based on created_at)
+        // 5. Calculate hours since last invitation (for informational purposes only)
         $hoursSinceLastInvitation = null;
         if ($lastInvitationCreatedAt) {
             $stmt = $conn->prepare("SELECT TIMESTAMPDIFF(HOUR, :created_at, NOW()) as hours_passed");
@@ -175,21 +168,10 @@ try {
 
         error_log("DEBUG: Hours since last invitation: $hoursSinceLastInvitation");
 
-        // 6. FIXED: Determine if we can send next invitation
-        $canSendNext = false;
-        if (count($pendingInvitations) === 0) {
-            // No pending invitations - can send
-            $canSendNext = true;
-            error_log("DEBUG: Can send next - no pending invitations");
-        } elseif ($hoursSinceLastInvitation !== null && $hoursSinceLastInvitation >= 24) {
-            // 24+ hours have passed since last invitation - can send even if there are pending
-            $canSendNext = true;
-            error_log("DEBUG: Can send next - 24+ hours passed ($hoursSinceLastInvitation hours)");
-        } else {
-            // There are pending invitations and less than 24 hours have passed
-            $canSendNext = false;
-            error_log("DEBUG: Cannot send next - pending invitations exist and only $hoursSinceLastInvitation hours passed");
-        }
+        // 6. MODIFIED: Always allow sending the next invitation
+        // Removed the 24-hour restriction logic
+        $canSendNext = true;  // Always true - no time restriction
+        error_log("DEBUG: Can send next - always true (24h restriction removed)");
 
         // 7. Get all accepted teachers with contract info
         $tableName = $teacherType === 'postgraduate' ? 'postg_teacher_disciplines' : 'teacher_disciplines';
@@ -226,7 +208,7 @@ try {
         // 10. Build response
         $response = [
             'success' => true,
-            'can_send_next' => $canSendNext,
+            'can_send_next' => $canSendNext,  // Always true now
             'pending_teachers' => $pendingTeacherIds,
             'accepted_teachers' => $acceptedTeachers,
             'rejected_teachers' => $allRejectedTeachers,
@@ -252,3 +234,4 @@ try {
     error_log("Check invitation status error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 }
+?>

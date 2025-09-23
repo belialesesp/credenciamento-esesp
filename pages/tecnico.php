@@ -107,32 +107,74 @@ try {
         }
     }
 
-    // Extract technician data
-    $name = $technician->getName();
-    $cpf = $technician->getCpf();
-    $email = $technician->getEmail();
-    $phone = $technician->getPhone();
-    $document_number = $technician->getDocumentNumber();
-    $document_emissor = $technician->getDocumentEmissor();
-    $document_uf = $technician->getDocumentUf();
-    $scholarship = $technician->getScholarship();
-    $special_needs = $technician->getSpecialNeeds();
-    $enabled = $technician->getEnabled();
-    $file_path = $technician->getFilePath();
+    // Extract technician data - using public properties
+    $name = $technician->name;
+    $cpf = $technician->cpf;
+    $email = $technician->email;
+    $phone = $technician->phone;
+    $document_number = $technician->document_number;
+    $document_emissor = $technician->document_emissor;
+    $document_uf = $technician->document_uf;
+    $scholarship = $technician->scholarship;
+    $special_needs = $technician->special_needs;
+    $enabled = $technician->enabled;
+    $file_path = $technician->file_path;
 
-    $createdAt = $technician->getCreatedAt();
-    $calledAt = $technician->getCalledAt();
+    $createdAt = $technician->created_at;
+    $calledAt = $technician->called_at;
 
     $dateF = $createdAt ? date('d/m/Y', strtotime($createdAt)) : '—';
     $calledDateF = $calledAt ? date('d/m/Y', strtotime($calledAt)) : '—';
 
-    $addressObj = $technician->getAddress();
+    // Handle address - now stored directly in user table
+    $addressObj = $technician->address;
     $addressStr = '';
+    
     if ($addressObj) {
-        $addressStr = titleCase($addressObj->getStreet()) . ', ' .
-            titleCase($addressObj->getCity()) . ' - ' .
-            strtoupper($addressObj->getState()) . ', CEP: ' .
-            $addressObj->getZip();
+        // Use the Address class's __toString() method if available
+        if (method_exists($addressObj, '__toString')) {
+            $addressStr = (string) $addressObj;
+            // Add city, state, and ZIP if not already included
+            if ($addressObj->city && $addressObj->state) {
+                $addressStr .= ', ' . titleCase($addressObj->city) . ' - ' . strtoupper($addressObj->state);
+            }
+            if ($addressObj->zip) {
+                $addressStr .= ', CEP: ' . $addressObj->zip;
+            }
+        } else {
+            // Build formatted address string manually
+            $parts = [];
+            
+            if ($addressObj->street) {
+                $streetPart = titleCase($addressObj->street);
+                if ($addressObj->number) {
+                    $streetPart .= ', ' . $addressObj->number;
+                }
+                if ($addressObj->complement) {
+                    $streetPart .= ', ' . $addressObj->complement;
+                }
+                $parts[] = $streetPart;
+            }
+            
+            if ($addressObj->neighborhood) {
+                $parts[] = titleCase($addressObj->neighborhood);
+            }
+            
+            if ($addressObj->city && $addressObj->state) {
+                $parts[] = titleCase($addressObj->city) . ' - ' . strtoupper($addressObj->state);
+            }
+            
+            if ($addressObj->zip) {
+                $parts[] = 'CEP: ' . $addressObj->zip;
+            }
+            
+            $addressStr = implode(', ', $parts);
+        }
+    }
+    
+    // If no formatted address, display as "Não informado"
+    if (empty($addressStr)) {
+        $addressStr = 'Não informado';
     }
 
     // Status text and class
@@ -232,7 +274,7 @@ if ($is_ajax_request) {
         </div>
         <div class="row">
             <p class="col-12"><strong>Endereço</strong></p>
-            <p class="col-12"><?= $addressStr ?></p>
+            <p class="col-12"><?= htmlspecialchars($addressStr) ?></p>
         </div>
         <div class="row">
             <p class="col-12"><strong>Escolaridade</strong></p>
@@ -489,7 +531,7 @@ if ($is_ajax_request) {
         </div>
         <div class="row">
             <p class="col-12"><strong>Endereço</strong></p>
-            <p class="col-12"><?= $addressStr ?></p>
+            <p class="col-12"><?= htmlspecialchars($addressStr) ?></p>
         </div>
         <div class="row">
             <p class="col-12"><strong>Escolaridade</strong></p>
@@ -502,95 +544,6 @@ if ($is_ajax_request) {
             </div>
         <?php endif; ?>
     </div>
-
-    <div class="info-section">
-        <h3>Documentos</h3>
-        <?php if (!empty($file_path)): ?>
-            <a href="../backend/documentos/tecnicos/<?= $file_path ?>" target="_blank">Download</a>
-        <?php else: ?>
-            <p>Nenhum documento disponível.</p>
-        <?php endif; ?>
-    </div>
-
-    <?php if ($is_own_profile || isFirstLogin()): ?>
-        <div class="info-section">
-            <h3>Alterar Senha</h3>
-
-            <?php if (isset($_SESSION['password_error'])): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <?= htmlspecialchars($_SESSION['password_error']) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                <?php unset($_SESSION['password_error']); ?>
-            <?php endif; ?>
-
-            <?php if (isset($_SESSION['password_success'])): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?= htmlspecialchars($_SESSION['password_success']) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                <?php unset($_SESSION['password_success']); ?>
-            <?php endif; ?>
-
-            <?php if (isFirstLogin()): ?>
-                <div class="alert alert-warning">
-                    <strong>Primeiro acesso!</strong> Por segurança, recomendamos que você altere sua senha.
-                </div>
-            <?php endif; ?>
-
-            <form method="post" action="../auth/process_change_password.php" class="needs-validation" novalidate>
-                <input type="hidden" name="return_url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
-
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label for="current_password">Senha Atual</label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="current_password"
-                                   name="current_password" required>
-                            <button class="btn btn-outline-secondary" type="button"
-                                    onclick="togglePassword('current_password')" tabindex="-1">
-                                <i class="fas fa-eye" id="current_password_icon"></i>
-                            </button>
-                        </div>
-                        <small class="form-text text-muted">
-                            Se é seu primeiro acesso, use seu CPF (apenas números)
-                        </small>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="new_password">Nova Senha</label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="new_password"
-                                   name="new_password" required minlength="8">
-                            <button class="btn btn-outline-secondary" type="button"
-                                    onclick="togglePassword('new_password')" tabindex="-1">
-                                <i class="fas fa-eye" id="new_password_icon"></i>
-                            </button>
-                        </div>
-                        <small class="form-text text-muted">
-                            Mínimo 8 caracteres, com letras maiúsculas, minúsculas, números e símbolos (@$!%*?&)
-                        </small>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="confirm_password">Confirmar Nova Senha</label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="confirm_password"
-                                   name="confirm_password" required>
-                            <button class="btn btn-outline-secondary" type="button"
-                                    onclick="togglePassword('confirm_password')" tabindex="-1">
-                                <i class="fas fa-eye" id="confirm_password_icon"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary">Alterar Senha</button>
-            </form>
-        </div>
-    <?php endif; ?>
 
     <?php if ($is_admin): ?>
         <div class="info-section">

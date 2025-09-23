@@ -607,8 +607,8 @@ $_SESSION['user-data'] = $teachers;
     return hoursPassed;
   }
   // Updated checkInvitationStatus function with better error handling
-  async function checkInvitationStatus(courseId) {
 
+  async function checkInvitationStatus(courseId) {
     const isPostgraduate = window.location.pathname.includes('docentes-pos');
 
     try {
@@ -620,7 +620,6 @@ $_SESSION['user-data'] = $teachers;
       if (data.success) {
         // Handle expired invitations - treat them as rejected
         if (data.expired_teachers && data.expired_teachers.length > 0) {
-
           // Move expired teachers to rejected list if not already there
           if (!data.rejected_teachers) {
             data.rejected_teachers = [];
@@ -631,26 +630,6 @@ $_SESSION['user-data'] = $teachers;
               data.rejected_teachers.push(teacherId);
             }
           });
-        }
-
-        // Calculate hours since last invitation based on created_at (not sent_at)
-        if (data.last_invitation_created_at) {
-          const lastInvitationDate = new Date(data.last_invitation_created_at);
-          const now = new Date();
-          data.hours_since_last_invitation = Math.floor((now - lastInvitationDate) / (1000 * 60 * 60));
-        }
-
-        // Determine if we can send next invitation
-        if (data.pending_teachers && data.pending_teachers.length > 0) {
-          // There are pending invitations
-          if (data.hours_since_last_invitation !== undefined && data.hours_since_last_invitation >= 24) {
-            data.can_send_next = true;
-          } else {
-            data.can_send_next = false;
-          }
-        } else {
-          // No pending invitations
-          data.can_send_next = true;
         }
 
         return data;
@@ -895,15 +874,9 @@ $_SESSION['user-data'] = $teachers;
             contractDiv.appendChild(saveBtn);
             nameCell.appendChild(contractDiv);
           } else if (!invitationHandled && isAdmin) {
-            let canSendInvitation = false;
+            const canSendInvitation = true;
 
-            if (invitationStatus.can_send_next) {
-              canSendInvitation = true;
-            } else if (invitationStatus.hours_since_last_invitation !== undefined && invitationStatus.hours_since_last_invitation !== null) {
-              canSendInvitation = invitationStatus.hours_since_last_invitation >= 24;
-            }
-
-            console.log(`Can send invitation to teacher ${teacherId}:`, canSendInvitation, 'hours since last:', invitationStatus.hours_since_last_invitation);
+            console.log(`Can send invitation to teacher ${teacherId}:`, canSendInvitation);
 
             if (canSendInvitation) {
               const actionButton = document.createElement('button');
