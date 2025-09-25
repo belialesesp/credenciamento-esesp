@@ -6,7 +6,7 @@ require_once '../backend/api/get_registers.php';
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+  session_start();
 }
 
 // Check if user is admin using session-stored roles
@@ -15,10 +15,10 @@ $isAdmin = $_SESSION['is_admin'] ?? false;
 // Helper function to truncate text
 function truncate_text($text, $length = 50)
 {
-    if (strlen($text) > $length) {
-        return substr($text, 0, $length) . '...';
-    }
-    return $text;
+  if (strlen($text) > $length) {
+    return substr($text, 0, $length) . '...';
+  }
+  return $text;
 }
 
 $conection = new Database();
@@ -728,7 +728,10 @@ $_SESSION['user-data'] = $interpreters;
   });
 
   async function renderTable(interpreters) {
-  console.log("DEBUG: Checking interpreters:", interpreters.map(i => ({id: i.id, name: i.name})));
+    console.log("DEBUG: Checking interpreters:", interpreters.map(i => ({
+      id: i.id,
+      name: i.name
+    })));
     const tbody = document.getElementById('interpretersTableBody');
     tbody.innerHTML = ''; // Clear table completely
 
@@ -871,7 +874,7 @@ $_SESSION['user-data'] = $interpreters;
           rejectedSpan.style.marginLeft = '10px';
           nameCell.appendChild(rejectedSpan);
         } else if (isAdmin && interpreter.enabled == 1) {
-          // SHOW INVITE BUTTON for all APTO interpreters without status
+
           const inviteBtn = document.createElement('button');
           inviteBtn.className = 'action-button';
           inviteBtn.textContent = 'Enviar Convite';
@@ -885,18 +888,14 @@ $_SESSION['user-data'] = $interpreters;
           };
           nameCell.appendChild(inviteBtn);
         }
-      } else if (isAdmin && interpreterToInvite && interpreterToInvite.id === interpreter.id && interpreter.enabled == 1) {
-        // SHOW INVITE BUTTON only for the selected APTO interpreter
+      } else if (isAdmin && interpreter.enabled == 1) {
+        // No invitation status, show button for APTO
         const inviteBtn = document.createElement('button');
         inviteBtn.className = 'action-button';
         inviteBtn.textContent = 'Enviar Convite';
         inviteBtn.onclick = (e) => {
           e.stopPropagation();
-          openInvitationModal(
-            interpreter.id,
-            interpreter.name,
-            interpreter.email
-          );
+          openInvitationModal(interpreter.id, interpreter.name, interpreter.email);
         };
         nameCell.appendChild(inviteBtn);
       }

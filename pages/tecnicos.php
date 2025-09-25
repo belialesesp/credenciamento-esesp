@@ -10,7 +10,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $isAdmin = false;
 if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
-    $isAdmin = in_array('admin', $_SESSION['user_roles']);
+  $isAdmin = in_array('admin', $_SESSION['user_roles']);
 }
 // Helper function to truncate text
 function truncate_text($text, $length = 50)
@@ -898,6 +898,7 @@ $_SESSION['user-data'] = $technicians;
           pendingSpan.style.marginLeft = '10px';
           nameCell.appendChild(pendingSpan);
         } else if (invitationStatus.is_accepted) {
+          // Contract info code stays the same
           const acceptedSpan = document.createElement('span');
           acceptedSpan.className = 'invitation-accepted';
           acceptedSpan.textContent = 'Contratado';
@@ -936,74 +937,63 @@ $_SESSION['user-data'] = $technicians;
           rejectedSpan.textContent = 'Recusado';
           rejectedSpan.style.marginLeft = '10px';
           nameCell.appendChild(rejectedSpan);
-        } else if (isAdmin && userToInvite && userToInvite.id == user.id && user.enabled == 1) {
-          // SHOW INVITE BUTTON only for the selected APTO user
+        } else if (isAdmin && user.enabled == 1) {
+          // SHOW INVITE BUTTON for ALL APTO technicians without any invitation status
           const inviteBtn = document.createElement('button');
           inviteBtn.className = 'action-button';
           inviteBtn.textContent = 'Enviar Convite';
           inviteBtn.onclick = (e) => {
             e.stopPropagation();
-            openInvitationModal(
-              user.id,
-              user.name,
-              user.email
-            );
+            openInvitationModal(user.id, user.name, user.email);
           };
           nameCell.appendChild(inviteBtn);
-          console.log('ADDING BUTTON FOR USER:', user.id);
         }
-      } else if (isAdmin && userToInvite && userToInvite.id == user.id && user.enabled == 1) {
-        // SHOW INVITE BUTTON only for the selected APTO user
+      } else if (isAdmin && user.enabled == 1) {
+        // If no invitation status at all, show button for APTO users
         const inviteBtn = document.createElement('button');
         inviteBtn.className = 'action-button';
         inviteBtn.textContent = 'Enviar Convite';
         inviteBtn.onclick = (e) => {
           e.stopPropagation();
-          openInvitationModal(
-            user.id,
-            user.name,
-            user.email
-          );
+          openInvitationModal(user.id, user.name, user.email);
         };
         nameCell.appendChild(inviteBtn);
-        console.log('ADDING BUTTON FOR USER:', user.id);
       }
+    row.appendChild(nameCell);
 
-      row.appendChild(nameCell);
+    // Email cell
+    const emailCell = document.createElement('td');
+    emailCell.textContent = user.email.toLowerCase();
+    row.appendChild(emailCell);
 
-      // Email cell
-      const emailCell = document.createElement('td');
-      emailCell.textContent = user.email.toLowerCase();
-      row.appendChild(emailCell);
+    // Created at cell
+    const createdCell = document.createElement('td');
+    createdCell.textContent = createdDateF;
+    row.appendChild(createdCell);
 
-      // Created at cell
-      const createdCell = document.createElement('td');
-      createdCell.textContent = createdDateF;
-      row.appendChild(createdCell);
+    // Called at cell
+    const calledCell = document.createElement('td');
+    calledCell.textContent = calledDateF;
+    row.appendChild(calledCell);
 
-      // Called at cell
-      const calledCell = document.createElement('td');
-      calledCell.textContent = calledDateF;
-      row.appendChild(calledCell);
+    // Status cell
+    const statusCell = document.createElement('td');
+    const statusSpan = document.createElement('span');
+    statusSpan.className = statusClass;
+    statusSpan.textContent = enabled;
+    statusCell.appendChild(statusSpan);
+    row.appendChild(statusCell);
 
-      // Status cell
-      const statusCell = document.createElement('td');
-      const statusSpan = document.createElement('span');
-      statusSpan.className = statusClass;
-      statusSpan.textContent = enabled;
-      statusCell.appendChild(statusSpan);
-      row.appendChild(statusCell);
+    // Click handler for row
+    row.onclick = (e) => {
+      if (e.target.closest('button, textarea, input')) {
+        return;
+      }
+      window.location.href = `tecnico.php?id=${user.id}`;
+    };
 
-      // Click handler for row
-      row.onclick = (e) => {
-        if (e.target.closest('button, textarea, input')) {
-          return;
-        }
-        window.location.href = `tecnico.php?id=${user.id}`;
-      };
-
-      tbody.appendChild(row);
-    }
+    tbody.appendChild(row);
+  }
   }
   // Helper function to parse dates in different formats
   function parseDate(dateString) {
