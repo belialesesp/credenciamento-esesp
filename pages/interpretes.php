@@ -427,7 +427,7 @@ $_SESSION['user-data'] = $interpreters;
     </div>
     <div class="modal-body">
       <form id="invitationForm">
-        <input type="hidden" id="interpreterId" name="teacher_id">
+        <input type="hidden" id="interpreterId" name="user_id">
         <input type="hidden" id="interpreterEmail" name="teacher_email">
         <input type="hidden" name="user_type" value="interpreter">
         <input type="hidden" name="is_staff" value="true">

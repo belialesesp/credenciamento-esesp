@@ -479,7 +479,7 @@ $_SESSION['user-data'] = $technicians;
     </div>
     <div class="modal-body">
       <form id="invitationForm">
-        <input type="hidden" id="technicianId" name="teacher_id">
+        <input type="hidden" id="technicianId" name="user_id">
         <input type="hidden" id="technicianEmail" name="teacher_email">
         <input type="hidden" name="user_type" value="technician">
         <input type="hidden" name="is_staff" value="true">

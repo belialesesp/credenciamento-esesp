@@ -1,7 +1,7 @@
 <?php
 // backend/helpers/email.helper.php
 
-require_once __DIR__ . '/../../vendor/autoload.php'; // Make sure PHPMailer is installed via Composer
+require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../config/email.config.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -21,17 +21,25 @@ function sendEmail($to, $toName, $subject, $body) {
     $mail = new PHPMailer(true);
     
     try {
+        // Enable debugging if needed
+        if (defined('EMAIL_DEBUG') && EMAIL_DEBUG) {
+            $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+            $mail->Debugoutput = function($str, $level) {
+                error_log("PHPMailer [$level]: " . trim($str));
+            };
+        }
+        
         // Server settings
         $mail->isSMTP();
         $mail->Host       = SMTP_HOST;
         $mail->SMTPAuth   = SMTP_AUTH;
         $mail->Username   = SMTP_USERNAME;
         $mail->Password   = SMTP_PASSWORD;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Use TLS for port 587
         $mail->Port       = SMTP_PORT;
         
-        // For debugging (disable in production)
-        // $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+        // Set timeout
+        $mail->Timeout = 30;
         
         // Recipients
         $mail->setFrom(EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME);
@@ -43,20 +51,24 @@ function sendEmail($to, $toName, $subject, $body) {
         $mail->CharSet = 'UTF-8';
         $mail->Subject = $subject;
         $mail->Body    = $body;
-        
-        // Alternative plain text version
         $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body));
         
+        error_log("Attempting to send email to: $to via " . SMTP_HOST . ":" . SMTP_PORT);
         $mail->send();
         
-        // Log successful email
         error_log("Email sent successfully to: $to");
-        
         return true;
+        
     } catch (Exception $e) {
-        // Log the error
-        error_log("Email error: {$mail->ErrorInfo}");
-        error_log("Failed to send email to: $to");
+        error_log("PHPMailer Exception: " . $e->getMessage());
+        error_log("PHPMailer Error Info: " . $mail->ErrorInfo);
+        
+        // Log more details for debugging
+        if (defined('EMAIL_DEBUG') && EMAIL_DEBUG) {
+            error_log("Debug - Host: " . SMTP_HOST);
+            error_log("Debug - Port: " . SMTP_PORT);
+            error_log("Debug - Username: " . SMTP_USERNAME);
+        }
         
         return false;
     }
@@ -146,25 +158,4 @@ function sendPasswordResetEmail($email, $name, $resetLink, $expires, $userType =
     ";
     
     return sendEmail($email, $name, $subject, $message);
-}
-
-/**
- * Fallback to PHP mail() if PHPMailer fails
- * This should only be used as a last resort
- */
-function sendEmailFallback($to, $subject, $body) {
-    $headers = array(
-        'From' => EMAIL_FROM_ADDRESS,
-        'Reply-To' => EMAIL_REPLY_TO,
-        'MIME-Version' => '1.0',
-        'Content-type' => 'text/html; charset=UTF-8',
-        'X-Mailer' => 'PHP/' . phpversion()
-    );
-    
-    $headersString = '';
-    foreach ($headers as $key => $value) {
-        $headersString .= $key . ': ' . $value . "\r\n";
-    }
-    
-    return mail($to, $subject, $body, $headersString);
 }

@@ -8,58 +8,21 @@
  */
 
 // Email settings
-define('EMAIL_FROM_ADDRESS', 'credenciamento@esesp.es.gov.br'); // Change to your domain
+define('EMAIL_FROM_ADDRESS', 'credenciamento@esesp.es.gov.br');
 define('EMAIL_FROM_NAME', 'Sistema de Credenciamento da ESESP');
-define('EMAIL_REPLY_TO', 'credenciamento@esesp.es.gov.br'); // Change to your support email
+define('EMAIL_REPLY_TO', 'credenciamento@esesp.es.gov.br');
 
-// SMTP settings - Choose one of the configurations below:
-
-// === OPTION 1: Gmail SMTP (Recommended for testing) ===
-// 1. Enable 2-factor authentication on your Gmail account
-// 2. Generate an App Password: https://myaccount.google.com/apppasswords
-// 3. Use the app password below, NOT your regular Gmail password
-define('SMTP_HOST', 'smtp.gmail.com');
-define('SMTP_PORT', 587);
-define('SMTP_SECURE', 'tls');
+// SMTP settings - CORRECTED PORT!
+define('SMTP_HOST', 'esesp.correio.es.gov.br');
+define('SMTP_PORT', 587); // Changed from 143 to 587 - the correct SMTP port
+define('SMTP_SECURE', 'tls'); // Port 587 uses TLS
 define('SMTP_AUTH', true);
-define('SMTP_USERNAME', 'ead.esesp@gmail.com'); // Your Gmail address
-define('SMTP_PASSWORD', 'aolr hmhs xwpn ljqy'); // Your Gmail App Password (NOT regular password)
-
-// === OPTION 2: Outlook/Hotmail SMTP ===
-// define('SMTP_HOST', 'smtp-mail.outlook.com');
-// define('SMTP_PORT', 587);
-// define('SMTP_SECURE', 'tls');
-// define('SMTP_AUTH', true);
-// define('SMTP_USERNAME', 'your-email@outlook.com');
-// define('SMTP_PASSWORD', 'your-password');
-
-// === OPTION 3: Local SMTP (Hosting Provider) ===
-// define('SMTP_HOST', 'localhost');
-// define('SMTP_PORT', 25);
-// define('SMTP_SECURE', false); // or 'tls'/'ssl' if supported
-// define('SMTP_AUTH', false); // Usually false for localhost
-// define('SMTP_USERNAME', '');
-// define('SMTP_PASSWORD', '');
-
-// === OPTION 4: SendGrid SMTP ===
-// define('SMTP_HOST', 'smtp.sendgrid.net');
-// define('SMTP_PORT', 587);
-// define('SMTP_SECURE', 'tls');
-// define('SMTP_AUTH', true);
-// define('SMTP_USERNAME', 'apikey'); // Always 'apikey' for SendGrid
-// define('SMTP_PASSWORD', 'your-sendgrid-api-key');
-
-// === OPTION 5: Amazon SES SMTP ===
-// define('SMTP_HOST', 'email-smtp.us-east-1.amazonaws.com'); // Change region as needed
-// define('SMTP_PORT', 587);
-// define('SMTP_SECURE', 'tls');
-// define('SMTP_AUTH', true);
-// define('SMTP_USERNAME', 'your-ses-smtp-username');
-// define('SMTP_PASSWORD', 'your-ses-smtp-password');
+define('SMTP_USERNAME', 'credenciamento@esesp.es.gov.br'); 
+define('SMTP_PASSWORD', 'esesp@EAD!2026'); 
 
 // Reset token settings
-define('RESET_TOKEN_EXPIRY_HOURS', 1); // How long reset tokens are valid
-define('RESET_TOKEN_LENGTH', 32); // Length of reset token in bytes
+define('RESET_TOKEN_EXPIRY_HOURS', 1);
+define('RESET_TOKEN_LENGTH', 32);
 
 // Debug mode (set to false in production)
-define('EMAIL_DEBUG', true); // Set to true to see detailed SMTP logs
+define('EMAIL_DEBUG', true);
