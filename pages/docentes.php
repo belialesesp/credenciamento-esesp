@@ -671,6 +671,9 @@ $_SESSION['user-data'] = $teachers;
 
   let isRendering = false;
 
+  // Replace your existing updateTable() function with this modified version
+  // This removes the invitationHandled limitation and shows buttons for all apto teachers
+
   async function updateTable() {
     if (isRendering) {
       console.log('Already rendering, skipping duplicate call');
@@ -680,7 +683,8 @@ $_SESSION['user-data'] = $teachers;
     isRendering = true;
 
     try {
-      let invitationHandled = false;
+      // Remove this line - we don't need it anymore
+      // let invitationHandled = false;
       invitationStatuses = {};
 
       const tbody = document.querySelector('.table tbody');
@@ -708,8 +712,6 @@ $_SESSION['user-data'] = $teachers;
         if (selectedCourseId) {
           invitationStatus = await checkInvitationStatus(selectedCourseId);
           invitationStatuses[selectedCourseId] = invitationStatus;
-
-
         }
       }
 
@@ -722,15 +724,12 @@ $_SESSION['user-data'] = $teachers;
 
       let sortedTeachers = [...currentTeachers];
 
-      // FIXED: Improved sorting logic with better debugging
+      // Keep existing sorting logic
       if (isFilteredByCourse && invitationStatus) {
-
         sortedTeachers.sort((a, b) => {
-          // Convert IDs to integers for comparison
           const aId = parseInt(a.id);
           const bId = parseInt(b.id);
 
-          // FIXED: Better status checking with type conversion and debugging
           const aPending = invitationStatus.pending_teachers ?
             invitationStatus.pending_teachers.some(id => parseInt(id) === aId) : false;
           const bPending = invitationStatus.pending_teachers ?
@@ -756,11 +755,9 @@ $_SESSION['user-data'] = $teachers;
           const aIneligible = aPending || aRejected || aExpired || aAccepted;
           const bIneligible = bPending || bRejected || bExpired || bAccepted;
 
-          // Eligible teachers (can receive invitations) come first
           if (!aIneligible && bIneligible) return -1;
           if (aIneligible && !bIneligible) return 1;
 
-          // Among eligible teachers, sort by called_at date
           let dateA = '9999-12-31';
           let dateB = '9999-12-31';
 
@@ -821,8 +818,25 @@ $_SESSION['user-data'] = $teachers;
           const selectedCourseId = courseSelect.value;
           const selectedCourseName = courseSelect.options[courseSelect.selectedIndex].text;
 
-          // FIXED: Better teacher ID comparison with type conversion
           const teacherId = parseInt(teacher.id);
+
+          // NEW: Check if teacher is "apto" for the selected course
+          let hasAptoStatus = false;
+          if (teacher.discipline_statuses) {
+            const disciplines = teacher.discipline_statuses.split('|~~|');
+            disciplines.forEach(disc => {
+              const parts = disc.split('|~|');
+              if (parts.length >= 3) {
+                const disciplineId = parts[0];
+                const status = parts[2];
+
+                // Check if this teacher is "apto" (status = 1) for the selected course
+                if (disciplineId == selectedCourseId && (status === '1' || status === 1)) {
+                  hasAptoStatus = true;
+                }
+              }
+            });
+          }
 
           const hasPendingInvitation = invitationStatus.pending_teachers ?
             invitationStatus.pending_teachers.some(id => parseInt(id) === teacherId) : false;
@@ -833,7 +847,7 @@ $_SESSION['user-data'] = $teachers;
           const isAcceptedTeacher = invitationStatus.accepted_teachers ?
             invitationStatus.accepted_teachers.hasOwnProperty(teacherId.toString()) : false;
 
-          console.log(`Teacher ${teacherId} (${teacher.name}) status - pending: ${hasPendingInvitation}, rejected: ${hasRejectedInvitation}, expired: ${hasExpiredInvitation}, accepted: ${isAcceptedTeacher}`);
+          console.log(`Teacher ${teacherId} (${teacher.name}) - apto: ${hasAptoStatus}, pending: ${hasPendingInvitation}, rejected: ${hasRejectedInvitation}, expired: ${hasExpiredInvitation}, accepted: ${isAcceptedTeacher}`);
 
           if (hasExpiredInvitation || hasRejectedInvitation) {
             const rejectedSpan = document.createElement('span');
@@ -873,31 +887,30 @@ $_SESSION['user-data'] = $teachers;
             contractDiv.appendChild(textarea);
             contractDiv.appendChild(saveBtn);
             nameCell.appendChild(contractDiv);
-          } else if (!invitationHandled && isAdmin) {
-            const canSendInvitation = true;
+          } else if (hasAptoStatus && isAdmin) {
+            // CHANGED: Show invite button for ALL apto teachers
+            // Removed the invitationHandled check completely
 
-            console.log(`Can send invitation to teacher ${teacherId}:`, canSendInvitation);
+            const actionButton = document.createElement('button');
+            actionButton.className = 'action-button';
+            actionButton.textContent = 'Enviar Convite';
+            actionButton.onclick = (e) => {
+              e.stopPropagation();
+              const teacherType = window.location.pathname.includes('docentes-pos') ? 'postgraduate' : 'regular';
+              openInvitationModal(
+                teacher.id,
+                teacher.name,
+                teacher.email,
+                selectedCourseId,
+                selectedCourseName,
+                teacherType
+              );
+            };
 
-            if (canSendInvitation) {
-              const actionButton = document.createElement('button');
-              actionButton.className = 'action-button';
-              actionButton.textContent = 'Enviar Convite';
-              actionButton.onclick = (e) => {
-                e.stopPropagation();
-                const teacherType = window.location.pathname.includes('docentes-pos') ? 'postgraduate' : 'regular';
-                openInvitationModal(
-                  teacher.id,
-                  teacher.name,
-                  teacher.email,
-                  selectedCourseId,
-                  selectedCourseName,
-                  teacherType
-                );
-              };
+            nameCell.appendChild(actionButton);
+            // REMOVED: invitationHandled = true; - This line was preventing multiple buttons
 
-              nameCell.appendChild(actionButton);
-              invitationHandled = true;
-            }
+            console.log(`Added invite button for apto teacher ${teacherId}`);
           }
         }
 
@@ -968,7 +981,6 @@ $_SESSION['user-data'] = $teachers;
 
         tbody.appendChild(row);
       }
-
 
       const hasData = currentTeachers.length > 0;
       document.getElementById('export-btn').disabled = !hasData;
