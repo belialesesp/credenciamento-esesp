@@ -9,6 +9,52 @@ use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 /**
+ * Test SMTP connection
+ * 
+ * @return array Connection test result
+ */
+function testSMTPConnection() {
+    $result = [
+        'success' => false,
+        'message' => '',
+        'details' => []
+    ];
+    
+    try {
+        $mail = new PHPMailer(true);
+        
+        // Enable verbose debug output
+        $mail->SMTPDebug = SMTP::DEBUG_CONNECTION;
+        $mail->Debugoutput = function($str, $level) use (&$result) {
+            $result['details'][] = "[$level] " . trim($str);
+        };
+        
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host = SMTP_HOST;
+        $mail->SMTPAuth = SMTP_AUTH;
+        $mail->Username = SMTP_USERNAME;
+        $mail->Password = SMTP_PASSWORD;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = SMTP_PORT;
+        $mail->Timeout = 10; // Shorter timeout for testing
+        
+        // Try to connect
+        if ($mail->smtpConnect()) {
+            $mail->smtpClose();
+            $result['success'] = true;
+            $result['message'] = 'SMTP connection successful';
+        } else {
+            $result['message'] = 'Failed to connect to SMTP server';
+        }
+    } catch (Exception $e) {
+        $result['message'] = 'SMTP connection error: ' . $e->getMessage();
+    }
+    
+    return $result;
+}
+
+/**
  * Send email using PHPMailer with SMTP
  * 
  * @param string $to Recipient email address
@@ -35,11 +81,31 @@ function sendEmail($to, $toName, $subject, $body) {
         $mail->SMTPAuth   = SMTP_AUTH;
         $mail->Username   = SMTP_USERNAME;
         $mail->Password   = SMTP_PASSWORD;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Use TLS for port 587
-        $mail->Port       = SMTP_PORT;
+        
+        // Set encryption based on port
+        if (SMTP_PORT == 587) {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        } elseif (SMTP_PORT == 465) {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        } else {
+            // For other ports, try without encryption or auto-detect
+            $mail->SMTPSecure = false;
+            $mail->SMTPAutoTLS = false;
+        }
+        
+        $mail->Port = SMTP_PORT;
         
         // Set timeout
         $mail->Timeout = 30;
+        
+        // Additional settings for better compatibility
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
         
         // Recipients
         $mail->setFrom(EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME);
@@ -54,10 +120,17 @@ function sendEmail($to, $toName, $subject, $body) {
         $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body));
         
         error_log("Attempting to send email to: $to via " . SMTP_HOST . ":" . SMTP_PORT);
-        $mail->send();
         
-        error_log("Email sent successfully to: $to");
-        return true;
+        // Try to send
+        $result = $mail->send();
+        
+        if ($result) {
+            error_log("Email sent successfully to: $to");
+            return true;
+        } else {
+            error_log("Email sending returned false for: $to");
+            return false;
+        }
         
     } catch (Exception $e) {
         error_log("PHPMailer Exception: " . $e->getMessage());
@@ -68,6 +141,18 @@ function sendEmail($to, $toName, $subject, $body) {
             error_log("Debug - Host: " . SMTP_HOST);
             error_log("Debug - Port: " . SMTP_PORT);
             error_log("Debug - Username: " . SMTP_USERNAME);
+            error_log("Debug - From: " . EMAIL_FROM_ADDRESS);
+            error_log("Debug - To: " . $to);
+            
+            // Try to provide more specific error information
+            if (strpos($e->getMessage(), 'Could not authenticate') !== false) {
+                error_log("Authentication failed - check username and password");
+            } elseif (strpos($e->getMessage(), 'Connection: opening') !== false || 
+                      strpos($e->getMessage(), 'Connection failed') !== false) {
+                error_log("Connection failed - check host and port settings");
+            } elseif (strpos($e->getMessage(), 'SMTP connect() failed') !== false) {
+                error_log("SMTP connection failed - verify server is accessible");
+            }
         }
         
         return false;
@@ -96,6 +181,7 @@ function sendPasswordResetEmail($email, $name, $resetLink, $expires, $userType =
         'interpreter' => 'Intérprete',
         'technician' => 'Técnico'
     ];
+    
     $userTypeName = isset($userType) ? ($userTypeNames[$userType] ?? 'Usuário') : '';
     
     $message = "
