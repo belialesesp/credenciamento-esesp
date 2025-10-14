@@ -575,7 +575,7 @@ $_SESSION['user-data'] = $interpreters;
       if (result.success) {
         alert('Informações do contrato salvas com sucesso!');
         // Refresh the table to show updated information
-        loadInterpreters();
+        await fetchFilteredData();
       } else {
         alert('Erro ao salvar informações do contrato: ' + result.message);
       }

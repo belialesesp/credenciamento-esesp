@@ -676,7 +676,6 @@ $_SESSION['user-data'] = $teachers;
 
   async function updateTable() {
     if (isRendering) {
-      console.log('Already rendering, skipping duplicate call');
       return;
     }
 
@@ -750,7 +749,6 @@ $_SESSION['user-data'] = $teachers;
           const bAccepted = invitationStatus.accepted_teachers ?
             invitationStatus.accepted_teachers.hasOwnProperty(bId.toString()) : false;
 
-          console.log(`Sorting check - Teacher ${aId} (${a.name}): pending=${aPending}, rejected=${aRejected}, expired=${aExpired}, accepted=${aAccepted}`);
 
           const aIneligible = aPending || aRejected || aExpired || aAccepted;
           const bIneligible = bPending || bRejected || bExpired || bAccepted;
@@ -796,7 +794,6 @@ $_SESSION['user-data'] = $teachers;
       // Render teachers
       for (let i = 0; i < sortedTeachers.length; i++) {
         const teacher = sortedTeachers[i];
-        console.log(`Rendering teacher ${i + 1}/${sortedTeachers.length}:`, teacher.name, 'ID:', teacher.id);
 
         const row = document.createElement('tr');
         row.dataset.teacherId = teacher.id;
@@ -847,7 +844,6 @@ $_SESSION['user-data'] = $teachers;
           const isAcceptedTeacher = invitationStatus.accepted_teachers ?
             invitationStatus.accepted_teachers.hasOwnProperty(teacherId.toString()) : false;
 
-          console.log(`Teacher ${teacherId} (${teacher.name}) - apto: ${hasAptoStatus}, pending: ${hasPendingInvitation}, rejected: ${hasRejectedInvitation}, expired: ${hasExpiredInvitation}, accepted: ${isAcceptedTeacher}`);
 
           if (hasExpiredInvitation || hasRejectedInvitation) {
             const rejectedSpan = document.createElement('span');
@@ -859,7 +855,6 @@ $_SESSION['user-data'] = $teachers;
             pendingSpan.className = 'invitation-pending';
             pendingSpan.textContent = 'Aguardando resposta';
             nameCell.appendChild(pendingSpan);
-            console.log(`Added pending status for teacher ${teacherId}`);
           } else if (isAcceptedTeacher) {
             // Contract info logic (unchanged)
             const contractDiv = document.createElement('div');
@@ -934,9 +929,8 @@ $_SESSION['user-data'] = $teachers;
             };
 
             nameCell.appendChild(actionButton);
-            // REMOVED: invitationHandled = true; - This line was preventing multiple buttons
 
-            console.log(`Added invite button for apto teacher ${teacherId}`);
+
           }
         }
 
@@ -1257,8 +1251,6 @@ $_SESSION['user-data'] = $teachers;
         alert('Convite enviado com sucesso!');
         closeInvitationModal();
 
-        // FIXED: Force complete refresh of data
-        console.log('Invitation sent successfully, refreshing data...');
 
         // Clear ALL caches
         invitationStatuses = {};
@@ -1269,7 +1261,6 @@ $_SESSION['user-data'] = $teachers;
         // Force fresh data fetch
         await fetchFilteredData();
 
-        console.log('Data refreshed after invitation sent');
       } else {
         alert('Erro ao enviar convite: ' + (result.message || 'Erro desconhecido'));
       }
@@ -1303,19 +1294,15 @@ $_SESSION['user-data'] = $teachers;
   });
   // Add event listeners with debug
   document.getElementById('category').addEventListener('change', function() {
-    console.log('Category changed, calling fetchFilteredData');
     fetchFilteredData();
   });
   document.getElementById('course').addEventListener('change', function() {
-    console.log('Course changed, calling fetchFilteredData');
     fetchFilteredData();
   });
   document.getElementById('status').addEventListener('change', function() {
-    console.log('Status changed, calling fetchFilteredData');
     fetchFilteredData();
   });
   document.getElementById('name').addEventListener('input', function() {
-    console.log('Name input, calling fetchFilteredData');
     fetchFilteredData();
   });
 </script>
