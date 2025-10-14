@@ -643,36 +643,37 @@ $_SESSION['user-data'] = $teachers;
 
 
   async function saveContractInfo(teacherId, courseId, contractInfo) {
-    const isPostgraduate = window.location.pathname.includes('docentes-pos');
+  try {
     const formData = new FormData();
-    formData.append('user_id', teacherId);
+    formData.append('teacher_id', teacherId);
     formData.append('course_id', courseId);
     formData.append('contract_info', contractInfo);
-    formData.append('teacher_type', isPostgraduate ? 'postgraduate' : 'regular');
+    formData.append('teacher_type', 'regular');
 
-    try {
-      const response = await fetch('../backend/api/save_contract_info.php', {
-        method: 'POST',
-        body: formData
-      });
+    const response = await fetch('../backend/api/save_contract_info.php', {
+      method: 'POST',
+      body: formData
+    });
 
-      const result = await response.json();
-      if (result.success) {
-        alert('Informações contratuais salvas com sucesso!');
-      } else {
-        alert('Erro ao salvar informações: ' + result.message);
-      }
-    } catch (error) {
-      console.error('Error saving contract info:', error);
-      alert('Erro ao salvar informações contratuais');
+    const result = await response.json();
+
+    if (result.success) {
+      alert('Informações do contrato salvas com sucesso!');
+      // Clear cache and refresh the table
+      invitationStatuses = {};
+      await updateTable();
+    } else {
+      alert('Erro ao salvar informações do contrato: ' + result.message);
     }
+  } catch (error) {
+    console.error('Error saving contract info:', error);
+    alert('Erro ao salvar informações do contrato.');
   }
+}
 
 
   let isRendering = false;
 
-  // Replace your existing updateTable() function with this modified version
-  // This removes the invitationHandled limitation and shows buttons for all apto teachers
 
   async function updateTable() {
     if (isRendering) {
@@ -875,33 +876,7 @@ $_SESSION['user-data'] = $teachers;
             saveBtn.textContent = 'Salvar';
             saveBtn.onclick = (e) => {
               e.stopPropagation();
-              async function saveContractInfo(teacherId, courseId, contractInfo) {
-                try {
-                  const formData = new FormData();
-                  formData.append('teacher_id', teacherId);
-                  formData.append('course_id', courseId);
-                  formData.append('contract_info', contractInfo);
-                  formData.append('teacher_type', 'regular');
-
-                  const response = await fetch('../backend/api/save_contract_info.php', {
-                    method: 'POST',
-                    body: formData
-                  });
-
-                  const result = await response.json();
-
-                  if (result.success) {
-                    alert('Informações do contrato salvas com sucesso!');
-                    // Refresh the table
-                    await renderTable(currentTeachers);
-                  } else {
-                    alert('Erro ao salvar informações do contrato: ' + result.message);
-                  }
-                } catch (error) {
-                  console.error('Error saving contract info:', error);
-                  alert('Erro ao salvar informações do contrato.');
-                }
-              }
+              saveContractInfo(teacher.id, selectedCourseId, textarea.value);
             };
 
             contractDiv.appendChild(label);
@@ -1010,7 +985,6 @@ $_SESSION['user-data'] = $teachers;
       isRendering = false;
     }
   }
-
 
   // Updated fetchFilteredData function to ensure proper cache clearing
   async function fetchFilteredData() {
