@@ -174,16 +174,13 @@ try {
         error_log("DEBUG: Can send next - always true (24h restriction removed)");
 
         // 7. Get all accepted teachers with contract info
-        $tableName = $teacherType === 'postgraduate' ? 'postg_teacher_disciplines' : 'teacher_disciplines';
-
         $stmt = $conn->prepare("
-            SELECT ci.user_id, td.contract_info
-            FROM course_invitations ci
-            LEFT JOIN $tableName td ON td.user_id = ci.user_id AND td.discipline_id = ci.course_id
-            WHERE ci.course_id = :course_id 
-            AND ci.teacher_type = :teacher_type
-            AND ci.status = 'accepted'
-        ");
+    SELECT ci.user_id, ci.contract_info
+    FROM course_invitations ci
+    WHERE ci.course_id = :course_id 
+    AND ci.teacher_type = :teacher_type
+    AND ci.status = 'accepted'
+");
         $stmt->execute([':course_id' => $courseId, ':teacher_type' => $teacherType]);
 
         $acceptedTeachers = [];

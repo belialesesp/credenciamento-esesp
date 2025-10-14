@@ -643,33 +643,33 @@ $_SESSION['user-data'] = $teachers;
 
 
   async function saveContractInfo(teacherId, courseId, contractInfo) {
-  try {
-    const formData = new FormData();
-    formData.append('teacher_id', teacherId);
-    formData.append('course_id', courseId);
-    formData.append('contract_info', contractInfo);
-    formData.append('teacher_type', 'regular');
+    try {
+      const formData = new FormData();
+      formData.append('teacher_id', teacherId);
+      formData.append('course_id', courseId);
+      formData.append('contract_info', contractInfo);
+      formData.append('teacher_type', 'regular');
 
-    const response = await fetch('../backend/api/save_contract_info.php', {
-      method: 'POST',
-      body: formData
-    });
+      const response = await fetch('../backend/api/save_contract_info.php', {
+        method: 'POST',
+        body: formData
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (result.success) {
-      alert('Informações do contrato salvas com sucesso!');
-      // Clear cache and refresh the table
-      invitationStatuses = {};
-      await updateTable();
-    } else {
-      alert('Erro ao salvar informações do contrato: ' + result.message);
+      if (result.success) {
+        alert('Informações do contrato salvas com sucesso!');
+        // Clear cache and refresh the table
+        invitationStatuses = {};
+        await updateTable();
+      } else {
+        alert('Erro ao salvar informações do contrato: ' + result.message);
+      }
+    } catch (error) {
+      console.error('Error saving contract info:', error);
+      alert('Erro ao salvar informações do contrato.');
     }
-  } catch (error) {
-    console.error('Error saving contract info:', error);
-    alert('Erro ao salvar informações do contrato.');
   }
-}
 
 
   let isRendering = false;

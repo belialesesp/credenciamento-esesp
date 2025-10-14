@@ -36,7 +36,7 @@ if (!$isStaff && !$courseId) {
 try {
     $connection = new Database();
     $conn = $connection->connect();
-    
+
     if ($isStaff) {
         // Handle staff contract info
         $stmt = $conn->prepare("
@@ -47,38 +47,37 @@ try {
             ORDER BY created_at DESC
             LIMIT 1
         ");
-        
+
         $stmt->bindParam(':contract_info', $contractInfo);
         $stmt->bindParam(':user_id', $userId);
     } else {
-        // Handle teacher course contract info (original logic)
-        $stmt = $conn->prepare("
-            UPDATE course_invitations 
-            SET contract_info = :contract_info
-            WHERE teacher_id = :user_id 
-            AND course_id = :course_id 
-            AND teacher_type = :teacher_type
-            AND status = 'accepted'
-            ORDER BY created_at DESC
-            LIMIT 1
-        ");
         
+        $stmt = $conn->prepare("
+        UPDATE course_invitations 
+        SET contract_info = :contract_info
+        WHERE user_id = :user_id 
+        AND course_id = :course_id 
+        AND teacher_type = :teacher_type
+        AND status = 'accepted'
+        ORDER BY created_at DESC
+        LIMIT 1
+        ");
+
         $stmt->bindParam(':contract_info', $contractInfo);
         $stmt->bindParam(':user_id', $userId);
         $stmt->bindParam(':course_id', $courseId);
         $stmt->bindParam(':teacher_type', $teacherType);
     }
-    
+
     if ($stmt->execute()) {
-        $message = $isStaff 
-            ? 'Informações contratuais do técnico/intérprete salvas' 
+        $message = $isStaff
+            ? 'Informações contratuais do técnico/intérprete salvas'
             : 'Informações contratuais do professor salvas';
-        
+
         echo json_encode(['success' => true, 'message' => $message]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Erro ao salvar informações']);
     }
-    
 } catch (Exception $e) {
     error_log("Save contract info error: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Erro no sistema']);
