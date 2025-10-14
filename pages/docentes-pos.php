@@ -896,7 +896,33 @@ Coordenação de Cursos
             saveBtn.textContent = 'Salvar';
             saveBtn.onclick = (e) => {
               e.stopPropagation();
-              saveContractInfo(teacher.id, selectedCourseId, textarea.value);
+              async function saveContractInfo(teacherId, courseId, contractInfo) {
+                try {
+                  const formData = new FormData();
+                  formData.append('teacher_id', teacherId);
+                  formData.append('course_id', courseId);
+                  formData.append('contract_info', contractInfo);
+                  formData.append('teacher_type', 'postgraduate');
+
+                  const response = await fetch('../backend/api/save_contract_info.php', {
+                    method: 'POST',
+                    body: formData
+                  });
+
+                  const result = await response.json();
+
+                  if (result.success) {
+                    alert('Informações do contrato salvas com sucesso!');
+                    // Refresh the table
+                    await renderTable(currentTeachers);
+                  } else {
+                    alert('Erro ao salvar informações do contrato: ' + result.message);
+                  }
+                } catch (error) {
+                  console.error('Error saving contract info:', error);
+                  alert('Erro ao salvar informações do contrato.');
+                }
+              }
             };
 
             contractDiv.appendChild(label);

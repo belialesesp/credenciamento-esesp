@@ -56,22 +56,7 @@ try {
 
         // If accepted, update user's status and called_at
         if ($action === 'accept') {
-            // Prepare contract info
-            $contractInfo = json_encode([
-                'accepted_at' => date('Y-m-d H:i:s'),
-                'status' => 'contracted',
-                'position' => 'Staff'
-            ]);
-            
-            // Update contract info
-            $updateContractStmt = $conn->prepare("
-                UPDATE staff_invitations 
-                SET contract_info = :contract_info
-                WHERE id = :id
-            ");
-            $updateContractStmt->bindParam(':contract_info', $contractInfo);
-            $updateContractStmt->bindParam(':id', $invitation['id']);
-            $updateContractStmt->execute();
+            // Don't set any default contract info - leave it empty for admin to fill
 
             // Update user's called_at date and enabled status
             $updateUserStmt = $conn->prepare("
@@ -81,9 +66,8 @@ try {
             ");
             $updateUserStmt->bindParam(':user_id', $invitation['user_id']);
             $updateUserStmt->execute();
-            
-            error_log("Updated user {$invitation['user_id']} - called_at set, enabled=1 - Response: {$action}");
 
+            error_log("Updated user {$invitation['user_id']} - called_at set, enabled=1 - Response: {$action}");
         } else {
             // For rejected invitations, still update user's called_at but set enabled to 0
             $updateUserStmt = $conn->prepare("
@@ -93,7 +77,7 @@ try {
             ");
             $updateUserStmt->bindParam(':user_id', $invitation['user_id']);
             $updateUserStmt->execute();
-            
+
             error_log("Updated user {$invitation['user_id']} - called_at set, enabled=0 - Response: {$action}");
         }
 
@@ -112,14 +96,14 @@ try {
     if (isset($invitation['user_id'])) {
         $connection = new Database();
         $conn = $connection->connect();
-        
+
         $roleStmt = $conn->prepare("
             SELECT role FROM user_roles WHERE user_id = :user_id LIMIT 1
         ");
         $roleStmt->bindParam(':user_id', $invitation['user_id']);
         $roleStmt->execute();
         $userRole = $roleStmt->fetch(PDO::FETCH_COLUMN);
-        
+
         if ($userRole === 'tecnico') {
             $userTypePT = 'Técnico';
         } elseif ($userRole === 'interprete') {
@@ -239,7 +223,7 @@ try {
             color: #999;
             font-size: 14px;
         }
-        
+
         .contract-info {
             background-color: #e8f5e8;
             border-left: 4px solid #28a745;
@@ -248,7 +232,7 @@ try {
             text-align: left;
             border-radius: 4px;
         }
-        
+
         .contract-info h3 {
             color: #28a745;
             margin-bottom: 10px;
@@ -271,12 +255,12 @@ try {
                     <p><strong>Posição:</strong> <?= $userTypePT ?></p>
                     <p><strong>Data de resposta:</strong> <?= date('d/m/Y H:i') ?></p>
                 </div>
-                
+
                 <div class="contract-info">
                     <h3>📋 Contrato Confirmado</h3>
                     <p>Seu contrato foi registrado no sistema. Em breve, a administração entrará em contato com os detalhes do seu contrato e próximos passos.</p>
                 </div>
-                
+
                 <p class="message">
                     Obrigado por fazer parte da nossa equipe! Sua contribuição é muito valiosa.
                 </p>

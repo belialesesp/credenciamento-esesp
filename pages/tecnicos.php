@@ -619,15 +619,14 @@ $_SESSION['user-data'] = $technicians;
 
   async function saveContractInfo(userId, contractInfo) {
     try {
-      const response = await fetch('save_contract_info.php', {
+      const formData = new FormData();
+      formData.append('teacher_id', userId); // Note: using teacher_id as expected by backend
+      formData.append('contract_info', contractInfo);
+      formData.append('is_staff', 'true');
+
+      const response = await fetch('../backend/api/save_contract_info.php', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          contract_info: contractInfo
-        }),
+        body: formData
       });
 
       const result = await response.json();
@@ -959,41 +958,41 @@ $_SESSION['user-data'] = $technicians;
         };
         nameCell.appendChild(inviteBtn);
       }
-    row.appendChild(nameCell);
+      row.appendChild(nameCell);
 
-    // Email cell
-    const emailCell = document.createElement('td');
-    emailCell.textContent = user.email.toLowerCase();
-    row.appendChild(emailCell);
+      // Email cell
+      const emailCell = document.createElement('td');
+      emailCell.textContent = user.email.toLowerCase();
+      row.appendChild(emailCell);
 
-    // Created at cell
-    const createdCell = document.createElement('td');
-    createdCell.textContent = createdDateF;
-    row.appendChild(createdCell);
+      // Created at cell
+      const createdCell = document.createElement('td');
+      createdCell.textContent = createdDateF;
+      row.appendChild(createdCell);
 
-    // Called at cell
-    const calledCell = document.createElement('td');
-    calledCell.textContent = calledDateF;
-    row.appendChild(calledCell);
+      // Called at cell
+      const calledCell = document.createElement('td');
+      calledCell.textContent = calledDateF;
+      row.appendChild(calledCell);
 
-    // Status cell
-    const statusCell = document.createElement('td');
-    const statusSpan = document.createElement('span');
-    statusSpan.className = statusClass;
-    statusSpan.textContent = enabled;
-    statusCell.appendChild(statusSpan);
-    row.appendChild(statusCell);
+      // Status cell
+      const statusCell = document.createElement('td');
+      const statusSpan = document.createElement('span');
+      statusSpan.className = statusClass;
+      statusSpan.textContent = enabled;
+      statusCell.appendChild(statusSpan);
+      row.appendChild(statusCell);
 
-    // Click handler for row
-    row.onclick = (e) => {
-      if (e.target.closest('button, textarea, input')) {
-        return;
-      }
-      window.location.href = `tecnico.php?id=${user.id}`;
-    };
+      // Click handler for row
+      row.onclick = (e) => {
+        if (e.target.closest('button, textarea, input')) {
+          return;
+        }
+        window.location.href = `tecnico.php?id=${user.id}`;
+      };
 
-    tbody.appendChild(row);
-  }
+      tbody.appendChild(row);
+    }
   }
   // Helper function to parse dates in different formats
   function parseDate(dateString) {

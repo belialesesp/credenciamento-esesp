@@ -560,15 +560,14 @@ $_SESSION['user-data'] = $interpreters;
 
   async function saveContractInfo(userId, contractInfo) {
     try {
-      const response = await fetch('save_contract_info.php', {
+      const formData = new FormData();
+      formData.append('teacher_id', userId); // Note: using teacher_id as expected by backend
+      formData.append('contract_info', contractInfo);
+      formData.append('is_staff', 'true');
+      
+      const response = await fetch('../backend/api/save_contract_info.php', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          contract_info: contractInfo
-        }),
+        body: formData
       });
 
       const result = await response.json();
