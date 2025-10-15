@@ -24,7 +24,8 @@ function get_docente($conn)
 
 function get_postg_docente($conn)
 {
-  $query = "SELECT DISTINCT u.id, u.name, u.email, u.created_at,
+
+  $query = "SELECT u.id, u.name, u.email, u.created_at,
                      GROUP_CONCAT(
                          CONCAT_WS('|~|',
                              d.id,
@@ -34,15 +35,12 @@ function get_postg_docente($conn)
                           ) SEPARATOR '|~~|'
                      ) AS discipline_statuses
               FROM user u
-              INNER JOIN user_roles ur ON u.id = ur.user_id AND ur.role = 'docente_pos'
+              INNER JOIN user_roles ur ON u.id = ur.user_id
               LEFT JOIN postg_teacher_disciplines td ON u.id = td.user_id
               LEFT JOIN postg_disciplinas d ON td.discipline_id = d.id
-              WHERE u.id IN (
-                  SELECT DISTINCT user_id 
-                  FROM user_roles 
-                  WHERE role = 'docente_pos'
-              )
-              GROUP BY u.id, u.name, u.email, u.created_at";
+              WHERE ur.role = 'docente_pos'
+              GROUP BY u.id, u.name, u.email, u.created_at
+              ORDER BY u.name";
 
   $stmt = $conn->prepare($query);
   $stmt->execute();

@@ -1010,44 +1010,45 @@ Coordenação de Cursos
   }
 
 
-  // Updated fetchFilteredData function to ensure proper cache clearing
   async function fetchFilteredData() {
 
-    const category = document.getElementById('category').value;
-    const course = document.getElementById('course').value;
-    const status = document.getElementById('status').value;
-    const name = document.getElementById('name').value;
+  const category = document.getElementById('category').value;
+  const course = document.getElementById('course').value;
+  const status = document.getElementById('status').value;
+  const name = document.getElementById('name').value;
 
-    // Update isFilteredByCourse flag
-    isFilteredByCourse = course !== '';
+  // Update isFilteredByCourse flag
+  isFilteredByCourse = course !== '';
 
-    // ALWAYS clear invitation statuses when filters change or data is refreshed
-    invitationStatuses = {};
+  // ALWAYS clear invitation statuses when filters change or data is refreshed
+  invitationStatuses = {};
 
-    if (!category && !course && !status && !name) {
-      currentTeachers = [...allTeachers];
-      await updateTable();
-      return;
-    }
-
-    const queryParams = new URLSearchParams();
-    if (category) queryParams.append('category', category);
-    if (course) queryParams.append('course', course);
-    if (status) queryParams.append('status', status);
-    if (name) queryParams.append('name', name);
-
-    try {
-      const response = await fetch('../backend/api/get_filtered_teachers.php?' + queryParams);
-      const data = await response.json();
-
-      currentTeachers = data;
-      await updateTable();
-    } catch (error) {
-      currentTeachers = [];
-      await updateTable();
-    }
-
+  if (!category && !course && !status && !name) {
+    currentTeachers = [...allTeachers];
+    await updateTable();
+    return;
   }
+
+  const queryParams = new URLSearchParams();
+  if (category) queryParams.append('category', category);
+  if (course) queryParams.append('course', course);
+  if (status) queryParams.append('status', status);
+  if (name) queryParams.append('name', name);
+
+  try {
+    // FIXED: Changed from get_filtered_teachers.php to get_filtered_teachers_postg.php
+    const response = await fetch('../backend/api/get_filtered_teachers_postg.php?' + queryParams);
+    const data = await response.json();
+
+    currentTeachers = data;
+    await updateTable();
+  } catch (error) {
+    console.error('Error fetching filtered data:', error);
+    currentTeachers = [];
+    await updateTable();
+  }
+
+}
 
   setInterval(async () => {
     if (isFilteredByCourse) {
