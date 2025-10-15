@@ -24,7 +24,7 @@ function get_docente($conn)
 
 function get_postg_docente($conn)
 {
-  $query = "SELECT u.id, u.name, u.email, u.created_at,
+  $query = "SELECT DISTINCT u.id, u.name, u.email, u.created_at,
                      GROUP_CONCAT(
                          CONCAT_WS('|~|',
                              d.id,
@@ -36,8 +36,13 @@ function get_postg_docente($conn)
               FROM user u
               INNER JOIN user_roles ur ON u.id = ur.user_id AND ur.role = 'docente_pos'
               LEFT JOIN postg_teacher_disciplines td ON u.id = td.user_id
-              LEFT JOIN disciplinas d ON td.discipline_id = d.id
-              GROUP BY u.id";
+              LEFT JOIN postg_disciplinas d ON td.discipline_id = d.id
+              WHERE u.id IN (
+                  SELECT DISTINCT user_id 
+                  FROM user_roles 
+                  WHERE role = 'docente_pos'
+              )
+              GROUP BY u.id, u.name, u.email, u.created_at";
 
   $stmt = $conn->prepare($query);
   $stmt->execute();
@@ -126,7 +131,7 @@ function get_postdocentes_call($conn, $date)
   LEFT JOIN
     postg_teacher_disciplines td ON u.id = td.user_id
   LEFT JOIN
-    postg_disciplinas d ON td.discipline_id = d.id
+    postg_disciplinas d ON td.discipline_id = d.id  // This one is correct
   LEFT JOIN
     postg_teacher_activities ta ON u.id = ta.user_id
   LEFT JOIN

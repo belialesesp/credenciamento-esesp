@@ -15,6 +15,7 @@ $isAdmin = false;
 if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
   $isAdmin = in_array('admin', $_SESSION['user_roles']);
 }
+
 // Validate input
 $userId = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
 $userEmail = filter_input(INPUT_POST, 'teacher_email', FILTER_VALIDATE_EMAIL);
@@ -26,8 +27,9 @@ $userType = trim($_POST['user_type'] ?? ''); // 'technician', 'interpreter', or 
 $courseId = filter_input(INPUT_POST, 'course_id', FILTER_VALIDATE_INT); // Only for teachers
 $teacherType = trim($_POST['teacher_type'] ?? 'regular'); // 'regular' or 'postgraduate'
 
-// Debug: Log all extracted values
-error_log("DEBUG: Extracted values - user_id: $userId, teacher_email: $userEmail, user_type: $userType, course_id: $courseId, teacher_type: $teacherType");
+// Debug: Log all extracted values INCLUDING the raw POST data
+error_log("DEBUG: Raw POST data: " . print_r($_POST, true));
+error_log("DEBUG: Extracted values - user_id: $userId, teacher_email: $userEmail, user_type: '$userType', course_id: $courseId, teacher_type: '$teacherType'");
 
 // For teachers, course ID is required
 if (empty($userType) && !$courseId) {
@@ -82,8 +84,22 @@ try {
 
     if (empty($userType)) {
         // Handle teacher invitation
-        // Check if user has the appropriate role
-        $requiredRole = $teacherType === 'postgraduate' ? 'docente_pos' : 'docente';
+        // FIXED: Check if user has the appropriate role
+        // The issue was that teacher_type might be 'postgraduate' but we need 'docente_pos'
+        $requiredRole = ($teacherType === 'postgraduate') ? 'docente_pos' : 'docente';
+        
+        error_log("DEBUG: Checking for role '$requiredRole' for user_id $userId (teacher_type: '$teacherType')");
+        
+        // First, let's check what roles the user actually has
+        $debugStmt = $conn->prepare("
+            SELECT role 
+            FROM user_roles 
+            WHERE user_id = :user_id
+        ");
+        $debugStmt->bindParam(':user_id', $userId);
+        $debugStmt->execute();
+        $userRoles = $debugStmt->fetchAll(PDO::FETCH_COLUMN);
+        error_log("DEBUG: User $userId has these roles: " . implode(', ', $userRoles));
         
         $stmt = $conn->prepare("
             SELECT COUNT(*) as has_role 
@@ -96,14 +112,16 @@ try {
         
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        error_log("DEBUG: Role check result: " . print_r($result, true));
+        error_log("DEBUG: Role check result for '$requiredRole': " . print_r($result, true));
         
         if (!$result || $result['has_role'] == 0) {
-            throw new Exception('Usuário não tem a função de professor necessária');
+            throw new Exception("Usuário não tem a função de professor necessária (esperado: '$requiredRole', usuário tem: " . implode(', ', $userRoles) . ")");
         }
 
         // Get course name
-        $courseTable = $teacherType === 'postgraduate' ? 'postg_disciplinas' : 'disciplinas';
+        $courseTable = ($teacherType === 'postgraduate') ? 'postg_disciplinas' : 'disciplinas';
+        error_log("DEBUG: Looking for course in table: $courseTable with id: $courseId");
+        
         $stmt = $conn->prepare("SELECT name FROM $courseTable WHERE id = :id");
         $stmt->bindParam(':id', $courseId);
         $stmt->execute();
@@ -228,7 +246,7 @@ try {
         $updateStmt->execute();
 
         $logMessage = empty($userType)
-            ? "Course invitation sent - Teacher: {$userName}, Course: {$invitationDetails}"
+            ? "Course invitation sent - Teacher: {$userName}, Course: {$invitationDetails}, Type: {$teacherType}"
             : "Staff invitation sent - {$userType}: {$userName}";
 
         error_log($logMessage);
@@ -271,56 +289,57 @@ function getInvitationLink($token, $action, $userType = '')
 function createInvitationEmailTemplate($userName, $details, $message, $acceptLink, $rejectLink, $expires, $isStaff = false)
 {
     $expiresFormatted = date('d/m/Y \à\s H:i', strtotime($expires));
-    $invitationType = $isStaff ? 'Técnico/Intérprete' : 'Curso';
+    $invitationType = $isStaff ? 'trabalho' : 'lecionar no curso';
 
     return "
+    <!DOCTYPE html>
     <html>
     <head>
-        <title>Convite para {$invitationType}</title>
+        <meta charset='UTF-8'>
         <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #007bff; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-            .content { background: #f8f9fa; padding: 30px; border: 1px solid #dee2e6; border-radius: 0 0 5px 5px; }
-            .details { background: #fff; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #e9ecef; }
-            .message-box { background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0; }
-            .buttons { text-align: center; margin: 30px 0; }
-            .button { display: inline-block; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 0 10px; font-weight: bold; }
-            .accept { background: #28a745; color: white; }
-            .reject { background: #dc3545; color: white; }
-            .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #6c757d; }
+            .header { background-color: #0066cc; color: white; padding: 20px; text-align: center; }
+            .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; }
+            .message { background-color: white; padding: 20px; margin: 20px 0; border-left: 4px solid #0066cc; }
+            .button-container { text-align: center; margin: 30px 0; }
+            .button { display: inline-block; padding: 12px 30px; margin: 0 10px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+            .accept { background-color: #28a745; color: white; }
+            .reject { background-color: #dc3545; color: white; }
+            .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; }
+            .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
         </style>
     </head>
     <body>
         <div class='container'>
             <div class='header'>
-                <h2>Convite para {$invitationType}</h2>
+                <h1>Convite para {$invitationType}</h1>
             </div>
             <div class='content'>
                 <p>Prezado(a) <strong>{$userName}</strong>,</p>
                 
-                <div class='details'>
-                    <h3 style='margin-top: 0;'>Detalhes:</h3>
-                    <p><strong>{$invitationType}:</strong> {$details}</p>
+                <div class='message'>
+                    " . nl2br(htmlspecialchars($message)) . "
                 </div>
                 
-                <div class='message-box'>
-                    <p>" . nl2br(htmlspecialchars($message)) . "</p>
+                <p><strong>Detalhes:</strong> {$details}</p>
+                
+                <div class='warning'>
+                    <strong>⚠️ Importante:</strong> Este convite expira em <strong>{$expiresFormatted}</strong>
                 </div>
                 
-                <p>Por favor, clique em um dos botões abaixo para responder a este convite:</p>
-                
-                <div class='buttons'>
+                <div class='button-container'>
                     <a href='{$acceptLink}' class='button accept'>✓ Aceitar Convite</a>
                     <a href='{$rejectLink}' class='button reject'>✗ Recusar Convite</a>
                 </div>
                 
-                <p><strong>Este convite expira em {$expiresFormatted}.</strong></p>
-                
-                <div class='footer'>
-                    <p>Este é um email automático. Por favor, não responda.</p>
-                    <p>Sistema de Credenciamento ESESP © " . date('Y') . "</p>
-                </div>
+                <p style='text-align: center; color: #666; font-size: 14px;'>
+                    Por favor, clique em um dos botões acima para responder a este convite.
+                </p>
+            </div>
+            <div class='footer'>
+                <p>Esta é uma mensagem automática, por favor não responda.</p>
+                <p>Sistema de Credenciamento ESESP © " . date('Y') . "</p>
             </div>
         </div>
     </body>
