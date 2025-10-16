@@ -1,5 +1,5 @@
 <?php
-// pages/course-invitation-response.php
+// pages/course-invitation-response.php - FIXED FOR UNIFIED USER SYSTEM
 session_start();
 require_once '../backend/classes/database.class.php';
 
@@ -17,24 +17,17 @@ try {
     $connection = new Database();
     $conn = $connection->connect();
 
-    // Get invitation details
+    // FIXED: Get invitation details using user table (not old teacher/postg_teacher tables)
     $stmt = $conn->prepare("
         SELECT ci.*, 
-               CASE 
-                   WHEN ci.teacher_type = 'postgraduate' THEN pt.name 
-                   ELSE t.name 
-               END as teacher_name,
-               CASE 
-                   WHEN ci.teacher_type = 'postgraduate' THEN pt.email 
-                   ELSE t.email 
-               END as teacher_email,
+               u.name as teacher_name,
+               u.email as teacher_email,
                CASE 
                    WHEN ci.teacher_type = 'postgraduate' THEN pd.name 
                    ELSE d.name 
                END as course_name
         FROM course_invitations ci
-        LEFT JOIN teacher t ON ci.teacher_id = t.id AND ci.teacher_type = 'regular'
-        LEFT JOIN postg_teacher pt ON ci.teacher_id = pt.id AND ci.teacher_type = 'postgraduate'
+        JOIN user u ON ci.user_id = u.id
         LEFT JOIN disciplinas d ON ci.course_id = d.id AND ci.teacher_type = 'regular'
         LEFT JOIN postg_disciplinas pd ON ci.course_id = pd.id AND ci.teacher_type = 'postgraduate'
         WHERE ci.token = :token
@@ -76,15 +69,19 @@ try {
             $table = 'teacher_disciplines';
         }
 
+        // FIXED: Use user_id instead of teacher_id
+        $user_id = $invitation['user_id'];
+        $course_id = $invitation['course_id'];
+
         // If accepted, update teacher's discipline status
         if ($action === 'accept') {
             // Check if the relationship already exists
             $checkStmt = $conn->prepare("
                 SELECT * FROM $table 
-                WHERE teacher_id = :teacher_id AND discipline_id = :discipline_id
+                WHERE user_id = :user_id AND discipline_id = :discipline_id
             ");
-            $checkStmt->bindParam(':teacher_id', $invitation['teacher_id']);
-            $checkStmt->bindParam(':discipline_id', $invitation['course_id']);
+            $checkStmt->bindParam(':user_id', $user_id);
+            $checkStmt->bindParam(':discipline_id', $course_id);
             $checkStmt->execute();
 
             if ($checkStmt->fetch()) {
@@ -92,28 +89,30 @@ try {
                 $updateStmt = $conn->prepare("
                     UPDATE $table 
                     SET enabled = 1, called_at = NOW() 
-                    WHERE teacher_id = :teacher_id AND discipline_id = :discipline_id
+                    WHERE user_id = :user_id AND discipline_id = :discipline_id
                 ");
             } else {
                 // Insert new record
                 $updateStmt = $conn->prepare("
-                    INSERT INTO $table (teacher_id, discipline_id, enabled, called_at, created_at) 
-                    VALUES (:teacher_id, :discipline_id, 1, NOW(), NOW())
+                    INSERT INTO $table (user_id, discipline_id, enabled, called_at, created_at) 
+                    VALUES (:user_id, :discipline_id, 1, NOW(), NOW())
                 ");
             }
 
-            $updateStmt->bindParam(':teacher_id', $invitation['teacher_id']);
-            $updateStmt->bindParam(':discipline_id', $invitation['course_id']);
+            $updateStmt->bindParam(':user_id', $user_id);
+            $updateStmt->bindParam(':discipline_id', $course_id);
             $updateStmt->execute();
+            
+            error_log("Accepted invitation - Updated $table for user_id: $user_id, discipline_id: $course_id");
         } else {
             // For rejected invitations, still update called_at
             // Check if the relationship exists
             $checkStmt = $conn->prepare("
                 SELECT * FROM $table 
-                WHERE teacher_id = :teacher_id AND discipline_id = :discipline_id
+                WHERE user_id = :user_id AND discipline_id = :discipline_id
             ");
-            $checkStmt->bindParam(':teacher_id', $invitation['teacher_id']);
-            $checkStmt->bindParam(':discipline_id', $invitation['course_id']);
+            $checkStmt->bindParam(':user_id', $user_id);
+            $checkStmt->bindParam(':discipline_id', $course_id);
             $checkStmt->execute();
 
             if ($checkStmt->fetch()) {
@@ -121,27 +120,30 @@ try {
                 $updateCalledAt = $conn->prepare("
                     UPDATE $table 
                     SET called_at = NOW() 
-                    WHERE teacher_id = :teacher_id AND discipline_id = :discipline_id
+                    WHERE user_id = :user_id AND discipline_id = :discipline_id
                 ");
             } else {
                 // Insert new record with called_at (disabled)
                 $updateCalledAt = $conn->prepare("
-                    INSERT INTO $table (teacher_id, discipline_id, enabled, called_at, created_at) 
-                    VALUES (:teacher_id, :discipline_id, 0, NOW(), NOW())
+                    INSERT INTO $table (user_id, discipline_id, enabled, called_at, created_at) 
+                    VALUES (:user_id, :discipline_id, 0, NOW(), NOW())
                 ");
             }
 
-            $updateCalledAt->bindParam(':teacher_id', $invitation['teacher_id']);
-            $updateCalledAt->bindParam(':discipline_id', $invitation['course_id']);
+            $updateCalledAt->bindParam(':user_id', $user_id);
+            $updateCalledAt->bindParam(':discipline_id', $course_id);
             $updateCalledAt->execute();
+            
+            error_log("Rejected invitation - Updated $table for user_id: $user_id, discipline_id: $course_id");
         }
 
-        error_log("Updated called_at for teacher {$invitation['teacher_id']} course {$invitation['course_id']} - Response: {$action}");
+        error_log("Updated called_at for user $user_id course $course_id - Response: {$action}");
 
         $success = true;
     }
 } catch (Exception $e) {
     error_log("Course invitation response error: " . $e->getMessage());
+    error_log("Error trace: " . $e->getTraceAsString());
     $error = 'Erro ao processar resposta';
 }
 
@@ -190,19 +192,16 @@ try {
             align-items: center;
             justify-content: center;
             font-size: 40px;
-            color: white;
         }
 
         .icon.success {
-            background-color: #28a745;
+            background-color: #d4edda;
+            color: #28a745;
         }
 
         .icon.error {
-            background-color: #dc3545;
-        }
-
-        .icon.info {
-            background-color: #17a2b8;
+            background-color: #f8d7da;
+            color: #dc3545;
         }
 
         h1 {
@@ -211,48 +210,33 @@ try {
             font-size: 24px;
         }
 
-        .message {
+        p {
             color: #666;
+            margin-bottom: 30px;
             line-height: 1.6;
-            margin-bottom: 30px;
-        }
-
-        .details {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 4px;
-            margin-bottom: 30px;
-            text-align: left;
-        }
-
-        .details p {
-            margin-bottom: 10px;
-            color: #555;
-        }
-
-        .details strong {
-            color: #333;
         }
 
         .button {
             display: inline-block;
             padding: 12px 30px;
-            background-color: #007bff;
+            background-color: #0066cc;
             color: white;
             text-decoration: none;
-            border-radius: 4px;
-            font-weight: 500;
+            border-radius: 5px;
+            font-weight: bold;
             transition: background-color 0.3s;
         }
 
         .button:hover {
-            background-color: #0056b3;
+            background-color: #0052a3;
         }
 
         .footer {
             margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
             color: #999;
-            font-size: 14px;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -260,56 +244,26 @@ try {
 <body>
     <div class="container">
         <?php if (isset($success) && $success): ?>
-            <?php if ($action === 'accept'): ?>
-                <div class="icon success">✓</div>
-                <h1>Convite Aceito!</h1>
-                <div class="message">
-                    <p>Você aceitou com sucesso o convite para lecionar.</p>
-                </div>
-                <div class="details">
-                    <p><strong>Professor:</strong> <?= htmlspecialchars($invitation['teacher_name']) ?></p>
-                    <p><strong>Curso:</strong> <?= htmlspecialchars($invitation['course_name']) ?></p>
-                </div>
-                <p class="message">
-                    Você foi cadastrado como apto para este curso.
-                    Em breve, a coordenação entrará em contato com mais informações.
-                </p>
-            <?php else: ?>
-                <div class="icon info">!</div>
-                <h1>Convite Recusado</h1>
-                <div class="message">
-                    <p>Você recusou o convite para lecionar.</p>
-                </div>
-                <div class="details">
-                    <p><strong>Professor:</strong> <?= htmlspecialchars($invitation['teacher_name']) ?></p>
-                    <p><strong>Curso:</strong> <?= htmlspecialchars($invitation['course_name']) ?></p>
-                </div>
-                <p class="message">
-                    Agradecemos sua resposta. A coordenação foi notificada.
-                </p>
-            <?php endif; ?>
+            <div class="icon success">✓</div>
+            <h1><?= $action === 'accept' ? 'Convite Aceito!' : 'Convite Recusado' ?></h1>
+            <p>
+                <?php if ($action === 'accept'): ?>
+                    Obrigado por aceitar o convite para lecionar <strong><?= htmlspecialchars($invitation['course_name']) ?></strong>.<br>
+                    Em breve você receberá mais informações sobre o curso.
+                <?php else: ?>
+                    Sua recusa foi registrada. Agradecemos por responder ao convite.
+                <?php endif; ?>
+            </p>
+            <a href="../index.php" class="button">Ir para o Sistema</a>
         <?php else: ?>
             <div class="icon error">✗</div>
             <h1>Erro</h1>
-            <div class="message">
-                <p><?= htmlspecialchars($error ?? 'Ocorreu um erro ao processar sua resposta.') ?></p>
-            </div>
+            <p><?= htmlspecialchars($error ?? 'Erro ao processar resposta') ?></p>
+            <a href="../index.php" class="button">Voltar ao Início</a>
         <?php endif; ?>
 
-        <?php
-        // Determine appropriate redirect link
-        if (isset($_SESSION['user_id'])) {
-            // User is logged in
-            $redirectLink = '../pages/home.php';
-        } else {
-            // User is not logged in
-            $redirectLink = '../index.php';
-        }
-        ?>
-        <a href="<?= $redirectLink ?>" class="button">Ir para o Sistema</a>
-
         <div class="footer">
-            <p>Sistema de Credenciamento ESESP © <?= date('Y') ?></p>
+            Sistema de Credenciamento ESESP © <?= date('Y') ?>
         </div>
     </div>
 </body>

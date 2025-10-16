@@ -1,140 +1,171 @@
 <?php
-// pages/interprete.php
+// pages/interprete.php - FIXED VERSION
 
+require_once '../init.php';
 require_once '../backend/classes/database.class.php';
-
-// Check authentication
-if (!isset($_SESSION['user_id'])) {
-  header('Location: login.php');
-  exit();
-}
-
-// Check if user can access this profile
-$requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$user_type = $_SESSION['user_type'] ?? '';
-$is_admin = hasRole('admin');
-$is_own_profile = false;
-
-if (!$requested_id) {
-  // No ID provided
-  if (!$is_admin && $_SESSION['user_type'] === 'interpreter') {
-    // Redirect to their own profile
-    header('Location: ?id=' . $_SESSION['type_id']);
-    exit();
-  } else {
-    header('Location: home.php');
-    exit();
-  }
-}
-
-// Check access permissions
-if ($is_admin) {
-  // Admin can see all profiles
-  $interpreter_id = $requested_id;
-} elseif (hasRole('interprete') && $_SESSION['user_id'] == $requested_id) {
-  // User viewing their own profile
-  $interpreter_id = $requested_id;
-  $is_own_profile = true;
-} else {
-  // Not authorized
-  header('Location: home.php');
-  exit();
-}
-
-// Include styles and header
-echo '<link rel="stylesheet" href="../styles/user.css">';
-include '../components/header.php';
-
 require_once '../pdf/assets/title_case.php';
 
-// Get interpreter data
+// Check authentication
+requireLogin();
+
+// Get database connection
 $conection = new Database();
 $conn = $conection->connect();
 
+// Check admin status
+$is_admin = false;
+if (hasRole('admin') || hasRole('gese') || hasRole('pedagogico')) {
+    $is_admin = true;
+}
+
+// Get requested ID from URL
+$requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// Verify the requested user exists and is an interpreter
+$stmt = $conn->prepare("
+    SELECT u.id 
+    FROM user u
+    INNER JOIN user_roles ur ON ur.user_id = u.id
+    WHERE u.id = ? AND ur.role = 'interprete' AND u.enabled = 1
+");
+$stmt->execute([$requested_id]);
+
+if (!$stmt->fetch()) {
+    header('Location: interpretes.php');
+    exit();
+}
+
+// Check access permissions
+$is_own_profile = false;
+if ($is_admin) {
+    $is_own_profile = false;
+} elseif (hasRole('interprete') && $_SESSION['user_id'] == $requested_id) {
+    $is_own_profile = true;
+} else {
+    header('Location: home.php');
+    exit();
+}
+
+// NOW fetch the interpreter data from the USER table, not interpreter table
+$sql = "
+    SELECT 
+        u.id,
+        u.name,
+        u.email,
+        u.special_needs,
+        u.document_number,
+        u.document_emissor,
+        u.document_uf,
+        u.phone,
+        u.cpf,
+        u.created_at,
+        u.called_at,
+        u.street,
+        u.city,
+        u.state,
+        u.zip_code,
+        u.number,
+        u.complement,
+        u.neighborhood,
+        u.scholarship,
+        u.enabled,
+        u.gese_evaluation,
+        u.pedagogico_evaluation,
+        d.path AS file_path
+    FROM user u
+    LEFT JOIN documents d ON d.user_id = u.id
+    WHERE u.id = :id
+";
+
 try {
-  // Get interpreter data
-  $sql = "SELECT i.*, a.* 
-            FROM interpreter i
-            LEFT JOIN address a ON i.address_id = a.id
-            WHERE i.id = :id";
-  $stmt = $conn->prepare($sql);
-  $stmt->execute([':id' => $interpreter_id]);
-  $interpreter = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([':id' => $requested_id]);
+    $interpreter = $stmt->fetch(PDO::FETCH_ASSOC);
 
-  if (!$interpreter) {
-    throw new Exception("Intérprete não encontrado");
-  }
-
-  // Get documents
-  $docSql = "SELECT * FROM documents WHERE interpreter_id = :id";
-  $docStmt = $conn->prepare($docSql);
-  $docStmt->execute([':id' => $interpreter_id]);
-  $document = $docStmt->fetch(PDO::FETCH_ASSOC);
-
-  // Extract data
-  $name = $interpreter['name'];
-  $document_number = $interpreter['document_number'];
-  $document_emissor = $interpreter['document_emissor'];
-  $document_uf = $interpreter['document_uf'];
-  $phone = $interpreter['phone'];
-  $cpf = $interpreter['cpf'];
-  $email = $interpreter['email'];
-  $special_needs = $interpreter['special_needs'];
-  $created_at = $interpreter['created_at'];
-  $enabled = $interpreter['enabled'];
-
-  // Address
-  $address = $interpreter['address'] ?? '';
-  $city = $interpreter['city'] ?? '';
-  $state = $interpreter['state'] ?? '';
-  $zip = $interpreter['zip'] ?? '';
-
-  // Document path
-  $file_path = $document['file_path'] ?? '';
-
-  $statusText = match ($enabled) {
-    1 => 'Apto',
-    0 => 'Inapto',
-    default => 'Aguardando aprovação',
-  };
-
-  $statusClass = match ($enabled) {
-    1 => 'status-approved',
-    0 => 'status-not-approved',
-    default => 'status-pending',
-  };
-
-  // Format date
-  $date = new DateTime($created_at);
-  $dateF = $date->format('d/m/Y H:i');
-  // Format called_at date
-  $called_at = $interpreter['called_at'] ?? null;
-  $calledDateF = '';
-  if ($called_at) {
-    $calledDate = new DateTime($called_at);
-    $calledDateF = $calledDate->format('d/m/Y H:i');
-  } else {
-    $calledDateF = 'Não chamado';
-  }
-  // Format filepath
-  $path = '';
-  if ($file_path) {
-    $string = $file_path;
-    $position = strpos($string, "interpretes");
-    if ($position !== false) {
-      $start = $position + strlen("interpretes/");
-      $path = substr($string, $start);
+    if (!$interpreter) {
+        throw new Exception("Intérprete não encontrado");
     }
-  }
+
+    // Extract data
+    $name = $interpreter['name'];
+    $document_number = $interpreter['document_number'];
+    $document_emissor = $interpreter['document_emissor'];
+    $document_uf = $interpreter['document_uf'];
+    $phone = $interpreter['phone'];
+    $cpf = $interpreter['cpf'];
+    $email = $interpreter['email'];
+    $special_needs = $interpreter['special_needs'];
+    $created_at = $interpreter['created_at'];
+    $called_at = $interpreter['called_at'];
+    $enabled = $interpreter['enabled'];
+    $scholarship = $interpreter['scholarship'] ?? '';
+
+    // Address
+    $address = $interpreter['street'] ?? '';
+    $city = $interpreter['city'] ?? '';
+    $state = $interpreter['state'] ?? '';
+    $zip = $interpreter['zip_code'] ?? '';
+
+    // Document path
+    $file_path = $interpreter['file_path'] ?? '';
+
+    $statusText = match ($enabled) {
+        1 => 'Apto',
+        0 => 'Inapto',
+        default => 'Aguardando aprovação',
+    };
+
+    $statusClass = match ($enabled) {
+        1 => 'status-approved',
+        0 => 'status-not-approved',
+        default => 'status-pending',
+    };
+
+    // Format date
+    $date = new DateTime($created_at);
+    $dateF = $date->format('d/m/Y H:i');
+    
+    // Format called_at date
+    $calledDateF = '';
+    if ($called_at) {
+        $calledDate = new DateTime($called_at);
+        $calledDateF = $calledDate->format('d/m/Y H:i');
+    } else {
+        $calledDateF = 'Não chamado';
+    }
+    
+    // Format filepath
+    $path = '';
+    if ($file_path) {
+        $string = $file_path;
+        $position = strpos($string, "interpretes");
+        if ($position !== false) {
+            $start = $position + strlen("interpretes/");
+            $path = substr($string, $start);
+        }
+    }
+
+    // Get evaluation status directly from the query result
+    $gese_eval = $interpreter['gese_evaluation'] ?? null;
+    $ped_eval = $interpreter['pedagogico_evaluation'] ?? null;
+
 } catch (Exception $e) {
-  echo '<div class="container">
+    // Include header only for error display
+    echo '<link rel="stylesheet" href="../styles/user.css">';
+    include '../components/header.php';
+    
+    echo '<div class="container">
             <h1 class="main-title">Erro</h1>
             <p>Erro ao carregar dados: ' . htmlspecialchars($e->getMessage()) . '</p>
             <a href="interpretes.php" class="btn btn-primary">Voltar para lista de intérpretes</a>
           </div>';
-  include '../components/footer.php';
-  exit();
+    include '../components/footer.php';
+    exit();
 }
+
+// MOVED: Include styles and header AFTER all redirects and data loading
+echo '<link rel="stylesheet" href="../styles/user.css">';
+include '../components/header.php';
 ?>
 
 <div class="container container-user">

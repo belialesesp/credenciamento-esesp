@@ -1,5 +1,5 @@
 <?php
-// backend/api/update_teacher_evaluation.php - FIXED VERSION FOR BOTH REGULAR AND POSTG TEACHERS
+// backend/api/update_teacher_evaluation.php - FIXED VERSION
 
 session_start();
 require_once __DIR__ . '/../classes/database.class.php';
@@ -11,7 +11,6 @@ header('Content-Type: application/json');
 // Logging for debugging
 $rawInput = file_get_contents('php://input');
 error_log("RAW INPUT: " . $rawInput);
-error_log("SESSION: " . print_r($_SESSION, true));
 
 try {
     // Check authentication
@@ -27,14 +26,13 @@ try {
         throw new Exception('Dados inválidos - campos faltando');
     }
     
-    // IMPORTANT: teacher_id is actually user_id in the new system
     $user_id = intval($data['teacher_id']); 
     $discipline_id = intval($data['discipline_id']);
     $evaluation_type = $data['evaluation_type'];
     $status = $data['status'] === null || $data['status'] === 'null' ? null : intval($data['status']);
     $evaluator_id = $_SESSION['user_id'];
     
-    error_log("PARSED VALUES: user_id=$user_id, discipline_id=$discipline_id, evaluation_type=$evaluation_type, status=" . var_export($status, true) . ", evaluator_id=$evaluator_id");
+    error_log("PARSED VALUES: user_id=$user_id, discipline_id=$discipline_id, evaluation_type=$evaluation_type, status=" . var_export($status, true));
     
     // Validate evaluation type
     if (!in_array($evaluation_type, ['gese', 'pedagogico'])) {
@@ -50,8 +48,6 @@ try {
     } elseif ($evaluation_type === 'pedagogico' && (in_array('pedagogico', $user_roles) || in_array('admin', $user_roles))) {
         $can_evaluate = true;
     }
-    
-    error_log("PERMISSION CHECK: can_evaluate=$can_evaluate, user_roles=" . implode(',', $user_roles));
     
     if (!$can_evaluate) {
         throw new Exception('Sem permissão para realizar esta avaliação');
@@ -69,30 +65,44 @@ try {
     $connection = new Database();
     $conn = $connection->connect();
     
-    // FIXED: Determine which table to update by checking user_roles
-    $checkRolesSql = "SELECT role FROM user_roles WHERE user_id = :user_id";
-    $checkRolesStmt = $conn->prepare($checkRolesSql);
-    $checkRolesStmt->execute([':user_id' => $user_id]);
-    $userRoles = $checkRolesStmt->fetchAll(PDO::FETCH_COLUMN);
+    // FIXED: Determine table by checking which table has this user_id + discipline_id combination
+    // First check teacher_disciplines (regular teachers)
+    $checkRegularSql = "SELECT COUNT(*) FROM teacher_disciplines WHERE user_id = :user_id AND discipline_id = :discipline_id";
+    $checkRegularStmt = $conn->prepare($checkRegularSql);
+    $checkRegularStmt->execute([':user_id' => $user_id, ':discipline_id' => $discipline_id]);
+    $existsInRegular = $checkRegularStmt->fetchColumn() > 0;
     
-    $isPostg = in_array('docente_pos', $userRoles);
-    $table = $isPostg ? 'postg_teacher_disciplines' : 'teacher_disciplines';
+    // Then check postg_teacher_disciplines (postgraduate teachers)
+    $checkPostgSql = "SELECT COUNT(*) FROM postg_teacher_disciplines WHERE user_id = :user_id AND discipline_id = :discipline_id";
+    $checkPostgStmt = $conn->prepare($checkPostgSql);
+    $checkPostgStmt->execute([':user_id' => $user_id, ':discipline_id' => $discipline_id]);
+    $existsInPostg = $checkPostgStmt->fetchColumn() > 0;
     
-    error_log("TABLE TO UPDATE: $table (isPostg: " . ($isPostg ? 'yes' : 'no') . ", userRoles: " . implode(',', $userRoles) . ")");
-    
-    // Check if record exists using user_id
-    $checkRecordSql = "SELECT COUNT(*) FROM $table WHERE user_id = :user_id AND discipline_id = :discipline_id";
-    $checkRecordStmt = $conn->prepare($checkRecordSql);
-    $checkRecordStmt->execute([':user_id' => $user_id, ':discipline_id' => $discipline_id]);
-    $recordExists = $checkRecordStmt->fetchColumn() > 0;
-    
-    if (!$recordExists) {
-        throw new Exception("Registro não encontrado na tabela $table para user_id=$user_id e discipline_id=$discipline_id");
+    // Determine which table to use based on where the record actually exists
+    if ($existsInRegular && !$existsInPostg) {
+        $table = 'teacher_disciplines';
+        $isPostg = false;
+    } elseif ($existsInPostg && !$existsInRegular) {
+        $table = 'postg_teacher_disciplines';
+        $isPostg = true;
+    } elseif ($existsInRegular && $existsInPostg) {
+        // Edge case: exists in both (shouldn't happen, but handle it)
+        // Prefer the table that matches the discipline table
+        $disciplineTableCheck = "SELECT COUNT(*) FROM postg_disciplinas WHERE id = :discipline_id";
+        $disciplineStmt = $conn->prepare($disciplineTableCheck);
+        $disciplineStmt->execute([':discipline_id' => $discipline_id]);
+        $isPostgDiscipline = $disciplineStmt->fetchColumn() > 0;
+        
+        $table = $isPostgDiscipline ? 'postg_teacher_disciplines' : 'teacher_disciplines';
+        $isPostg = $isPostgDiscipline;
+        error_log("WARNING: Record exists in both tables. Using $table based on discipline type.");
+    } else {
+        throw new Exception("Registro não encontrado em nenhuma tabela para user_id=$user_id e discipline_id=$discipline_id");
     }
     
-    error_log("RECORD EXISTS: yes");
+    error_log("TABLE TO UPDATE: $table (existsInRegular: $existsInRegular, existsInPostg: $existsInPostg)");
     
-    // Build update query - UPDATE USING user_id
+    // Build update query
     $column_prefix = $evaluation_type === 'gese' ? 'gese' : 'pedagogico';
     
     $sql = "
@@ -123,7 +133,7 @@ try {
     error_log("UPDATE RESULT: result=$result, rowsAffected=$rowsAffected");
     
     if ($rowsAffected === 0) {
-        error_log("WARNING: No rows were updated. This might mean the values are already the same.");
+        error_log("WARNING: No rows were updated. Values may already be the same.");
     }
     
     // Verify the update
@@ -159,3 +169,4 @@ try {
     ]);
     exit();
 }
+?>
