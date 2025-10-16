@@ -1,17 +1,15 @@
 <?php
-// backend/api/update_teacher_evaluation.php - FIXED VERSION FOR BOTH REGULAR AND POSTG TEACHERS
+// backend/api/update_staff_evaluation.php
+// New API endpoint for technician and interpreter evaluations
 
 session_start();
 require_once __DIR__ . '/../classes/database.class.php';
 
-// Clear any previous output
 ob_clean();
 header('Content-Type: application/json');
 
-// Logging for debugging
 $rawInput = file_get_contents('php://input');
-error_log("RAW INPUT: " . $rawInput);
-error_log("SESSION: " . print_r($_SESSION, true));
+error_log("STAFF EVALUATION - RAW INPUT: " . $rawInput);
 
 try {
     // Check authentication
@@ -20,21 +18,25 @@ try {
     }
     
     $data = json_decode($rawInput, true);
-    error_log("DECODED DATA: " . print_r($data, true));
+    error_log("STAFF EVALUATION - DECODED DATA: " . print_r($data, true));
     
-    if (empty($data) || !isset($data['teacher_id']) || !isset($data['discipline_id']) || 
+    if (empty($data) || !isset($data['user_id']) || !isset($data['user_type']) ||
         !isset($data['evaluation_type']) || !isset($data['status'])) {
         throw new Exception('Dados inválidos - campos faltando');
     }
     
-    // IMPORTANT: teacher_id is actually user_id in the new system
-    $user_id = intval($data['teacher_id']); 
-    $discipline_id = intval($data['discipline_id']);
-    $evaluation_type = $data['evaluation_type'];
+    $user_id = intval($data['user_id']);
+    $user_type = $data['user_type']; // 'technician' or 'interpreter'
+    $evaluation_type = $data['evaluation_type']; // 'gese' or 'pedagogico'
     $status = $data['status'] === null || $data['status'] === 'null' ? null : intval($data['status']);
     $evaluator_id = $_SESSION['user_id'];
     
-    error_log("PARSED VALUES: user_id=$user_id, discipline_id=$discipline_id, evaluation_type=$evaluation_type, status=" . var_export($status, true) . ", evaluator_id=$evaluator_id");
+    error_log("PARSED: user_id=$user_id, type=$user_type, eval=$evaluation_type, status=" . var_export($status, true));
+    
+    // Validate user type
+    if (!in_array($user_type, ['technician', 'interpreter'])) {
+        throw new Exception('Tipo de usuário inválido: ' . $user_type);
+    }
     
     // Validate evaluation type
     if (!in_array($evaluation_type, ['gese', 'pedagogico'])) {
@@ -51,15 +53,13 @@ try {
         $can_evaluate = true;
     }
     
-    error_log("PERMISSION CHECK: can_evaluate=$can_evaluate, user_roles=" . implode(',', $user_roles));
-    
     if (!$can_evaluate) {
         throw new Exception('Sem permissão para realizar esta avaliação');
     }
     
-    // Validate IDs
-    if ($user_id <= 0 || $discipline_id <= 0) {
-        throw new Exception('IDs inválidos: user_id=' . $user_id . ', discipline_id=' . $discipline_id);
+    // Validate IDs and status
+    if ($user_id <= 0) {
+        throw new Exception('ID de usuário inválido: ' . $user_id);
     }
     
     if ($status !== null && !in_array($status, [0, 1])) {
@@ -69,30 +69,19 @@ try {
     $connection = new Database();
     $conn = $connection->connect();
     
-    // FIXED: Determine which table to update by checking user_roles
-    $checkRolesSql = "SELECT role FROM user_roles WHERE user_id = :user_id";
-    $checkRolesStmt = $conn->prepare($checkRolesSql);
-    $checkRolesStmt->execute([':user_id' => $user_id]);
-    $userRoles = $checkRolesStmt->fetchAll(PDO::FETCH_COLUMN);
+    // Determine table name
+    $table = $user_type === 'technician' ? 'technician' : 'interpreter';
     
-    $isPostg = in_array('docente_pos', $userRoles);
-    $table = $isPostg ? 'postg_teacher_disciplines' : 'teacher_disciplines';
+    // Check if record exists
+    $checkSql = "SELECT COUNT(*) FROM $table WHERE id = :user_id";
+    $checkStmt = $conn->prepare($checkSql);
+    $checkStmt->execute([':user_id' => $user_id]);
     
-    error_log("TABLE TO UPDATE: $table (isPostg: " . ($isPostg ? 'yes' : 'no') . ", userRoles: " . implode(',', $userRoles) . ")");
-    
-    // Check if record exists using user_id
-    $checkRecordSql = "SELECT COUNT(*) FROM $table WHERE user_id = :user_id AND discipline_id = :discipline_id";
-    $checkRecordStmt = $conn->prepare($checkRecordSql);
-    $checkRecordStmt->execute([':user_id' => $user_id, ':discipline_id' => $discipline_id]);
-    $recordExists = $checkRecordStmt->fetchColumn() > 0;
-    
-    if (!$recordExists) {
-        throw new Exception("Registro não encontrado na tabela $table para user_id=$user_id e discipline_id=$discipline_id");
+    if ($checkStmt->fetchColumn() == 0) {
+        throw new Exception("Registro não encontrado na tabela $table para user_id=$user_id");
     }
     
-    error_log("RECORD EXISTS: yes");
-    
-    // Build update query - UPDATE USING user_id
+    // Build update query
     $column_prefix = $evaluation_type === 'gese' ? 'gese' : 'pedagogico';
     
     $sql = "
@@ -101,16 +90,14 @@ try {
             {$column_prefix}_evaluation = :status,
             {$column_prefix}_evaluated_at = :evaluated_at,
             {$column_prefix}_evaluated_by = :evaluator_id
-        WHERE user_id = :user_id 
-        AND discipline_id = :discipline_id
+        WHERE id = :user_id
     ";
     
     $params = [
         ':status' => $status,
         ':evaluated_at' => $status !== null ? date('Y-m-d H:i:s') : null,
         ':evaluator_id' => $status !== null ? $evaluator_id : null,
-        ':user_id' => $user_id,
-        ':discipline_id' => $discipline_id
+        ':user_id' => $user_id
     ];
     
     error_log("SQL: $sql");
@@ -122,14 +109,49 @@ try {
     
     error_log("UPDATE RESULT: result=$result, rowsAffected=$rowsAffected");
     
-    if ($rowsAffected === 0) {
-        error_log("WARNING: No rows were updated. This might mean the values are already the same.");
-    }
+    // Also update the enabled field based on both evaluations
+    $updateEnabledSql = "
+        UPDATE $table
+        SET enabled = CASE
+            WHEN {$column_prefix}_evaluation = 1 AND 
+                 (SELECT COUNT(*) FROM (SELECT 1) t WHERE 
+                  ({$column_prefix === 'gese' ? 'pedagogico' : 'gese'}_evaluation = 1 OR 
+                   {$column_prefix === 'gese' ? 'pedagogico' : 'gese'}_evaluation IS NULL)) > 0
+            THEN 
+                CASE 
+                    WHEN (SELECT {$column_prefix === 'gese' ? 'pedagogico' : 'gese'}_evaluation 
+                          FROM $table WHERE id = :user_id) = 1 THEN 1
+                    ELSE NULL
+                END
+            WHEN {$column_prefix}_evaluation = 0 THEN 0
+            ELSE NULL
+        END
+        WHERE id = :user_id
+    ";
+    
+    // Simpler approach - just update based on both evaluations
+    $updateEnabledSql = "
+        UPDATE $table t1
+        JOIN (SELECT id, gese_evaluation, pedagogico_evaluation FROM $table WHERE id = :user_id) t2
+        ON t1.id = t2.id
+        SET t1.enabled = CASE
+            WHEN t2.gese_evaluation = 1 AND t2.pedagogico_evaluation = 1 THEN 1
+            WHEN t2.gese_evaluation = 0 OR t2.pedagogico_evaluation = 0 THEN 0
+            ELSE NULL
+        END
+        WHERE t1.id = :user_id
+    ";
+    
+    $updateStmt = $conn->prepare($updateEnabledSql);
+    $updateStmt->execute([':user_id' => $user_id]);
     
     // Verify the update
-    $verifySql = "SELECT {$column_prefix}_evaluation, {$column_prefix}_evaluated_at, {$column_prefix}_evaluated_by, enabled FROM $table WHERE user_id = :user_id AND discipline_id = :discipline_id";
+    $verifySql = "SELECT {$column_prefix}_evaluation, {$column_prefix}_evaluated_at, 
+                         {$column_prefix}_evaluated_by, 
+                         gese_evaluation, pedagogico_evaluation, enabled 
+                  FROM $table WHERE id = :user_id";
     $verifyStmt = $conn->prepare($verifySql);
-    $verifyStmt->execute([':user_id' => $user_id, ':discipline_id' => $discipline_id]);
+    $verifyStmt->execute([':user_id' => $user_id]);
     $verifyResult = $verifyStmt->fetch(PDO::FETCH_ASSOC);
     
     error_log("VERIFICATION: " . print_r($verifyResult, true));

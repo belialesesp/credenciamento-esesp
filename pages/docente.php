@@ -373,72 +373,206 @@ if ($is_ajax_request) {
     <?php if ($is_admin): ?>
 
       function updateEvaluation(teacherId, disciplineId, evaluationType, status) {
-        const evaluationLabels = {
-          'gese': 'Avaliação Documental',
-          'pedagogico': 'Avaliação Pedagógica'
-        };
+  const evaluationLabels = {
+    'gese': 'Avaliação Documental',
+    'pedagogico': 'Avaliação Pedagógica'
+  };
 
-        const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar');
-        const evaluationLabel = evaluationLabels[evaluationType] || evaluationType;
+  const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar');
+  const evaluationLabel = evaluationLabels[evaluationType] || evaluationType;
 
-        const confirmMessage = `Tem certeza que deseja ${statusText} a ${evaluationLabel} para esta disciplina?`;
+  const confirmMessage = `Tem certeza que deseja ${statusText} a ${evaluationLabel} para esta disciplina?`;
 
-        if (!confirm(confirmMessage)) {
-          return;
-        }
+  if (!confirm(confirmMessage)) {
+    return;
+  }
 
-        // Show loading state
-        const buttons = event.target.parentElement.querySelectorAll('button');
-        buttons.forEach(btn => btn.disabled = true);
+  // Get the button that was clicked
+  const clickedButton = event.target;
+  const buttonContainer = clickedButton.closest('.discipline-actions');
+  const allButtons = buttonContainer.querySelectorAll('button');
+  
+  // Disable all buttons and show loading
+  allButtons.forEach(btn => {
+    btn.disabled = true;
+    if (btn === clickedButton) {
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+    }
+  });
 
-        fetch('../backend/api/update_teacher_evaluation.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              teacher_id: teacherId,
-              discipline_id: disciplineId,
-              evaluation_type: evaluationType,
-              status: status
-            })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              // Reload the section via AJAX
-              const url = new URL(window.location);
-              url.searchParams.set('ajax', '1');
-
-              fetch(url)
-                .then(response => response.text())
-                .then(html => {
-                  // Update the page content
-                  const parser = new DOMParser();
-                  const doc = parser.parseFromString(html, 'text/html');
-                  const newContent = doc.querySelector('.container');
-                  if (newContent) {
-                    document.querySelector('.container').innerHTML = newContent.innerHTML;
-                  }
-
-                  // Show success message
-                  showNotification(`${evaluationLabel} atualizada com sucesso!`, 'success');
-                })
-                .catch(error => {
-                  console.error('Error reloading content:', error);
-                  location.reload();
-                });
-            } else {
-              showNotification('Erro ao atualizar avaliação: ' + (data.message || 'Erro desconhecido'), 'danger');
-              buttons.forEach(btn => btn.disabled = false);
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            showNotification('Erro ao processar solicitação', 'danger');
-            buttons.forEach(btn => btn.disabled = false);
-          });
+  fetch('../backend/api/update_teacher_evaluation.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        teacher_id: teacherId,
+        discipline_id: disciplineId,
+        evaluation_type: evaluationType,
+        status: status
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showNotification(`${evaluationLabel} atualizada com sucesso!`, 'success');
+        
+        // Update the badges immediately without full page reload
+        updateEvaluationBadges(buttonContainer, evaluationType, status, data.verification);
+        
+        // Re-enable buttons based on new status
+        updateButtonStates(buttonContainer, evaluationType, status);
+      } else {
+        showNotification('Erro ao atualizar avaliação: ' + (data.message || 'Erro desconhecido'), 'danger');
+        
+        // Re-enable buttons on error
+        allButtons.forEach(btn => {
+          btn.disabled = false;
+          // Restore original button text
+          restoreButtonText(btn, evaluationType, status);
+        });
       }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showNotification('Erro ao processar solicitação', 'danger');
+      
+      // Re-enable buttons on error
+      allButtons.forEach(btn => {
+        btn.disabled = false;
+        restoreButtonText(btn, evaluationType, status);
+      });
+    });
+}
+
+function updateEvaluationBadges(container, evaluationType, status, verification) {
+  const badges = container.closest('.discipline-item').querySelector('.evaluation-status');
+  
+  if (evaluationType === 'gese') {
+    const geseBadge = badges.querySelector('span:first-child');
+    if (status === 1) {
+      geseBadge.className = 'badge bg-success';
+      geseBadge.textContent = 'Avaliação Documental: Aprovado';
+    } else if (status === 0) {
+      geseBadge.className = 'badge bg-danger';
+      geseBadge.textContent = 'Avaliação Documental: Reprovado';
+    } else {
+      geseBadge.className = 'badge bg-warning';
+      geseBadge.textContent = 'Avaliação Documental: Pendente';
+    }
+  } else if (evaluationType === 'pedagogico') {
+    const pedBadge = badges.querySelector('span:last-child');
+    if (status === 1) {
+      pedBadge.className = 'badge bg-success ms-2';
+      pedBadge.textContent = 'Avaliação Pedagógica: Aprovado';
+    } else if (status === 0) {
+      pedBadge.className = 'badge bg-danger ms-2';
+      pedBadge.textContent = 'Avaliação Pedagógica: Reprovado';
+    } else {
+      pedBadge.className = 'badge bg-warning ms-2';
+      pedBadge.textContent = 'Avaliação Pedagógica: Pendente';
+    }
+  }
+  
+  // Update the main status badge at the top
+  if (verification) {
+    updateMainStatusBadge(container, verification);
+  }
+}
+
+function updateMainStatusBadge(container, verification) {
+  const mainStatusBadge = container.closest('.discipline-item').querySelector('.user-status');
+  const geseEval = verification.gese_evaluation;
+  const pedEval = verification.pedagogico_evaluation;
+  
+  let statusText = 'Aguardando';
+  let statusClass = 'status-pending';
+  
+  if (geseEval !== null && pedEval !== null) {
+    if (geseEval === 1 && pedEval === 1) {
+      statusText = 'Apto';
+      statusClass = 'status-approved';
+    } else if (geseEval === 0 || pedEval === 0) {
+      statusText = 'Inapto';
+      statusClass = 'status-not-approved';
+    } else {
+      statusText = 'Em avaliação';
+      statusClass = 'status-pending';
+    }
+  } else if (geseEval !== null || pedEval !== null) {
+    statusText = 'Em avaliação';
+    statusClass = 'status-pending';
+  }
+  
+  mainStatusBadge.className = 'user-status ' + statusClass + ' ms-3';
+  mainStatusBadge.textContent = statusText;
+}
+
+function updateButtonStates(container, evaluationType, newStatus) {
+  // Find all buttons for this evaluation type
+  const buttons = container.querySelectorAll(`button[onclick*="${evaluationType}"]`);
+  
+  buttons.forEach(btn => {
+    const btnStatus = btn.onclick.toString().match(/,\s*(\d+|null)\s*\)/);
+    if (btnStatus) {
+      const btnStatusValue = btnStatus[1] === 'null' ? null : parseInt(btnStatus[1]);
+      
+      // Disable the button that matches the new status, enable others
+      if (btnStatusValue === newStatus) {
+        btn.disabled = true;
+      } else {
+        btn.disabled = false;
+      }
+      
+      // Restore original button text
+      restoreButtonText(btn, evaluationType, btnStatusValue);
+    }
+  });
+}
+
+function restoreButtonText(btn, evaluationType, status) {
+  // Restore original button text based on type and status
+  const icons = {
+    1: '<i class="fas fa-check"></i>',
+    0: '<i class="fas fa-times"></i>',
+    null: '<i class="fas fa-undo"></i>'
+  };
+  
+  const texts = {
+    gese: {
+      1: 'Aprovar Documentação',
+      0: 'Reprovar Documentação',
+      null: 'Resetar'
+    },
+    pedagogico: {
+      1: 'Aprovar Pedagogia',
+      0: 'Reprovar Pedagogia',
+      null: 'Resetar'
+    }
+  };
+  
+  const icon = icons[status] || icons[null];
+  const text = texts[evaluationType]?.[status] || 'Resetar';
+  
+  btn.innerHTML = `${icon} ${text}`;
+}
+
+function showNotification(message, type) {
+  // Create notification element
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+  alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+  alertDiv.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  document.body.appendChild(alertDiv);
+
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    alertDiv.remove();
+  }, 5000);
+}
 
       function showNotification(message, type) {
         const alertDiv = document.createElement('div');

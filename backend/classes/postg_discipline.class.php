@@ -6,40 +6,70 @@ class DisciplinePostg {
   public $name;
   public $post_graduation;
   public $eixo;
-  public $enabled; // Add this property for status
+  public $enabled;
+  public $called_at;
+  public $gese_evaluation;
+  public $gese_evaluated_at;
+  public $gese_evaluated_by;
+  public $pedagogico_evaluation;
+  public $pedagogico_evaluated_at;
+  public $pedagogico_evaluated_by;
 
-  public function __construct($id, $name, $post_graduation, $eixo, $enabled = null) {
+  public function __construct(
+    $id, 
+    $name, 
+    $post_graduation, 
+    $eixo, 
+    $enabled = null, 
+    $called_at = null,
+    $gese_evaluation = null,
+    $gese_evaluated_at = null,
+    $gese_evaluated_by = null,
+    $pedagogico_evaluation = null,
+    $pedagogico_evaluated_at = null,
+    $pedagogico_evaluated_by = null
+  ) {
     $this->id = $id;
     $this->name = $name;
     $this->post_graduation = $post_graduation;
     $this->eixo = $eixo;
-    $this->enabled = $enabled; // Initialize enabled status
+    $this->enabled = $enabled;
+    $this->called_at = $called_at;
+    $this->gese_evaluation = $gese_evaluation;
+    $this->gese_evaluated_at = $gese_evaluated_at;
+    $this->gese_evaluated_by = $gese_evaluated_by;
+    $this->pedagogico_evaluation = $pedagogico_evaluation;
+    $this->pedagogico_evaluated_at = $pedagogico_evaluated_at;
+    $this->pedagogico_evaluated_by = $pedagogico_evaluated_by;
   }
 
-  // Add the missing getId() method
   public function getId() {
     return $this->id;
   }
 
-  // Add status text method
   public function getStatusText() {
-    return match ($this->enabled) {
-      1 => 'Apto',
-      0 => 'Inapto',
-      default => 'Aguardando aprovação', 
-    };
+    if ($this->gese_evaluation === null || $this->pedagogico_evaluation === null) {
+      return 'Aguardando avaliações';
+    }
+    if ($this->gese_evaluation === 1 && $this->pedagogico_evaluation === 1) {
+      return 'Apto';
+    }
+    if ($this->gese_evaluation === 0 || $this->pedagogico_evaluation === 0) {
+      return 'Inapto';
+    }
+    return 'Em avaliação';
   }
 
-  // Add status class method for CSS styling
   public function getStatusClass() {
-    return match ($this->enabled) {
-      1 => 'status-approved',
-      0 => 'status-not-approved',
-      default => 'status-pending',
-    };
+    if ($this->gese_evaluation === null || $this->pedagogico_evaluation === null) {
+      return 'status-pending';
+    }
+    if ($this->gese_evaluation === 1 && $this->pedagogico_evaluation === 1) {
+      return 'status-approved';
+    }
+    return 'status-not-approved';
   }
 
-  // Add method to update status
   public function updateStatus($status) {
     $this->enabled = $status;
   }

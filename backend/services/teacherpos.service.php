@@ -100,55 +100,69 @@ class TeacherPostGService
     }
 
     function getTeacherPostGDisciplines($user_id)
-    {
-        $sql = "
-            SELECT
-                d.id AS discipline_id,
-                d.name AS discipline_name,
-                ex.name AS eixo_name,
-                pg.name AS postg_name,
-                dt.enabled AS discipline_status,
-                dt.called_at AS discipline_called_at
-            FROM 
-                postg_disciplinas AS d
-            LEFT JOIN 
-                postg_eixo AS ex ON ex.id = d.eixo_id
-            LEFT JOIN
-                postgraduation AS pg ON ex.postg_id = pg.id
-            LEFT JOIN 
-                postg_teacher_disciplines AS dt ON dt.discipline_id = d.id AND dt.user_id = :user_id
-            WHERE 
-                EXISTS (SELECT 1 FROM postg_teacher_disciplines WHERE discipline_id = d.id AND user_id = :user_id)
-            GROUP BY d.id, d.name, ex.name, pg.name, dt.enabled, dt.called_at
-            ORDER BY ex.name, d.name
-        ";
+{
+    $sql = "
+        SELECT
+            d.id AS discipline_id,
+            d.name AS discipline_name,
+            ex.name AS eixo_name,
+            pg.name AS postg_name,
+            dt.enabled AS discipline_status,
+            dt.called_at AS discipline_called_at,
+            dt.gese_evaluation,
+            dt.gese_evaluated_at,
+            dt.gese_evaluated_by,
+            dt.pedagogico_evaluation,
+            dt.pedagogico_evaluated_at,
+            dt.pedagogico_evaluated_by
+        FROM 
+            postg_disciplinas AS d
+        LEFT JOIN 
+            postg_eixo AS ex ON ex.id = d.eixo_id
+        LEFT JOIN
+            postgraduation AS pg ON ex.postg_id = pg.id
+        LEFT JOIN 
+            postg_teacher_disciplines AS dt ON dt.discipline_id = d.id AND dt.user_id = :user_id
+        WHERE 
+            EXISTS (SELECT 1 FROM postg_teacher_disciplines WHERE discipline_id = d.id AND user_id = :user_id)
+        GROUP BY d.id, d.name, ex.name, pg.name, dt.enabled, dt.called_at, 
+                 dt.gese_evaluation, dt.gese_evaluated_at, dt.gese_evaluated_by,
+                 dt.pedagogico_evaluation, dt.pedagogico_evaluated_at, dt.pedagogico_evaluated_by
+        ORDER BY ex.name, d.name
+    ";
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
-        $stmt->execute();
+    $stmt = $this->db->prepare($sql);
+    $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+    $stmt->execute();
 
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $disciplines = [];
-        $post_graduation = [];
+    $disciplines = [];
+    $post_graduation = [];
 
-        foreach ($results as $result) {
-            $disciplines[] = new DisciplinePostg(
-                $result["discipline_id"],
-                $result["discipline_name"],
-                $result["postg_name"],
-                $result["eixo_name"],
-                $result["discipline_status"],
-                $result["discipline_called_at"]
-            );
+    foreach ($results as $result) {
+        $disciplines[] = new DisciplinePostg(
+            $result["discipline_id"],
+            $result["discipline_name"],
+            $result["postg_name"],
+            $result["eixo_name"],
+            $result["discipline_status"],
+            $result["discipline_called_at"],
+            $result["gese_evaluation"] ?? null,
+            $result["gese_evaluated_at"] ?? null,
+            $result["gese_evaluated_by"] ?? null,
+            $result["pedagogico_evaluation"] ?? null,
+            $result["pedagogico_evaluated_at"] ?? null,
+            $result["pedagogico_evaluated_by"] ?? null
+        );
 
-            if (!in_array($result['postg_name'], $post_graduation)) {
-                $post_graduation[] = $result['postg_name'];
-            }
+        if (!in_array($result['postg_name'], $post_graduation)) {
+            $post_graduation[] = $result['postg_name'];
         }
-
-        return array($disciplines, $post_graduation);
     }
+
+    return array($disciplines, $post_graduation);
+}
 
     function getTeacherLectures($user_id)
     {

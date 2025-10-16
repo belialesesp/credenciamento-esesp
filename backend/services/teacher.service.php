@@ -100,74 +100,86 @@ class TeacherService
     }
 
     function getTeacherDisciplines($user_id)
-    {
-        $sql = "
-            SELECT
-                d.id AS discipline_id,
-                d.name AS discipline_name,
-                eixo.name AS eixo_name,
-                est.name AS estacao_name,
-                dt.enabled AS discipline_status,
-                dt.called_at AS discipline_called_at
-            FROM 
-                disciplinas AS d
-            LEFT JOIN 
-                estacao AS est ON est.id = d.estacao_id
-            LEFT JOIN 
-                eixo ON eixo.id = est.eixo_id
-            LEFT JOIN 
-                teacher_disciplines AS dt ON dt.discipline_id = d.id AND dt.user_id = :user_id
-            WHERE 
-                EXISTS (SELECT 1 FROM teacher_disciplines WHERE discipline_id = d.id AND user_id = :user_id)
-            GROUP BY d.id
-        ";
+{
+    $sql = "
+        SELECT
+            d.id AS discipline_id,
+            d.name AS discipline_name,
+            eixo.name AS eixo_name,
+            est.name AS estacao_name,
+            dt.enabled AS discipline_status,
+            dt.called_at AS discipline_called_at,
+            dt.gese_evaluation,
+            dt.gese_evaluated_at,
+            dt.gese_evaluated_by,
+            dt.pedagogico_evaluation,
+            dt.pedagogico_evaluated_at,
+            dt.pedagogico_evaluated_by
+        FROM 
+            disciplinas AS d
+        LEFT JOIN 
+            estacao AS est ON est.id = d.estacao_id
+        LEFT JOIN 
+            eixo ON eixo.id = est.eixo_id
+        LEFT JOIN 
+            teacher_disciplines AS dt ON dt.discipline_id = d.id AND dt.user_id = :user_id
+        WHERE 
+            EXISTS (SELECT 1 FROM teacher_disciplines WHERE discipline_id = d.id AND user_id = :user_id)
+        GROUP BY d.id
+    ";
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->execute();
+    $stmt = $this->db->prepare($sql);
+    $stmt->bindParam(':user_id', $user_id);
+    $stmt->execute();
+    
+    $disciplines = [];
+    
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        // Get modules for this discipline
+        $module_sql = "
+            SELECT 
+                m.name AS module_name 
+            FROM 
+                module AS m
+            INNER JOIN 
+                teacher_module AS tm ON tm.module_id = m.id
+            WHERE 
+                tm.user_id = :user_id 
+                AND m.discipline_id = :discipline_id
+        ";
         
-        $disciplines = [];
+        $module_stmt = $this->db->prepare($module_sql);
+        $module_stmt->bindParam(':user_id', $user_id);
+        $module_stmt->bindParam(':discipline_id', $row["discipline_id"]);
+        $module_stmt->execute();
         
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            // Get modules for this discipline
-            $module_sql = "
-                SELECT 
-                    m.name AS module_name 
-                FROM 
-                    module AS m
-                INNER JOIN 
-                    teacher_module AS tm ON tm.module_id = m.id
-                WHERE 
-                    tm.user_id = :user_id 
-                    AND m.discipline_id = :discipline_id
-            ";
-            
-            $module_stmt = $this->db->prepare($module_sql);
-            $module_stmt->bindParam(':user_id', $user_id);
-            $module_stmt->bindParam(':discipline_id', $row["discipline_id"]);
-            $module_stmt->execute();
-            
-            $modules = [];
-            while ($module_row = $module_stmt->fetch(PDO::FETCH_ASSOC)) {
-                $modules[] = $module_row["module_name"];
-            }
-            
-            // Create discipline object with current structure
-            $discipline = new Discipline(
-                $row["discipline_id"],
-                $row["discipline_name"],
-                $row["eixo_name"] ?? '',
-                $row["estacao_name"] ?? '',
-                $modules,
-                $row["discipline_status"],
-                $row["discipline_called_at"] ?? null
-            );
-            
-            $disciplines[] = $discipline;
+        $modules = [];
+        while ($module_row = $module_stmt->fetch(PDO::FETCH_ASSOC)) {
+            $modules[] = $module_row["module_name"];
         }
         
-        return $disciplines;
+        // Create discipline object with ALL evaluation fields
+        $discipline = new Discipline(
+            $row["discipline_id"],
+            $row["discipline_name"],
+            $row["eixo_name"] ?? '',
+            $row["estacao_name"] ?? '',
+            $modules,
+            $row["discipline_status"],
+            $row["discipline_called_at"] ?? null,
+            $row["gese_evaluation"] ?? null,
+            $row["gese_evaluated_at"] ?? null,
+            $row["gese_evaluated_by"] ?? null,
+            $row["pedagogico_evaluation"] ?? null,
+            $row["pedagogico_evaluated_at"] ?? null,
+            $row["pedagogico_evaluated_by"] ?? null
+        );
+        
+        $disciplines[] = $discipline;
     }
+    
+    return $disciplines;
+}
 
     function getTeacherEducation($user_id)
     {

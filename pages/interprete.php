@@ -31,7 +31,7 @@ if (!$requested_id) {
 if ($is_admin) {
   // Admin can see all profiles
   $interpreter_id = $requested_id;
-} elseif (hasRole('interprete') && $_SESSION['user_id'] == $requested_id){
+} elseif (hasRole('interprete') && $_SESSION['user_id'] == $requested_id) {
   // User viewing their own profile
   $interpreter_id = $requested_id;
   $is_own_profile = true;
@@ -283,68 +283,89 @@ try {
 
   <?php if ($is_admin): ?>
     <div class="info-section">
-      <h3>Status do Intérprete</h3>
-      <div class="row mb-3">
-        <div class="col-3">
-          <strong>Status:</strong>
-          <span class="user-status <?= $statusClass ?>"><?= $statusText ?></span>
-        </div>
-      </div>
+      <h3>Avaliação</h3>
       <div class="row">
         <div class="col-12">
-          <button type="button"
-            class="btn btn-success mr-2"
-            onclick="updateInterpreterStatus(<?= $interpreter_id ?>, 1)"
-            <?= $enabled == 1 ? 'disabled' : '' ?>>
-            <i class="fas fa-check"></i> Aprovar
-          </button>
-          <button type="button"
-            class="btn btn-danger"
-            onclick="updateInterpreterStatus(<?= $interpreter_id ?>, 0)"
-            <?= $enabled == 0 ? 'disabled' : '' ?>>
-            <i class="fas fa-times"></i> Reprovar
-          </button>
-          <button type="button"
-            class="btn btn-secondary"
-            onclick="updateInterpreterStatus(<?= $interpreter_id ?>, null)"
-            <?= $enabled === null ? 'disabled' : '' ?>>
-            <i class="fas fa-undo"></i> Resetar status
-          </button>
+          <p><strong>Status Atual:</strong>
+            <span class="user-status <?= $statusClass ?>"><?= $statusText ?></span>
+          </p>
         </div>
       </div>
+
+      <?php
+      // Get evaluation status
+      $gese_eval = $interpreter['gese_evaluation'] ?? null;
+      $ped_eval = $interpreter['pedagogico_evaluation'] ?? null;
+
+      $show_gese = isGESE() || (isAdmin() && hasRole('gese'));
+      $show_ped = isPedagogico() || (isAdmin() && hasRole('pedagogico'));
+      ?>
+
+      <!-- Show evaluation status badges -->
+      <div class="evaluation-status mb-3">
+        <span class="badge <?= $gese_eval === 1 ? 'bg-success' : ($gese_eval === 0 ? 'bg-danger' : 'bg-warning') ?>">
+          Avaliação Documental: <?= $gese_eval === 1 ? 'Aprovado' : ($gese_eval === 0 ? 'Reprovado' : 'Pendente') ?>
+        </span>
+        <span class="badge <?= $ped_eval === 1 ? 'bg-success' : ($ped_eval === 0 ? 'bg-danger' : 'bg-warning') ?> ms-2">
+          Avaliação Pedagógica: <?= $ped_eval === 1 ? 'Aprovado' : ($ped_eval === 0 ? 'Reprovado' : 'Pendente') ?>
+        </span>
+      </div>
+
+      <!-- GESE Evaluation Buttons -->
+      <?php if ($show_gese): ?>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Avaliação Documental (GESE):</label>
+          <div class="btn-group" role="group">
+            <button type="button"
+              class="btn btn-success"
+              onclick="updateEvaluation(<?= $requested_id ?>, 'gese', 1)"
+              <?= $gese_eval === 1 ? 'disabled' : '' ?>>
+              <i class="fas fa-check"></i> Aprovar Documentação
+            </button>
+            <button type="button"
+              class="btn btn-danger"
+              onclick="updateEvaluation(<?= $requested_id ?>, 'gese', 0)"
+              <?= $gese_eval === 0 ? 'disabled' : '' ?>>
+              <i class="fas fa-times"></i> Reprovar Documentação
+            </button>
+            <button type="button"
+              class="btn btn-secondary"
+              onclick="updateEvaluation(<?= $requested_id ?>, 'gese', null)"
+              <?= $gese_eval === null ? 'disabled' : '' ?>>
+              <i class="fas fa-undo"></i> Resetar
+            </button>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <!-- Pedagogico Evaluation Buttons -->
+      <?php if ($show_ped): ?>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Avaliação Pedagógica (Pedagógico):</label>
+          <div class="btn-group" role="group">
+            <button type="button"
+              class="btn btn-success"
+              onclick="updateEvaluation(<?= $requested_id ?>, 'pedagogico', 1)"
+              <?= $ped_eval === 1 ? 'disabled' : '' ?>>
+              <i class="fas fa-check"></i> Aprovar Pedagogia
+            </button>
+            <button type="button"
+              class="btn btn-danger"
+              onclick="updateEvaluation(<?= $requested_id ?>, 'pedagogico', 0)"
+              <?= $ped_eval === 0 ? 'disabled' : '' ?>>
+              <i class="fas fa-times"></i> Reprovar Pedagogia
+            </button>
+            <button type="button"
+              class="btn btn-secondary"
+              onclick="updateEvaluation(<?= $requested_id ?>, 'pedagogico', null)"
+              <?= $ped_eval === null ? 'disabled' : '' ?>>
+              <i class="fas fa-undo"></i> Resetar
+            </button>
+          </div>
+        </div>
+      <?php endif; ?>
     </div>
-    <style>
-      /* Add this CSS to fix the button display */
-      .info-section .btn {
-        margin-right: 10px;
-        margin-top: 5px;
-      }
-
-      .user-status {
-        font-weight: bold;
-        font-size: 1.1em;
-      }
-
-      .user-status.status-approved {
-        color: #28a745;
-      }
-
-      .user-status.status-not-approved {
-        color: #dc3545;
-      }
-
-      .user-status.status-pending {
-        color: #ffc107;
-      }
-
-      /* Ensure buttons are displayed inline */
-      .info-section .row .col-12 {
-        display: flex;
-        align-items: center;
-      }
-    </style>
   <?php endif; ?>
-
 </div>
 
 <?php
@@ -378,67 +399,168 @@ include '../components/footer.php';
   });
 
   <?php if ($is_admin): ?>
-  function updateInterpreterStatus(interpreterId, status) {
-    const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar o status');
-    
-    if (confirm(`Tem certeza que deseja ${statusText} o intérprete?`)) {
-      fetch('../backend/api/update_interpreter_status.php', {
+
+    function updateEvaluation(userId, evaluationType, status) {
+      const evaluationLabels = {
+        'gese': 'Avaliação Documental',
+        'pedagogico': 'Avaliação Pedagógica'
+      };
+
+      const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar');
+      const evaluationLabel = evaluationLabels[evaluationType] || evaluationType;
+
+      if (!confirm(`Tem certeza que deseja ${statusText} a ${evaluationLabel}?`)) {
+        return;
+      }
+
+      const clickedButton = event.target;
+      const buttonGroup = clickedButton.closest('.btn-group');
+      const allButtons = buttonGroup.querySelectorAll('button');
+
+      allButtons.forEach(btn => {
+        btn.disabled = true;
+        if (btn === clickedButton) {
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+        }
+      });
+
+      fetch('../backend/api/update_staff_evaluation.php', {
           method: 'POST',
           headers: {
-            'Content-type': 'application/json'
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            interpreter_id: interpreterId,
-            status: status === null ? 'null' : status
+            user_id: userId,
+            user_type: 'interpreter',
+            evaluation_type: evaluationType,
+            status: status
           })
         })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            // Fix: Get the buttons correctly
-            const statusElement = document.querySelector('.user-status');
-            const enableButton = document.querySelector('button[onclick*="updateInterpreterStatus"][onclick*=", 1)"]');
-            const disableButton = document.querySelector('button[onclick*="updateInterpreterStatus"][onclick*=", 0)"]');
-            const resetButton = document.querySelector('button[onclick*="updateInterpreterStatus"][onclick*=", null)"]');
+            showNotification(`${evaluationLabel} atualizada com sucesso!`, 'success');
 
-            // Determine new status text and class
-            let newStatusText, newStatusClass;
-            if (status === 1) {
-              newStatusText = 'Apto';
-              newStatusClass = 'status-approved';
-            } else if (status === 0) {
-              newStatusText = 'Inapto';
-              newStatusClass = 'status-not-approved';
-            } else {
-              newStatusText = 'Aguardando aprovação';
-              newStatusClass = 'status-pending';
-            }
-
-            // Update status display
-            statusElement.textContent = newStatusText;
-            statusElement.className = 'user-status ' + newStatusClass;
-
-            // Update button states
-            if (enableButton) enableButton.disabled = (status === 1);
-            if (disableButton) disableButton.disabled = (status === 0);
-            if (resetButton) resetButton.disabled = (status === null);
-
-            Toastify({
-              text: "Status atualizado!",
-              className: "statusToast",
-              style: {
-                background: "#38b000",
-              },
-            }).showToast();
+            updateEvaluationBadges(evaluationType, status, data.verification);
+            updateButtonStates(buttonGroup, status);
           } else {
-            alert('Erro ao atualizar status: ' + (data.message || 'Unknown error'));
+            showNotification('Erro: ' + (data.message || 'Erro desconhecido'), 'danger');
+            allButtons.forEach(btn => {
+              btn.disabled = false;
+              restoreButtonText(btn, evaluationType, status);
+            });
           }
         })
         .catch(error => {
           console.error('Error:', error);
-          alert('Erro ao atualizar status.');
+          showNotification('Erro ao processar solicitação', 'danger');
+          allButtons.forEach(btn => {
+            btn.disabled = false;
+            restoreButtonText(btn, evaluationType, status);
+          });
         });
     }
-  }
-<?php endif; ?>
+
+    function updateEvaluationBadges(evaluationType, status, verification) {
+      const badges = document.querySelector('.evaluation-status');
+
+      if (evaluationType === 'gese') {
+        const geseBadge = badges.querySelector('span:first-child');
+        if (status === 1) {
+          geseBadge.className = 'badge bg-success';
+          geseBadge.textContent = 'Avaliação Documental: Aprovado';
+        } else if (status === 0) {
+          geseBadge.className = 'badge bg-danger';
+          geseBadge.textContent = 'Avaliação Documental: Reprovado';
+        } else {
+          geseBadge.className = 'badge bg-warning';
+          geseBadge.textContent = 'Avaliação Documental: Pendente';
+        }
+      } else if (evaluationType === 'pedagogico') {
+        const pedBadge = badges.querySelector('span:last-child');
+        if (status === 1) {
+          pedBadge.className = 'badge bg-success ms-2';
+          pedBadge.textContent = 'Avaliação Pedagógica: Aprovado';
+        } else if (status === 0) {
+          pedBadge.className = 'badge bg-danger ms-2';
+          pedBadge.textContent = 'Avaliação Pedagógica: Reprovado';
+        } else {
+          pedBadge.className = 'badge bg-warning ms-2';
+          pedBadge.textContent = 'Avaliação Pedagógica: Pendente';
+        }
+      }
+
+      if (verification) {
+        updateMainStatusBadge(verification);
+      }
+    }
+
+    function updateMainStatusBadge(verification) {
+      const mainStatusBadge = document.querySelector('.user-status');
+      const geseEval = verification.gese_evaluation;
+      const pedEval = verification.pedagogico_evaluation;
+
+      let statusText = 'Aguardando aprovação';
+      let statusClass = 'status-pending';
+
+      if (geseEval !== null && pedEval !== null) {
+        if (geseEval === 1 && pedEval === 1) {
+          statusText = 'Apto';
+          statusClass = 'status-approved';
+        } else if (geseEval === 0 || pedEval === 0) {
+          statusText = 'Inapto';
+          statusClass = 'status-not-approved';
+        }
+      }
+
+      mainStatusBadge.className = 'user-status ' + statusClass;
+      mainStatusBadge.textContent = statusText;
+    }
+
+    function updateButtonStates(buttonGroup, newStatus) {
+      const buttons = buttonGroup.querySelectorAll('button');
+
+      buttons.forEach(btn => {
+        const btnStatus = btn.onclick.toString().match(/,\s*(\d+|null)\s*\)/);
+        if (btnStatus) {
+          const btnStatusValue = btnStatus[1] === 'null' ? null : parseInt(btnStatus[1]);
+          btn.disabled = (btnStatusValue === newStatus);
+          restoreButtonText(btn, null, btnStatusValue);
+        }
+      });
+    }
+
+    function restoreButtonText(btn, evaluationType, status) {
+      const icons = {
+        1: '<i class="fas fa-check"></i>',
+        0: '<i class="fas fa-times"></i>',
+        null: '<i class="fas fa-undo"></i>'
+      };
+
+      const texts = {
+        1: ['Aprovar Documentação', 'Aprovar Pedagogia'],
+        0: ['Reprovar Documentação', 'Reprovar Pedagogia'],
+        null: ['Resetar', 'Resetar']
+      };
+
+      const icon = icons[status] || icons[null];
+      const isGese = btn.onclick.toString().includes("'gese'");
+      const textIndex = isGese ? 0 : 1;
+      const text = texts[status]?.[textIndex] || 'Resetar';
+
+      btn.innerHTML = `${icon} ${text}`;
+    }
+
+    function showNotification(message, type) {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+      alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+      alertDiv.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+      document.body.appendChild(alertDiv);
+      setTimeout(() => alertDiv.remove(), 5000);
+    }
+  <?php endif; ?>
 </script>
