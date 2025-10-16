@@ -1,6 +1,6 @@
 <?php
 // backend/api/update_staff_evaluation.php
-// New API endpoint for technician and interpreter evaluations
+// API endpoint for technician and interpreter evaluations - FIXED for unified user table
 
 session_start();
 require_once __DIR__ . '/../classes/database.class.php';
@@ -28,7 +28,7 @@ try {
     $user_id = intval($data['user_id']);
     $user_type = $data['user_type']; // 'technician' or 'interpreter'
     $evaluation_type = $data['evaluation_type']; // 'gese' or 'pedagogico'
-    $status = $data['status'] === null || $data['status'] === 'null' ? null : intval($data['status']);
+    $status = ($data['status'] === null || $data['status'] === 'null') ? null : intval($data['status']);
     $evaluator_id = $_SESSION['user_id'];
     
     error_log("PARSED: user_id=$user_id, type=$user_type, eval=$evaluation_type, status=" . var_export($status, true));
@@ -69,16 +69,19 @@ try {
     $connection = new Database();
     $conn = $connection->connect();
     
-    // Determine table name
-    $table = $user_type === 'technician' ? 'technician' : 'interpreter';
+    // FIXED: Use the unified 'user' table instead of separate technician/interpreter tables
+    $table = 'user';
     
-    // Check if record exists
-    $checkSql = "SELECT COUNT(*) FROM $table WHERE id = :user_id";
+    // Verify the user exists and has the correct role
+    $role = $user_type === 'technician' ? 'tecnico' : 'interprete';
+    $checkSql = "SELECT COUNT(*) FROM user u 
+                 INNER JOIN user_roles ur ON u.id = ur.user_id 
+                 WHERE u.id = :user_id AND ur.role = :role";
     $checkStmt = $conn->prepare($checkSql);
-    $checkStmt->execute([':user_id' => $user_id]);
+    $checkStmt->execute([':user_id' => $user_id, ':role' => $role]);
     
     if ($checkStmt->fetchColumn() == 0) {
-        throw new Exception("Registro não encontrado na tabela $table para user_id=$user_id");
+        throw new Exception("Usuário não encontrado ou não possui a função de $user_type (user_id=$user_id)");
     }
     
     // Build update query
@@ -109,27 +112,7 @@ try {
     
     error_log("UPDATE RESULT: result=$result, rowsAffected=$rowsAffected");
     
-    // Also update the enabled field based on both evaluations
-    $updateEnabledSql = "
-        UPDATE $table
-        SET enabled = CASE
-            WHEN {$column_prefix}_evaluation = 1 AND 
-                 (SELECT COUNT(*) FROM (SELECT 1) t WHERE 
-                  ({$column_prefix === 'gese' ? 'pedagogico' : 'gese'}_evaluation = 1 OR 
-                   {$column_prefix === 'gese' ? 'pedagogico' : 'gese'}_evaluation IS NULL)) > 0
-            THEN 
-                CASE 
-                    WHEN (SELECT {$column_prefix === 'gese' ? 'pedagogico' : 'gese'}_evaluation 
-                          FROM $table WHERE id = :user_id) = 1 THEN 1
-                    ELSE NULL
-                END
-            WHEN {$column_prefix}_evaluation = 0 THEN 0
-            ELSE NULL
-        END
-        WHERE id = :user_id
-    ";
-    
-    // Simpler approach - just update based on both evaluations
+    // Update the enabled field based on both evaluations
     $updateEnabledSql = "
         UPDATE $table t1
         JOIN (SELECT id, gese_evaluation, pedagogico_evaluation FROM $table WHERE id = :user_id) t2
@@ -169,6 +152,18 @@ try {
     echo json_encode($response);
     exit();
     
+} catch (PDOException $e) {
+    $errorMessage = "Erro de banco de dados: " . $e->getMessage();
+    error_log("PDO ERROR CAUGHT: " . $errorMessage);
+    error_log("ERROR TRACE: " . $e->getTraceAsString());
+    
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => $errorMessage,
+        'error_type' => 'database'
+    ]);
+    exit();
 } catch (Exception $e) {
     $errorMessage = $e->getMessage();
     error_log("ERROR CAUGHT: " . $errorMessage);
@@ -177,7 +172,8 @@ try {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => $errorMessage
+        'message' => $errorMessage,
+        'error_type' => 'general'
     ]);
     exit();
 }
