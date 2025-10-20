@@ -141,7 +141,7 @@ require_once '../components/header.php';
 
 <script>
   // Define admin users for client-side validation
-  const adminUsers = ['credenciamento', 'gese', 'pedagogico'];
+  const adminUsers = ['credenciamento', 'gese', 'pedagogico', 'gedth'];
   
   // CPF Mask with special case for admin
   document.getElementById('cpf').addEventListener('input', function(e) {

@@ -10,7 +10,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $isAdmin = false;
 if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
-  $isAdmin = in_array('admin', $_SESSION['user_roles']);
+  $is_admin = isAdministrativeRole();
 }
 // Helper function to truncate text
 function truncate_text($text, $length = 50)
@@ -518,6 +518,51 @@ $_SESSION['user-data'] = $technicians;
   </div>
 </div>
 <script>
+  // Always add these at the top:
+  const userRoles = <?php echo json_encode($_SESSION['user_roles'] ?? []); ?>;
+
+  function canSendInvites() {
+    return userRoles.includes('admin') || userRoles.includes('gedth');
+  }
+
+  function canViewContractInfo() {
+    return userRoles.includes('admin') || userRoles.includes('gese');
+  }
+
+  // For page access check:
+  const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
+
+  // Function to check if user can send invites (admin or GEDTH only)
+  function canSendInvites() {
+    return userRoles.includes('admin') || userRoles.includes('gedth');
+  }
+
+  // Function to check if user can view/edit contract info (admin or GESE only)
+  function canViewContractInfo() {
+    return userRoles.includes('admin') || userRoles.includes('gese');
+  }
+  if (invitationStatus.is_accepted) {
+    const acceptedSpan = document.createElement('span');
+    acceptedSpan.className = 'invitation-accepted';
+    acceptedSpan.textContent = 'Contratado';
+    acceptedSpan.style.marginLeft = '10px';
+    nameCell.appendChild(acceptedSpan);
+
+    // Only show contract textarea if user can view contract info
+    if (canViewContractInfo()) {
+      // ... existing contract textarea code
+    }
+  } else if (canSendInvites() && user.enabled == 1) {
+    // Show invite button for admin and GEDTH
+    const inviteBtn = document.createElement('button');
+    inviteBtn.className = 'action-button';
+    inviteBtn.textContent = 'Enviar Convite';
+    inviteBtn.onclick = (e) => {
+      e.stopPropagation();
+      openInvitationModal(user.id, user.name, user.email);
+    };
+    nameCell.appendChild(inviteBtn);
+  }
   let allTechnicians = <?= json_encode($technicians) ?>;
   let currentUsers = [...allTechnicians];
   let currentSort = {
@@ -525,7 +570,6 @@ $_SESSION['user-data'] = $technicians;
     direction: 'desc'
   };
   let invitationStatuses = {};
-  const isAdmin = <?= json_encode($isAdmin) ?>;
 
 
 
@@ -820,28 +864,6 @@ $_SESSION['user-data'] = $technicians;
       userInvitationStatuses[user.id] = await checkInvitationStatus(user.id);
     }
 
-    // Find the user who should get the invite button
-    let userToInvite = null;
-    for (const user of sortedUsers) {
-      // Only consider "Apto" users
-      if (user.enabled != 1) continue;
-
-      const invitationStatus = userInvitationStatuses[user.id];
-
-      // If no invitation status found or user has no pending/accepted/rejected invitations
-      if (!invitationStatus ||
-        (!invitationStatus.has_pending &&
-          !invitationStatus.is_accepted &&
-          !invitationStatus.is_rejected)) {
-        userToInvite = user;
-        break;
-      }
-    }
-
-    // DEBUG: Log the final userToInvite
-    console.log('User to invite:', userToInvite);
-    console.log('All invitation statuses:', userInvitationStatuses);
-
     // Now render using the sorted users array
     for (const user of sortedUsers) {
       const enabled = user.enabled == 1 ? 'Apto' :
@@ -882,12 +904,6 @@ $_SESSION['user-data'] = $technicians;
       // Get invitation status from our pre-fetched data
       const invitationStatus = userInvitationStatuses[user.id];
 
-      // DEBUG: Log each user's status
-      console.log(`User ${user.id} (${user.name}) status:`, invitationStatus);
-      console.log(`Should show button for this user?`, userToInvite && userToInvite.id == user.id);
-      console.log(`User is Apto?`, user.enabled == 1);
-      console.log(`Is admin?`, isAdmin);
-
       // Add invitation status indicators and buttons
       if (invitationStatus) {
         if (invitationStatus.has_pending) {
@@ -897,47 +913,49 @@ $_SESSION['user-data'] = $technicians;
           pendingSpan.style.marginLeft = '10px';
           nameCell.appendChild(pendingSpan);
         } else if (invitationStatus.is_accepted) {
-          // Contract info code stays the same
           const acceptedSpan = document.createElement('span');
           acceptedSpan.className = 'invitation-accepted';
           acceptedSpan.textContent = 'Contratado';
           acceptedSpan.style.marginLeft = '10px';
           nameCell.appendChild(acceptedSpan);
 
-          // Add contract textarea for accepted staff
-          const contractDiv = document.createElement('div');
-          contractDiv.style.display = 'inline-block';
-          contractDiv.style.marginLeft = '10px';
+          // Only show contract textarea if user can view contract info
+          if (canViewContractInfo()) {
+            // Add contract textarea for accepted staff
+            const contractDiv = document.createElement('div');
+            contractDiv.style.display = 'inline-block';
+            contractDiv.style.marginLeft = '10px';
 
-          const label = document.createElement('label');
-          label.className = 'contract-label';
-          label.textContent = 'Contrato:';
+            const label = document.createElement('label');
+            label.className = 'contract-label';
+            label.textContent = 'Contrato:';
 
-          const textarea = document.createElement('textarea');
-          textarea.className = 'contract-textarea';
-          textarea.placeholder = 'Informações do contrato...';
-          textarea.value = invitationStatus.contract_info || '';
+            const textarea = document.createElement('textarea');
+            textarea.className = 'contract-textarea';
+            textarea.placeholder = 'Informações do contrato...';
+            textarea.value = invitationStatus.contract_info || '';
 
-          const saveBtn = document.createElement('button');
-          saveBtn.className = 'contract-save-btn';
-          saveBtn.textContent = 'Salvar';
-          saveBtn.onclick = (e) => {
-            e.stopPropagation();
-            saveContractInfo(user.id, textarea.value);
-          };
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'contract-save-btn';
+            saveBtn.textContent = 'Salvar';
+            saveBtn.onclick = (e) => {
+              e.stopPropagation();
+              saveContractInfo(user.id, textarea.value);
+            };
 
-          contractDiv.appendChild(label);
-          contractDiv.appendChild(textarea);
-          contractDiv.appendChild(saveBtn);
-          nameCell.appendChild(contractDiv);
+            contractDiv.appendChild(label);
+            contractDiv.appendChild(textarea);
+            contractDiv.appendChild(saveBtn);
+            nameCell.appendChild(contractDiv);
+          }
         } else if (invitationStatus.is_rejected) {
           const rejectedSpan = document.createElement('span');
           rejectedSpan.className = 'invitation-rejected';
           rejectedSpan.textContent = 'Recusado';
           rejectedSpan.style.marginLeft = '10px';
           nameCell.appendChild(rejectedSpan);
-        } else if (isAdmin && user.enabled == 1) {
-          // SHOW INVITE BUTTON for ALL APTO technicians without any invitation status
+        } else if (canSendInvites() && user.enabled == 1) {
+          // Show invite button for admin and GEDTH (no pending, rejected, or accepted status)
           const inviteBtn = document.createElement('button');
           inviteBtn.className = 'action-button';
           inviteBtn.textContent = 'Enviar Convite';
@@ -947,7 +965,7 @@ $_SESSION['user-data'] = $technicians;
           };
           nameCell.appendChild(inviteBtn);
         }
-      } else if (isAdmin && user.enabled == 1) {
+      } else if (canSendInvites() && user.enabled == 1) {
         // If no invitation status at all, show button for APTO users
         const inviteBtn = document.createElement('button');
         inviteBtn.className = 'action-button';
@@ -958,6 +976,7 @@ $_SESSION['user-data'] = $technicians;
         };
         nameCell.appendChild(inviteBtn);
       }
+
       row.appendChild(nameCell);
 
       // Email cell
@@ -993,6 +1012,31 @@ $_SESSION['user-data'] = $technicians;
 
       tbody.appendChild(row);
     }
+  }
+
+  // Helper function to parse dates in different formats
+  function parseDate(dateString) {
+    if (!dateString) return new Date(NaN);
+
+    if (dateString.includes('/')) {
+      // Handle "DD/MM/YYYY" format
+      const [day, month, year] = dateString.split('/');
+      return new Date(`${year}-${month}-${day}`);
+    } else if (dateString.includes('-')) {
+      // Handle "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" format
+      return new Date(dateString);
+    } else {
+      console.warn('Unknown date format:', dateString);
+      return new Date(NaN);
+    }
+  }
+
+  // Title case function
+  function titleCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/(?:^|\s)\w/g, function(match) {
+      return match.toUpperCase();
+    });
   }
   // Helper function to parse dates in different formats
   function parseDate(dateString) {

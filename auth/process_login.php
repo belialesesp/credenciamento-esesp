@@ -19,7 +19,7 @@ function processUnifiedLogin($cpf, $password)
         $cleanCpf = preg_replace('/[^0-9]/', '', $cpf);
 
         // Special case for admin login
-        $adminUsers = ['credenciamento', 'gese', 'pedagogico'];
+        $adminUsers = ['credenciamento', 'gese', 'pedagogico', 'gedth'];
         $isAdminLogin = false;
         $adminUser = '';
 

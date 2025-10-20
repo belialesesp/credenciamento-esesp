@@ -21,15 +21,9 @@ $connection = new Database();
 $conn = $connection->connect();
 
 // Check if user is admin
-$is_admin = false;
-if (isset($_SESSION['user_id'])) {
-  $admin_check = $conn->prepare("
-        SELECT COUNT(*) 
-        FROM user_roles 
-        WHERE user_id = ? AND role = 'admin'
-    ");
-  $admin_check->execute([$_SESSION['user_id']]);
-  $is_admin = ($admin_check->fetchColumn() > 0);
+$isAdmin = false;
+if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
+  $is_admin = isAdministrativeRole();
 }
 
 // Get requested ID from URL
@@ -272,9 +266,8 @@ ob_start();
 
           <?php
           // Check if user should see evaluation buttons
-          $show_gese = isGESE() || (isAdmin() && hasRole('gese'));
-          $show_ped = isPedagogico() || (isAdmin() && hasRole('pedagogico'));
-          $show_old_admin = isAdmin() && !hasRole('gese') && !hasRole('pedagogico');
+          $show_gese = (isGESE() || (isAdmin() && !isGEDTH())) && !isGEDTH();
+          $show_ped = (isPedagogico() || (isAdmin() && !isGEDTH())) && !isGEDTH();
           ?>
 
           <?php if ($show_gese || $show_ped || $show_old_admin): ?>
@@ -445,6 +438,18 @@ ob_start();
 </div>
 
 <script>
+  const userRoles = <?php echo json_encode($_SESSION['user_roles'] ?? []); ?>;
+  // Function to check if user can send invites (admin or GEDTH only)
+  function canSendInvites() {
+    return userRoles.includes('admin') || userRoles.includes('gedth');
+  }
+
+  // Function to check if user can view/edit contract info (admin or GESE only)
+  function canViewContractInfo() {
+    return userRoles.includes('admin') || userRoles.includes('gese');
+  }
+  const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
+
   function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
     const icon = document.getElementById(fieldId + '_icon');

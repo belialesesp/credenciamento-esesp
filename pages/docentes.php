@@ -12,7 +12,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $isAdmin = false;
 if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
-  $isAdmin = in_array('admin', $_SESSION['user_roles']);
+  $is_admin = isAdministrativeRole();
 }
 // Helper function to truncate text
 function truncate_text($text, $length = 50)
@@ -582,6 +582,19 @@ $_SESSION['user-data'] = $teachers;
 </div>
 
 <script>
+  // Always add these at the top:
+  const userRoles = <?php echo json_encode($_SESSION['user_roles'] ?? []); ?>;
+
+  function canSendInvites() {
+    return userRoles.includes('admin') || userRoles.includes('gedth');
+  }
+
+  function canViewContractInfo() {
+    return userRoles.includes('admin') || userRoles.includes('gese');
+  }
+
+  // For page access check:
+  const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
   let allTeachers = <?php echo json_encode($teachers); ?>;
   let currentTeachers = [...allTeachers];
   let isFilteredByCourse = false;
@@ -594,7 +607,7 @@ $_SESSION['user-data'] = $teachers;
 
     return !!(category || course || status || name);
   }
-  const isAdmin = <?php echo json_encode($isAdmin); ?>;
+
   let invitationStatuses = {};
   // Add this function to get hours passed from sent_at date
   function getHoursPassedFromDate(sentAtDate) {
@@ -857,36 +870,43 @@ $_SESSION['user-data'] = $teachers;
             pendingSpan.textContent = 'Aguardando resposta';
             nameCell.appendChild(pendingSpan);
           } else if (isAcceptedTeacher) {
-            // Contract info logic (unchanged)
-            const contractDiv = document.createElement('div');
-            contractDiv.style.display = 'inline-block';
-            contractDiv.style.marginLeft = '10px';
+            // Only show contract info if user can view it (admin or GESE)
+            if (canViewContractInfo()) {
+              const contractDiv = document.createElement('div');
+              contractDiv.style.display = 'inline-block';
+              contractDiv.style.marginLeft = '10px';
 
-            const label = document.createElement('label');
-            label.className = 'contract-label';
-            label.textContent = 'Contratado:';
+              const label = document.createElement('label');
+              label.className = 'contract-label';
+              label.textContent = 'Contratado:';
 
-            const textarea = document.createElement('textarea');
-            textarea.className = 'contract-textarea';
-            textarea.placeholder = 'Informações do contrato...';
-            textarea.value = invitationStatus.accepted_teachers[teacherId.toString()] || '';
+              const textarea = document.createElement('textarea');
+              textarea.className = 'contract-textarea';
+              textarea.placeholder = 'Informações do contrato...';
+              textarea.value = invitationStatus.accepted_teachers[teacherId.toString()] || '';
 
-            const saveBtn = document.createElement('button');
-            saveBtn.className = 'contract-save-btn';
-            saveBtn.textContent = 'Salvar';
-            saveBtn.onclick = (e) => {
-              e.stopPropagation();
-              saveContractInfo(teacher.id, selectedCourseId, textarea.value);
-            };
+              const saveBtn = document.createElement('button');
+              saveBtn.className = 'contract-save-btn';
+              saveBtn.textContent = 'Salvar';
+              saveBtn.onclick = (e) => {
+                e.stopPropagation();
+                saveContractInfo(teacher.id, selectedCourseId, textarea.value);
+              };
 
-            contractDiv.appendChild(label);
-            contractDiv.appendChild(textarea);
-            contractDiv.appendChild(saveBtn);
-            nameCell.appendChild(contractDiv);
-          } else if (hasAptoStatus && isAdmin) {
-            // CHANGED: Show invite button for ALL apto teachers
-            // Removed the invitationHandled check completely
-
+              contractDiv.appendChild(label);
+              contractDiv.appendChild(textarea);
+              contractDiv.appendChild(saveBtn);
+              nameCell.appendChild(contractDiv);
+            } else {
+              // For GEDTH and Pedagogico, just show "Contratado" status
+              const acceptedSpan = document.createElement('span');
+              acceptedSpan.className = 'invitation-accepted';
+              acceptedSpan.textContent = 'Contratado';
+              acceptedSpan.style.marginLeft = '10px';
+              nameCell.appendChild(acceptedSpan);
+            }
+          } else if (hasAptoStatus && canSendInvites()) {
+            // Show invite button for admin and GEDTH
             const actionButton = document.createElement('button');
             actionButton.className = 'action-button';
             actionButton.textContent = 'Enviar Convite';
@@ -904,8 +924,6 @@ $_SESSION['user-data'] = $teachers;
             };
 
             nameCell.appendChild(actionButton);
-
-
           }
         }
 

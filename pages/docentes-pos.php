@@ -12,7 +12,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $isAdmin = false;
 if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
-  $isAdmin = in_array('admin', $_SESSION['user_roles']);
+  $is_admin = isAdministrativeRole();
 }
 // Helper function to truncate text
 function truncate_text($text, $length = 50)
@@ -600,6 +600,19 @@ Coordenação de Cursos
   </div>
 </div>
 <script>
+  // Always add these at the top:
+  const userRoles = <?php echo json_encode($_SESSION['user_roles'] ?? []); ?>;
+
+  function canSendInvites() {
+    return userRoles.includes('admin') || userRoles.includes('gedth');
+  }
+
+  function canViewContractInfo() {
+    return userRoles.includes('admin') || userRoles.includes('gese');
+  }
+
+  // For page access check:
+  const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
   let allTeachers = <?php echo json_encode($teachers); ?>;
   let currentTeachers = [...allTeachers];
   let isFilteredByCourse = false;
@@ -612,7 +625,7 @@ Coordenação de Cursos
 
     return !!(category || course || status || name);
   }
-  const isAdmin = <?php echo json_encode($isAdmin); ?>;
+
   let invitationStatuses = {};
   // Add this function to get hours passed from sent_at date
   function getHoursPassedFromDate(sentAtDate) {
@@ -1012,43 +1025,43 @@ Coordenação de Cursos
 
   async function fetchFilteredData() {
 
-  const category = document.getElementById('category').value;
-  const course = document.getElementById('course').value;
-  const status = document.getElementById('status').value;
-  const name = document.getElementById('name').value;
+    const category = document.getElementById('category').value;
+    const course = document.getElementById('course').value;
+    const status = document.getElementById('status').value;
+    const name = document.getElementById('name').value;
 
-  // Update isFilteredByCourse flag
-  isFilteredByCourse = course !== '';
+    // Update isFilteredByCourse flag
+    isFilteredByCourse = course !== '';
 
-  // ALWAYS clear invitation statuses when filters change or data is refreshed
-  invitationStatuses = {};
+    // ALWAYS clear invitation statuses when filters change or data is refreshed
+    invitationStatuses = {};
 
-  if (!category && !course && !status && !name) {
-    currentTeachers = [...allTeachers];
-    await updateTable();
-    return;
+    if (!category && !course && !status && !name) {
+      currentTeachers = [...allTeachers];
+      await updateTable();
+      return;
+    }
+
+    const queryParams = new URLSearchParams();
+    if (category) queryParams.append('category', category);
+    if (course) queryParams.append('course', course);
+    if (status) queryParams.append('status', status);
+    if (name) queryParams.append('name', name);
+
+    try {
+      // FIXED: Changed from get_filtered_teachers.php to get_filtered_teachers_postg.php
+      const response = await fetch('../backend/api/get_filtered_teachers_postg.php?' + queryParams);
+      const data = await response.json();
+
+      currentTeachers = data;
+      await updateTable();
+    } catch (error) {
+      console.error('Error fetching filtered data:', error);
+      currentTeachers = [];
+      await updateTable();
+    }
+
   }
-
-  const queryParams = new URLSearchParams();
-  if (category) queryParams.append('category', category);
-  if (course) queryParams.append('course', course);
-  if (status) queryParams.append('status', status);
-  if (name) queryParams.append('name', name);
-
-  try {
-    // FIXED: Changed from get_filtered_teachers.php to get_filtered_teachers_postg.php
-    const response = await fetch('../backend/api/get_filtered_teachers_postg.php?' + queryParams);
-    const data = await response.json();
-
-    currentTeachers = data;
-    await updateTable();
-  } catch (error) {
-    console.error('Error fetching filtered data:', error);
-    currentTeachers = [];
-    await updateTable();
-  }
-
-}
 
   setInterval(async () => {
     if (isFilteredByCourse) {

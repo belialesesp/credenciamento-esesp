@@ -28,7 +28,7 @@ if ($user_id) {
 }
 
 // Check if user is admin
-$is_admin = in_array('admin', $user_roles);
+$is_admin = isAdministrativeRole();
 
 // Get primary role for display (or use the first role)
 $primary_role = !empty($user_roles) ? $user_roles[0] : 'user';

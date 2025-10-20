@@ -5,8 +5,20 @@ require_once '../classes/database.class.php';
 
 header('Content-Type: application/json');
 
-// Check if user is logged in and is admin
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Acesso não autorizado']);
+    exit;
+}
+
+// Check if user has permission to edit contract info
+// Only admin and GESE can edit contract info
+$user_roles = $_SESSION['user_roles'] ?? [];
+$is_admin = in_array('admin', $user_roles);
+$is_gese = in_array('gese', $user_roles);
+
+// Check if user has permission (admin or GESE only)
+if (!$is_admin && !$is_gese) {
     echo json_encode(['success' => false, 'message' => 'Acesso não autorizado']);
     exit;
 }

@@ -9,8 +9,10 @@ if (session_status() === PHP_SESSION_NONE) {
   session_start();
 }
 
-// Check if user is admin using session-stored roles
-$isAdmin = $_SESSION['is_admin'] ?? false;
+$isAdmin = false;
+if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
+  $is_admin = isAdministrativeRole();
+}
 
 // Helper function to truncate text
 function truncate_text($text, $length = 50)
@@ -467,6 +469,30 @@ $_SESSION['user-data'] = $interpreters;
 </div>
 
 <script>
+  // Always add these at the top:
+  const userRoles = <?php echo json_encode($_SESSION['user_roles'] ?? []); ?>;
+
+  function canSendInvites() {
+    return userRoles.includes('admin') || userRoles.includes('gedth');
+  }
+
+  function canViewContractInfo() {
+    return userRoles.includes('admin') || userRoles.includes('gese');
+  }
+
+  // For page access check:
+  const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
+
+  // Function to check if user can send invites (admin or GEDTH only)
+  function canSendInvites() {
+    return userRoles.includes('admin') || userRoles.includes('gedth');
+  }
+
+  // Function to check if user can view/edit contract info (admin or GESE only)
+  function canViewContractInfo() {
+    return userRoles.includes('admin') || userRoles.includes('gese');
+  }
+
   // Global variables for sorting
   let allInterpreters = <?= json_encode($interpreters) ?>;
   let currentInterpreters = [...allInterpreters];
@@ -475,7 +501,6 @@ $_SESSION['user-data'] = $interpreters;
     direction: 'desc'
   };
   let invitationStatuses = {};
-  const isAdmin = <?= json_encode($isAdmin) ?>;
 
   // Modal functions
   function openInvitationModal(userId, userName, userEmail) {
@@ -564,7 +589,7 @@ $_SESSION['user-data'] = $interpreters;
       formData.append('teacher_id', userId); // Note: using teacher_id as expected by backend
       formData.append('contract_info', contractInfo);
       formData.append('is_staff', 'true');
-      
+
       const response = await fetch('../backend/api/save_contract_info.php', {
         method: 'POST',
         body: formData
@@ -840,40 +865,42 @@ $_SESSION['user-data'] = $interpreters;
           acceptedSpan.style.marginLeft = '10px';
           nameCell.appendChild(acceptedSpan);
 
-          // Add contract textarea for accepted staff
-          const contractDiv = document.createElement('div');
-          contractDiv.style.display = 'inline-block';
-          contractDiv.style.marginLeft = '10px';
+          // Only show contract textarea if user can view contract info
+          if (canViewContractInfo()) {
+            // Add contract textarea for accepted staff
+            const contractDiv = document.createElement('div');
+            contractDiv.style.display = 'inline-block';
+            contractDiv.style.marginLeft = '10px';
 
-          const label = document.createElement('label');
-          label.className = 'contract-label';
-          label.textContent = 'Contrato:';
+            const label = document.createElement('label');
+            label.className = 'contract-label';
+            label.textContent = 'Contrato:';
 
-          const textarea = document.createElement('textarea');
-          textarea.className = 'contract-textarea';
-          textarea.placeholder = 'Informações do contrato...';
-          textarea.value = invitationStatus.contract_info || '';
+            const textarea = document.createElement('textarea');
+            textarea.className = 'contract-textarea';
+            textarea.placeholder = 'Informações do contrato...';
+            textarea.value = invitationStatus.contract_info || '';
 
-          const saveBtn = document.createElement('button');
-          saveBtn.className = 'contract-save-btn';
-          saveBtn.textContent = 'Salvar';
-          saveBtn.onclick = (e) => {
-            e.stopPropagation();
-            saveContractInfo(interpreter.id, textarea.value);
-          };
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'contract-save-btn';
+            saveBtn.textContent = 'Salvar';
+            saveBtn.onclick = (e) => {
+              e.stopPropagation();
+              saveContractInfo(user.id, textarea.value);
+            };
 
-          contractDiv.appendChild(label);
-          contractDiv.appendChild(textarea);
-          contractDiv.appendChild(saveBtn);
-          nameCell.appendChild(contractDiv);
+            contractDiv.appendChild(label);
+            contractDiv.appendChild(textarea);
+            contractDiv.appendChild(saveBtn);
+            nameCell.appendChild(contractDiv);
+          }
         } else if (invitationStatus.is_rejected) {
           const rejectedSpan = document.createElement('span');
           rejectedSpan.className = 'invitation-rejected';
           rejectedSpan.textContent = 'Recusado';
           rejectedSpan.style.marginLeft = '10px';
           nameCell.appendChild(rejectedSpan);
-        } else if (isAdmin && interpreter.enabled == 1) {
-
+        } else if (canSendInvites() && user.enabled == 1) {
           const inviteBtn = document.createElement('button');
           inviteBtn.className = 'action-button';
           inviteBtn.textContent = 'Enviar Convite';

@@ -26,15 +26,9 @@ require_once '../backend/services/technician.service.php';
 $connection = new Database();
 $conn = $connection->connect();
 
-$is_admin = false;
-if (isset($_SESSION['user_id'])) {
-    $admin_check = $conn->prepare("
-        SELECT COUNT(*) 
-        FROM user_roles 
-        WHERE user_id = ? AND role = 'admin'
-    ");
-    $admin_check->execute([$_SESSION['user_id']]);
-    $is_admin = ($admin_check->fetchColumn() > 0);
+$isAdmin = false;
+if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
+    $is_admin = isAdministrativeRole();
 }
 
 $requested_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -114,7 +108,7 @@ try {
 
     $addressObj = $technician->address;
     $addressStr = '';
-    
+
     if ($addressObj) {
         if (method_exists($addressObj, '__toString')) {
             $addressStr = (string) $addressObj;
@@ -126,7 +120,7 @@ try {
             }
         } else {
             $parts = [];
-            
+
             if ($addressObj->street) {
                 $streetPart = titleCase($addressObj->street);
                 if ($addressObj->number) {
@@ -137,23 +131,23 @@ try {
                 }
                 $parts[] = $streetPart;
             }
-            
+
             if ($addressObj->neighborhood) {
                 $parts[] = titleCase($addressObj->neighborhood);
             }
-            
+
             if ($addressObj->city && $addressObj->state) {
                 $parts[] = titleCase($addressObj->city) . ' - ' . strtoupper($addressObj->state);
             }
-            
+
             if ($addressObj->zip) {
                 $parts[] = 'CEP: ' . $addressObj->zip;
             }
-            
+
             $addressStr = implode(', ', $parts);
         }
     }
-    
+
     if (empty($addressStr)) {
         $addressStr = 'Não informado';
     }
@@ -177,10 +171,9 @@ try {
     $eval_stmt = $conn->prepare($eval_sql);
     $eval_stmt->execute([$requested_id]);
     $eval_data = $eval_stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     $gese_eval = $eval_data['gese_evaluation'] ?? null;
     $ped_eval = $eval_data['pedagogico_evaluation'] ?? null;
-
 } catch (Exception $e) {
     if ($is_ajax_request) {
         echo '<div class="alert alert-danger">Erro ao carregar dados do técnico: ' . htmlspecialchars($e->getMessage()) . '</div>';
@@ -323,9 +316,9 @@ if ($is_ajax_request) {
                         <label for="current_password">Senha Atual</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="current_password"
-                                   name="current_password" required>
+                                name="current_password" required>
                             <button class="btn btn-outline-secondary" type="button"
-                                    onclick="togglePassword('current_password')" tabindex="-1">
+                                onclick="togglePassword('current_password')" tabindex="-1">
                                 <i class="fas fa-eye" id="current_password_icon"></i>
                             </button>
                         </div>
@@ -340,9 +333,9 @@ if ($is_ajax_request) {
                         <label for="new_password">Nova Senha</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="new_password"
-                                   name="new_password" required minlength="8">
+                                name="new_password" required minlength="8">
                             <button class="btn btn-outline-secondary" type="button"
-                                    onclick="togglePassword('new_password')" tabindex="-1">
+                                onclick="togglePassword('new_password')" tabindex="-1">
                                 <i class="fas fa-eye" id="new_password_icon"></i>
                             </button>
                         </div>
@@ -355,9 +348,9 @@ if ($is_ajax_request) {
                         <label for="confirm_password">Confirmar Nova Senha</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="confirm_password"
-                                   name="confirm_password" required>
+                                name="confirm_password" required>
                             <button class="btn btn-outline-secondary" type="button"
-                                    onclick="togglePassword('confirm_password')" tabindex="-1">
+                                onclick="togglePassword('confirm_password')" tabindex="-1">
                                 <i class="fas fa-eye" id="confirm_password_icon"></i>
                             </button>
                         </div>
@@ -374,15 +367,15 @@ if ($is_ajax_request) {
             <h3>Avaliação</h3>
             <div class="row">
                 <div class="col-12">
-                    <p><strong>Status Atual:</strong> 
+                    <p><strong>Status Atual:</strong>
                         <span class="user-status <?= $statusClass ?>"><?= $statusText ?></span>
                     </p>
                 </div>
             </div>
 
             <?php
-            $show_gese = isGESE() || (isAdmin() && hasRole('gese'));
-            $show_ped = isPedagogico() || (isAdmin() && hasRole('pedagogico'));
+            $show_gese = (isGESE() || (isAdmin() && !isGEDTH())) && !isGEDTH();
+            $show_ped = (isPedagogico() || (isAdmin() && !isGEDTH())) && !isGEDTH();
             ?>
 
             <!-- Show evaluation status badges -->
@@ -453,6 +446,20 @@ if ($is_ajax_request) {
 </div>
 
 <script>
+    // Always add these at the top:
+    const userRoles = <?php echo json_encode($_SESSION['user_roles'] ?? []); ?>;
+
+    function canSendInvites() {
+        return userRoles.includes('admin') || userRoles.includes('gedth');
+    }
+
+    function canViewContractInfo() {
+        return userRoles.includes('admin') || userRoles.includes('gese');
+    }
+
+    // For page access check:
+    const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
+
     function togglePassword(fieldId) {
         const field = document.getElementById(fieldId);
         const icon = document.getElementById(fieldId + '_icon');
@@ -469,168 +476,169 @@ if ($is_ajax_request) {
     }
 
     <?php if ($is_admin): ?>
-    function updateEvaluation(userId, evaluationType, status) {
-        const evaluationLabels = {
-            'gese': 'Avaliação Documental',
-            'pedagogico': 'Avaliação Pedagógica'
-        };
 
-        const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar');
-        const evaluationLabel = evaluationLabels[evaluationType] || evaluationType;
+        function updateEvaluation(userId, evaluationType, status) {
+            const evaluationLabels = {
+                'gese': 'Avaliação Documental',
+                'pedagogico': 'Avaliação Pedagógica'
+            };
 
-        if (!confirm(`Tem certeza que deseja ${statusText} a ${evaluationLabel}?`)) {
-            return;
-        }
+            const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar');
+            const evaluationLabel = evaluationLabels[evaluationType] || evaluationType;
 
-        const clickedButton = event.target;
-        const buttonGroup = clickedButton.closest('.btn-group');
-        const allButtons = buttonGroup.querySelectorAll('button');
-        
-        allButtons.forEach(btn => {
-            btn.disabled = true;
-            if (btn === clickedButton) {
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+            if (!confirm(`Tem certeza que deseja ${statusText} a ${evaluationLabel}?`)) {
+                return;
             }
-        });
 
-        fetch('../backend/api/update_staff_evaluation.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    user_type: 'technician',
-                    evaluation_type: evaluationType,
-                    status: status
+            const clickedButton = event.target;
+            const buttonGroup = clickedButton.closest('.btn-group');
+            const allButtons = buttonGroup.querySelectorAll('button');
+
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                if (btn === clickedButton) {
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+                }
+            });
+
+            fetch('../backend/api/update_staff_evaluation.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        user_type: 'technician',
+                        evaluation_type: evaluationType,
+                        status: status
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification(`${evaluationLabel} atualizada com sucesso!`, 'success');
-                    
-                    updateEvaluationBadges(evaluationType, status, data.verification);
-                    updateButtonStates(buttonGroup, status);
-                } else {
-                    showNotification('Erro: ' + (data.message || 'Erro desconhecido'), 'danger');
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification(`${evaluationLabel} atualizada com sucesso!`, 'success');
+
+                        updateEvaluationBadges(evaluationType, status, data.verification);
+                        updateButtonStates(buttonGroup, status);
+                    } else {
+                        showNotification('Erro: ' + (data.message || 'Erro desconhecido'), 'danger');
+                        allButtons.forEach(btn => {
+                            btn.disabled = false;
+                            restoreButtonText(btn, evaluationType, status);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Erro ao processar solicitação', 'danger');
                     allButtons.forEach(btn => {
                         btn.disabled = false;
                         restoreButtonText(btn, evaluationType, status);
                     });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('Erro ao processar solicitação', 'danger');
-                allButtons.forEach(btn => {
-                    btn.disabled = false;
-                    restoreButtonText(btn, evaluationType, status);
                 });
+        }
+
+        function updateEvaluationBadges(evaluationType, status, verification) {
+            const badges = document.querySelector('.evaluation-status');
+
+            if (evaluationType === 'gese') {
+                const geseBadge = badges.querySelector('span:first-child');
+                if (status === 1) {
+                    geseBadge.className = 'badge bg-success';
+                    geseBadge.textContent = 'Avaliação Documental: Aprovado';
+                } else if (status === 0) {
+                    geseBadge.className = 'badge bg-danger';
+                    geseBadge.textContent = 'Avaliação Documental: Reprovado';
+                } else {
+                    geseBadge.className = 'badge bg-warning';
+                    geseBadge.textContent = 'Avaliação Documental: Pendente';
+                }
+            } else if (evaluationType === 'pedagogico') {
+                const pedBadge = badges.querySelector('span:last-child');
+                if (status === 1) {
+                    pedBadge.className = 'badge bg-success ms-2';
+                    pedBadge.textContent = 'Avaliação Pedagógica: Aprovado';
+                } else if (status === 0) {
+                    pedBadge.className = 'badge bg-danger ms-2';
+                    pedBadge.textContent = 'Avaliação Pedagógica: Reprovado';
+                } else {
+                    pedBadge.className = 'badge bg-warning ms-2';
+                    pedBadge.textContent = 'Avaliação Pedagógica: Pendente';
+                }
+            }
+
+            if (verification) {
+                updateMainStatusBadge(verification);
+            }
+        }
+
+        function updateMainStatusBadge(verification) {
+            const mainStatusBadge = document.querySelector('.user-status');
+            const geseEval = verification.gese_evaluation;
+            const pedEval = verification.pedagogico_evaluation;
+
+            let statusText = 'Aguardando aprovação';
+            let statusClass = 'status-pending';
+
+            if (geseEval !== null && pedEval !== null) {
+                if (geseEval === 1 && pedEval === 1) {
+                    statusText = 'Apto';
+                    statusClass = 'status-approved';
+                } else if (geseEval === 0 || pedEval === 0) {
+                    statusText = 'Inapto';
+                    statusClass = 'status-not-approved';
+                }
+            }
+
+            mainStatusBadge.className = 'user-status ' + statusClass;
+            mainStatusBadge.textContent = statusText;
+        }
+
+        function updateButtonStates(buttonGroup, newStatus) {
+            const buttons = buttonGroup.querySelectorAll('button');
+
+            buttons.forEach(btn => {
+                const btnStatus = btn.onclick.toString().match(/,\s*(\d+|null)\s*\)/);
+                if (btnStatus) {
+                    const btnStatusValue = btnStatus[1] === 'null' ? null : parseInt(btnStatus[1]);
+                    btn.disabled = (btnStatusValue === newStatus);
+                    restoreButtonText(btn, null, btnStatusValue);
+                }
             });
-    }
-
-    function updateEvaluationBadges(evaluationType, status, verification) {
-        const badges = document.querySelector('.evaluation-status');
-        
-        if (evaluationType === 'gese') {
-            const geseBadge = badges.querySelector('span:first-child');
-            if (status === 1) {
-                geseBadge.className = 'badge bg-success';
-                geseBadge.textContent = 'Avaliação Documental: Aprovado';
-            } else if (status === 0) {
-                geseBadge.className = 'badge bg-danger';
-                geseBadge.textContent = 'Avaliação Documental: Reprovado';
-            } else {
-                geseBadge.className = 'badge bg-warning';
-                geseBadge.textContent = 'Avaliação Documental: Pendente';
-            }
-        } else if (evaluationType === 'pedagogico') {
-            const pedBadge = badges.querySelector('span:last-child');
-            if (status === 1) {
-                pedBadge.className = 'badge bg-success ms-2';
-                pedBadge.textContent = 'Avaliação Pedagógica: Aprovado';
-            } else if (status === 0) {
-                pedBadge.className = 'badge bg-danger ms-2';
-                pedBadge.textContent = 'Avaliação Pedagógica: Reprovado';
-            } else {
-                pedBadge.className = 'badge bg-warning ms-2';
-                pedBadge.textContent = 'Avaliação Pedagógica: Pendente';
-            }
         }
-        
-        if (verification) {
-            updateMainStatusBadge(verification);
+
+        function restoreButtonText(btn, evaluationType, status) {
+            const icons = {
+                1: '<i class="fas fa-check"></i>',
+                0: '<i class="fas fa-times"></i>',
+                null: '<i class="fas fa-undo"></i>'
+            };
+
+            const texts = {
+                1: ['Aprovar Documentação', 'Aprovar Pedagogia'],
+                0: ['Reprovar Documentação', 'Reprovar Pedagogia'],
+                null: ['Resetar', 'Resetar']
+            };
+
+            const icon = icons[status] || icons[null];
+            const isGese = btn.onclick.toString().includes("'gese'");
+            const textIndex = isGese ? 0 : 1;
+            const text = texts[status]?.[textIndex] || 'Resetar';
+
+            btn.innerHTML = `${icon} ${text}`;
         }
-    }
 
-    function updateMainStatusBadge(verification) {
-        const mainStatusBadge = document.querySelector('.user-status');
-        const geseEval = verification.gese_evaluation;
-        const pedEval = verification.pedagogico_evaluation;
-        
-        let statusText = 'Aguardando aprovação';
-        let statusClass = 'status-pending';
-        
-        if (geseEval !== null && pedEval !== null) {
-            if (geseEval === 1 && pedEval === 1) {
-                statusText = 'Apto';
-                statusClass = 'status-approved';
-            } else if (geseEval === 0 || pedEval === 0) {
-                statusText = 'Inapto';
-                statusClass = 'status-not-approved';
-            }
-        }
-        
-        mainStatusBadge.className = 'user-status ' + statusClass;
-        mainStatusBadge.textContent = statusText;
-    }
-
-    function updateButtonStates(buttonGroup, newStatus) {
-        const buttons = buttonGroup.querySelectorAll('button');
-        
-        buttons.forEach(btn => {
-            const btnStatus = btn.onclick.toString().match(/,\s*(\d+|null)\s*\)/);
-            if (btnStatus) {
-                const btnStatusValue = btnStatus[1] === 'null' ? null : parseInt(btnStatus[1]);
-                btn.disabled = (btnStatusValue === newStatus);
-                restoreButtonText(btn, null, btnStatusValue);
-            }
-        });
-    }
-
-    function restoreButtonText(btn, evaluationType, status) {
-        const icons = {
-            1: '<i class="fas fa-check"></i>',
-            0: '<i class="fas fa-times"></i>',
-            null: '<i class="fas fa-undo"></i>'
-        };
-        
-        const texts = {
-            1: ['Aprovar Documentação', 'Aprovar Pedagogia'],
-            0: ['Reprovar Documentação', 'Reprovar Pedagogia'],
-            null: ['Resetar', 'Resetar']
-        };
-        
-        const icon = icons[status] || icons[null];
-        const isGese = btn.onclick.toString().includes("'gese'");
-        const textIndex = isGese ? 0 : 1;
-        const text = texts[status]?.[textIndex] || 'Resetar';
-        
-        btn.innerHTML = `${icon} ${text}`;
-    }
-
-    function showNotification(message, type) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        alertDiv.innerHTML = `
+        function showNotification(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        document.body.appendChild(alertDiv);
-        setTimeout(() => alertDiv.remove(), 5000);
-    }
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
     <?php endif; ?>
 </script>
 

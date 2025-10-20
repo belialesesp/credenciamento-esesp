@@ -1,5 +1,5 @@
 <?php
-// init.php - Core initialization file
+// init.php - Core initialization file with GEDTH role support
 session_start();
 require_once __DIR__ . '/backend/classes/database.class.php';
 
@@ -29,11 +29,29 @@ function hasAnyRole($roles) {
     return !empty(array_intersect($userRoles, $roles));
 }
 
+// UPDATED: Separate admin and administrative role checks
+function isMainAdmin() {
+    // Only the main admin role
+    return hasRole('admin');
+}
+
 function isAdmin() {
+    // ONLY checks for the main admin role
+    // Use this for general admin access (dashboard, lists, stats)
     return hasRole('admin') || ($_SESSION['user_type'] === 'admin');
 }
 
-// IMPORTANT: Define GESE and Pedagogico functions HERE, before they are used
+function isAdministrativeRole() {
+    // Check if user has ANY administrative role (admin, gese, gedth, pedagogico)
+    // Use this when you need to give access to all administrative staff
+    return hasAnyRole(['admin', 'gese', 'gedth', 'pedagogico']);
+}
+
+// GEDTH role function
+function isGEDTH() {
+    return hasRole('gedth');
+}
+
 function isGESE() {
     return hasRole('gese');
 }
@@ -48,6 +66,17 @@ function canEvaluateDocuments() {
 
 function canEvaluatePedagogy() {
     return hasAnyRole(['admin', 'pedagogico']);
+}
+
+// NEW: Permission functions for GEDTH role
+function canSendInvites() {
+    // Only admin and GEDTH can send invites
+    return hasAnyRole(['admin', 'gedth']);
+}
+
+function canViewContractInfo() {
+    // Only admin and GESE can view/edit contract information
+    return hasAnyRole(['admin', 'gese']);
 }
 
 // Get user roles from database
@@ -70,6 +99,7 @@ function getUserType() {
     
     // Priority order for backward compatibility
     if (in_array('admin', $roles)) return 'admin';
+    if (in_array('gedth', $roles)) return 'gedth';
     if (in_array('gese', $roles)) return 'gese';
     if (in_array('pedagogico', $roles)) return 'pedagogico';
     if (in_array('docente_pos', $roles)) return 'postg_teacher';
@@ -84,12 +114,17 @@ function getUserType() {
 function translateUserType($user_type) {
     $types = [
         'admin' => 'Administrador',
+        'gedth' => 'GEDTH',
         'gese' => 'GESE',
         'pedagogico' => 'Pedagógico',
         'teacher' => 'Docente',
         'postg_teacher' => 'Docente Pós-Graduação',
         'technician' => 'Técnico',
-        'interpreter' => 'Intérprete'
+        'interpreter' => 'Intérprete',
+        'docente' => 'Docente',
+        'docente_pos' => 'Docente Pós-Graduação',
+        'tecnico' => 'Técnico',
+        'interprete' => 'Intérprete'
     ];
     return $types[$user_type] ?? $user_type;
 }
@@ -174,6 +209,7 @@ function getPrimaryRole() {
 
     // Priority order
     if (in_array('admin', $roles)) return 'admin';
+    if (in_array('gedth', $roles)) return 'gedth';
     if (in_array('gese', $roles)) return 'gese';
     if (in_array('pedagogico', $roles)) return 'pedagogico';
     if (in_array('docente_pos', $roles)) return 'docente_pos';
@@ -188,6 +224,7 @@ function getPrimaryRole() {
 function getRoleDisplayName($role) {
     $roleNames = [
         'admin' => 'Administrador',
+        'gedth' => 'GEDTH',
         'gese' => 'GESE',
         'pedagogico' => 'Pedagógico',
         'docente' => 'Docente',
@@ -196,14 +233,6 @@ function getRoleDisplayName($role) {
         'interprete' => 'Intérprete'
     ];
 
-    return $roleNames[$role] ?? $role;
+    return $roleNames[$role] ?? ucfirst($role);
 }
-
-// Security headers
-header('X-Frame-Options: DENY');
-header('X-Content-Type-Options: nosniff');
-header('X-XSS-Protection: 1; mode=block');
-
-// Set default timezone (adjust as needed)
-date_default_timezone_set('America/Sao_Paulo');
 ?>

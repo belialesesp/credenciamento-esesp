@@ -13,9 +13,9 @@ $conection = new Database();
 $conn = $conection->connect();
 
 // Check admin status
-$is_admin = false;
-if (hasRole('admin') || hasRole('gese') || hasRole('pedagogico')) {
-    $is_admin = true;
+$isAdmin = false;
+if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {
+  $is_admin = isAdministrativeRole();
 }
 
 // Get requested ID from URL
@@ -31,19 +31,19 @@ $stmt = $conn->prepare("
 $stmt->execute([$requested_id]);
 
 if (!$stmt->fetch()) {
-    header('Location: interpretes.php');
-    exit();
+  header('Location: interpretes.php');
+  exit();
 }
 
 // Check access permissions
 $is_own_profile = false;
 if ($is_admin) {
-    $is_own_profile = false;
+  $is_own_profile = false;
 } elseif (hasRole('interprete') && $_SESSION['user_id'] == $requested_id) {
-    $is_own_profile = true;
+  $is_own_profile = true;
 } else {
-    header('Location: home.php');
-    exit();
+  header('Location: home.php');
+  exit();
 }
 
 // NOW fetch the interpreter data from the USER table, not interpreter table
@@ -78,89 +78,88 @@ $sql = "
 ";
 
 try {
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([':id' => $requested_id]);
-    $interpreter = $stmt->fetch(PDO::FETCH_ASSOC);
+  $stmt = $conn->prepare($sql);
+  $stmt->execute([':id' => $requested_id]);
+  $interpreter = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$interpreter) {
-        throw new Exception("Intérprete não encontrado");
+  if (!$interpreter) {
+    throw new Exception("Intérprete não encontrado");
+  }
+
+  // Extract data
+  $name = $interpreter['name'];
+  $document_number = $interpreter['document_number'];
+  $document_emissor = $interpreter['document_emissor'];
+  $document_uf = $interpreter['document_uf'];
+  $phone = $interpreter['phone'];
+  $cpf = $interpreter['cpf'];
+  $email = $interpreter['email'];
+  $special_needs = $interpreter['special_needs'];
+  $created_at = $interpreter['created_at'];
+  $called_at = $interpreter['called_at'];
+  $enabled = $interpreter['enabled'];
+  $scholarship = $interpreter['scholarship'] ?? '';
+
+  // Address
+  $address = $interpreter['street'] ?? '';
+  $city = $interpreter['city'] ?? '';
+  $state = $interpreter['state'] ?? '';
+  $zip = $interpreter['zip_code'] ?? '';
+
+  // Document path
+  $file_path = $interpreter['file_path'] ?? '';
+
+  $statusText = match ($enabled) {
+    1 => 'Apto',
+    0 => 'Inapto',
+    default => 'Aguardando aprovação',
+  };
+
+  $statusClass = match ($enabled) {
+    1 => 'status-approved',
+    0 => 'status-not-approved',
+    default => 'status-pending',
+  };
+
+  // Format date
+  $date = new DateTime($created_at);
+  $dateF = $date->format('d/m/Y H:i');
+
+  // Format called_at date
+  $calledDateF = '';
+  if ($called_at) {
+    $calledDate = new DateTime($called_at);
+    $calledDateF = $calledDate->format('d/m/Y H:i');
+  } else {
+    $calledDateF = 'Não chamado';
+  }
+
+  // Format filepath
+  $path = '';
+  if ($file_path) {
+    $string = $file_path;
+    $position = strpos($string, "interpretes");
+    if ($position !== false) {
+      $start = $position + strlen("interpretes/");
+      $path = substr($string, $start);
     }
+  }
 
-    // Extract data
-    $name = $interpreter['name'];
-    $document_number = $interpreter['document_number'];
-    $document_emissor = $interpreter['document_emissor'];
-    $document_uf = $interpreter['document_uf'];
-    $phone = $interpreter['phone'];
-    $cpf = $interpreter['cpf'];
-    $email = $interpreter['email'];
-    $special_needs = $interpreter['special_needs'];
-    $created_at = $interpreter['created_at'];
-    $called_at = $interpreter['called_at'];
-    $enabled = $interpreter['enabled'];
-    $scholarship = $interpreter['scholarship'] ?? '';
-
-    // Address
-    $address = $interpreter['street'] ?? '';
-    $city = $interpreter['city'] ?? '';
-    $state = $interpreter['state'] ?? '';
-    $zip = $interpreter['zip_code'] ?? '';
-
-    // Document path
-    $file_path = $interpreter['file_path'] ?? '';
-
-    $statusText = match ($enabled) {
-        1 => 'Apto',
-        0 => 'Inapto',
-        default => 'Aguardando aprovação',
-    };
-
-    $statusClass = match ($enabled) {
-        1 => 'status-approved',
-        0 => 'status-not-approved',
-        default => 'status-pending',
-    };
-
-    // Format date
-    $date = new DateTime($created_at);
-    $dateF = $date->format('d/m/Y H:i');
-    
-    // Format called_at date
-    $calledDateF = '';
-    if ($called_at) {
-        $calledDate = new DateTime($called_at);
-        $calledDateF = $calledDate->format('d/m/Y H:i');
-    } else {
-        $calledDateF = 'Não chamado';
-    }
-    
-    // Format filepath
-    $path = '';
-    if ($file_path) {
-        $string = $file_path;
-        $position = strpos($string, "interpretes");
-        if ($position !== false) {
-            $start = $position + strlen("interpretes/");
-            $path = substr($string, $start);
-        }
-    }
-
-    // Get evaluation status directly from the query result
-    $gese_eval = $interpreter['gese_evaluation'] ?? null;
-    $ped_eval = $interpreter['pedagogico_evaluation'] ?? null;
-
+  // Get evaluation status directly from the query result
+  $gese_eval = $interpreter['gese_evaluation'] ?? null;
+  $ped_eval = $interpreter['pedagogico_evaluation'] ?? null;
 } catch (Exception $e) {
-    // Include header only for error display
-    echo '<link rel="stylesheet" href="../styles/user.css">';
-    include '../components/header.php';
-    
-    echo '<div class="container">
+  // Include header only for error display
+  echo '<link rel="stylesheet" href="../styles/user.css">';
+  include '../components/header.php';
+
+  echo '<div class="container">
             <h1 class="main-title">Erro</h1>
             <p>Erro ao carregar dados: ' . htmlspecialchars($e->getMessage()) . '</p>
             <a href="interpretes.php" class="btn btn-primary">Voltar para lista de intérpretes</a>
           </div>';
-    include '../components/footer.php';
-    exit();
+  include '../components/footer.php';
+  exit();
 }
 
 // MOVED: Include styles and header AFTER all redirects and data loading
@@ -328,8 +327,8 @@ include '../components/header.php';
       $gese_eval = $interpreter['gese_evaluation'] ?? null;
       $ped_eval = $interpreter['pedagogico_evaluation'] ?? null;
 
-      $show_gese = isGESE() || (isAdmin() && hasRole('gese'));
-      $show_ped = isPedagogico() || (isAdmin() && hasRole('pedagogico'));
+      $show_gese = (isGESE() || (isAdmin() && !isGEDTH())) && !isGEDTH();
+      $show_ped = (isPedagogico() || (isAdmin() && !isGEDTH())) && !isGEDTH();
       ?>
 
       <!-- Show evaluation status badges -->
@@ -404,6 +403,20 @@ include '../components/footer.php';
 ?>
 
 <script>
+  // Always add these at the top:
+  const userRoles = <?php echo json_encode($_SESSION['user_roles'] ?? []); ?>;
+
+  function canSendInvites() {
+    return userRoles.includes('admin') || userRoles.includes('gedth');
+  }
+
+  function canViewContractInfo() {
+    return userRoles.includes('admin') || userRoles.includes('gese');
+  }
+
+  // For page access check:
+  const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
+
   function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
     const icon = document.getElementById(fieldId + '_icon');
@@ -595,3 +608,13 @@ include '../components/footer.php';
     }
   <?php endif; ?>
 </script>
+
+<?php
+if ($is_ajax_request) {
+  $content = ob_get_clean();
+  echo $content;
+  exit();
+} else {
+  include '../components/footer.php';
+}
+?>
