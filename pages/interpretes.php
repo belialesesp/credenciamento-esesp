@@ -558,7 +558,6 @@ $_SESSION['user-data'] = $interpreters;
       });
 
       const result = await response.json();
-      console.log("DEBUG: Send invitation result:", result);
 
       if (result.success) {
         alert('Convite enviado com sucesso!');
@@ -589,7 +588,6 @@ $_SESSION['user-data'] = $interpreters;
     try {
       const response = await fetch(`../backend/api/check_course_invitation_status.php?user_id=${interpreterId}&is_staff=true`);
       const data = await response.json();
-      console.log("DEBUG: checkInvitationStatus for ID", interpreterId, "returned:", data); // ADD THIS
 
       if (data.success) {
         return data;
@@ -769,10 +767,7 @@ $_SESSION['user-data'] = $interpreters;
   });
 
   async function renderTable(interpreters) {
-    console.log("DEBUG: Checking interpreters:", interpreters.map(i => ({
-      id: i.id,
-      name: i.name
-    })));
+
     const tbody = document.getElementById('interpretersTableBody');
     tbody.innerHTML = ''; // Clear table completely
 
@@ -827,7 +822,6 @@ $_SESSION['user-data'] = $interpreters;
         break;
       }
     }
-
     // Now render using the sorted interpreters array
     for (const interpreter of sortedInterpreters) {
       const enabled = interpreter.enabled == 1 ? 'Apto' :
@@ -917,21 +911,18 @@ $_SESSION['user-data'] = $interpreters;
           rejectedSpan.textContent = 'Recusado';
           rejectedSpan.style.marginLeft = '10px';
           nameCell.appendChild(rejectedSpan);
-        } else if (canSendInvites() && user.enabled == 1) {
+        } else if (canSendInvites() && interpreter.enabled == 1) {
+
           const inviteBtn = document.createElement('button');
           inviteBtn.className = 'action-button';
           inviteBtn.textContent = 'Enviar Convite';
           inviteBtn.onclick = (e) => {
             e.stopPropagation();
-            openInvitationModal(
-              interpreter.id,
-              interpreter.name,
-              interpreter.email
-            );
+            openInvitationModal(interpreter.id, interpreter.name, interpreter.email);
           };
           nameCell.appendChild(inviteBtn);
         }
-      } else if (isAdmin && interpreter.enabled == 1) {
+      } else if (canSendInvites() && interpreter.enabled == 1) {
         // No invitation status, show button for APTO
         const inviteBtn = document.createElement('button');
         inviteBtn.className = 'action-button';
@@ -979,7 +970,6 @@ $_SESSION['user-data'] = $interpreters;
       tbody.appendChild(row);
     }
 
-    console.log("DEBUG: Table rendering complete");
   }
 
   function updateStats() {

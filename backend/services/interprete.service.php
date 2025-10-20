@@ -1,109 +1,134 @@
 <?php
+// backend/services/interprete.service.php - Updated to match TechnicianService structure
 
 require_once __DIR__ . '/../classes/address.class.php';
 require_once __DIR__ . '/../classes/interpreter.class.php';
 
-
 class InterpreterService {
-  private $db;
+    private $conn;
 
-  public function __construct($db) {
-    $this->db = $db;
-  }
-
-  function getInterpreter($interpreter_id) {
-    $sql = "
-      SELECT
-        i.name,
-        i.email,
-        i.special_needs,
-        i.document_number,
-        i.document_emissor,
-        i.document_uf,
-        i.phone,
-        i.cpf,
-        i.scholarship,
-        i.enabled,
-        t.called_at,
-        i.address_id,
-        i.created_at,
-        a.street,
-        a.city,
-        a.state,
-        a.zip_code,
-        a.complement,
-        a.address_number,
-        a.neighborhood,
-        d.path AS file_path
-      FROM
-        interpreter AS i
-      LEFT JOIN
-        address AS a
-        ON a.id = i.address_id
-      LEFT JOIN
-        documents AS d
-        ON d.interpreter_id = i.id
-      WHERE 
-        i.id = :interpreter_id   
-    ";
-
-    $stmt = $this->db->prepare($sql);
-    $stmt->bindParam(":interpreter_id", $interpreter_id, PDO::PARAM_INT);
-    $stmt->execute();
-
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if($result) {
-      $address = new Address(
-        $result["address_id"],
-        $result["street"],
-        $result["city"],
-        $result["state"],
-        $result["zip_code"],
-        $result["complement"],
-        $result["address_number"],
-        $result["neighborhood"],
-      );
-
+    public function __construct($conn) {
+        $this->conn = $conn;
     }
 
-    $interpreter = new Interpreter(
-      $interpreter_id,
-      $result["name"],
-      $result["email"],
-      $result["special_needs"],
-      $result["document_number"],
-      $result["document_emissor"],
-      $result["document_uf"],
-      $result["phone"],
-      $result["cpf"],
-      $result['created_at'],
-      $address,
-      $result['scholarship'],
-      $result['enabled'],
-      $result['file_path']
-    );
+    public function getInterpreter($user_id) {
+        $sql = "
+            SELECT 
+                u.id,
+                u.name,
+                u.email,
+                u.special_needs,
+                u.document_number,
+                u.document_emissor,
+                u.document_uf,
+                u.phone,
+                u.cpf,
+                u.created_at,
+                u.called_at,
+                u.street,
+                u.city,
+                u.state,
+                u.zip_code,
+                u.number,
+                u.complement,
+                u.neighborhood,
+                u.scholarship,
+                u.enabled,
+                d.path AS file_path
+            FROM user u
+            INNER JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN documents d ON d.user_id = u.id
+            WHERE u.id = :user_id 
+                AND ur.role = 'interprete'
+            LIMIT 1
+        ";
 
-    return $interpreter;
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->execute();
 
-  }
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-  function updateStatus($interpreter_id, $status) {
-    $sql = "
-    UPDATE interpreter 
-      SET enabled = :status
-    WHERE id = :id
-    ";
+        if (!$row) {
+            return null;
+        }
 
-    $query_run = $this->db->prepare($sql);
+        // Create Address object
+        $address = null;
+        if ($row['street'] || $row['city'] || $row['state']) {
+            $address = new Address(
+                null,                           // id
+                $row['street'] ?? '',           // street
+                $row['city'] ?? '',             // city
+                $row['state'] ?? '',            // state
+                $row['zip_code'] ?? '',         // zip
+                $row['complement'] ?? '',       // complement
+                $row['number'] ?? '',           // number
+                $row['neighborhood'] ?? ''      // neighborhood
+            );
+        }
 
-    $data = [
-    ':status' => $status,
-    ':id' => $interpreter_id
-    ];
+        // Map status fields
+        $statusText = match($row['enabled']) {
+            1 => 'Apto',
+            0 => 'Inapto',
+            default => 'Aguardando aprovação'
+        };
 
-    $query_execute = $query_run->execute($data);
-  
-  }
+        $statusClass = match($row['enabled']) {
+            1 => 'status-approved',
+            0 => 'status-not-approved',
+            default => 'status-pending'
+        };
 
+        // Create Interpreter object with ALL required params
+        return new Interpreter(
+            $row['id'],
+            $row['name'],
+            $row['email'],
+            $row['special_needs'],
+            $row['document_number'],
+            $row['document_emissor'],
+            $row['document_uf'],
+            $row['phone'],
+            $row['cpf'],
+            $row['created_at'],
+            $row['called_at'],              // Added this field
+            $address,                       // Pass the Address object
+            $row['scholarship'],
+            $row['enabled'],
+            $row['file_path'],
+            $statusText,                    // Added this field
+            $statusClass                    // Added this field
+        );
+    }
+
+    public function getAllInterpreters() {
+        $sql = "
+            SELECT 
+                u.id,
+                u.name,
+                u.email,
+                u.phone,
+                u.cpf,
+                u.created_at,
+                u.enabled
+            FROM user u
+            INNER JOIN user_roles ur ON ur.user_id = u.id
+            WHERE ur.role = 'interprete'
+            ORDER BY u.created_at DESC
+        ";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function updateInterpreterStatus($user_id, $status) {
+        $sql = "UPDATE user SET enabled = :status WHERE id = :user_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }
