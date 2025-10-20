@@ -270,7 +270,7 @@ ob_start();
           $show_ped = (isPedagogico() || (isAdmin() && !isGEDTH())) && !isGEDTH();
           ?>
 
-          <?php if ($show_gese || $show_ped || $show_old_admin): ?>
+          <?php if ($show_gese || $show_ped): ?>
             <div class="discipline-actions mt-2">
 
               <!-- Show evaluation status badges -->

@@ -343,6 +343,23 @@ $_SESSION['user-data'] = $teachers;
     margin-left: 10px;
   }
 
+  .invitation-contracted {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #cfe2ff;
+    color: #084298;
+    border: 1px solid #9ec5fe;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+    font-weight: 500;
+  }
+
+  .invitation-contracted:before {
+    content: "📋 ";
+    font-size: 14px;
+  }
+
   /* Called at column specific styles */
   #called-at-header,
   .called-at-cell {
@@ -708,622 +725,630 @@ Coordenação de Cursos
   // This removes the invitationHandled limitation and shows buttons for all apto teachers
 
   async function updateTable() {
-    if (isRendering) {
-      console.log('Already rendering, skipping duplicate call');
-      return;
-    }
-
-    isRendering = true;
-
-    try {
-      // REMOVED: let invitationHandled = false;
-      invitationStatuses = {};
-
-      const tbody = document.querySelector('.table tbody');
-      tbody.innerHTML = '';
-
-      if (!currentTeachers || currentTeachers.length === 0) {
-        const row = document.createElement('tr');
-        const cell = document.createElement('td');
-        cell.colSpan = isAdmin ? 5 : 4;
-        cell.textContent = 'Nenhum docente encontrado.';
-        cell.style.textAlign = 'center';
-        row.appendChild(cell);
-        tbody.appendChild(row);
-
-        document.getElementById('export-btn').disabled = true;
-        document.getElementById('export-pdf-btn').disabled = !hasActiveFilters();
+      if (isRendering) {
+        console.log('Already rendering, skipping duplicate call');
         return;
       }
 
-      let invitationStatus = null;
-      if (isFilteredByCourse) {
-        const courseSelect = document.getElementById('course');
-        const selectedCourseId = courseSelect.value;
+      isRendering = true;
 
-        if (selectedCourseId) {
-          invitationStatus = await checkInvitationStatus(selectedCourseId);
-          invitationStatuses[selectedCourseId] = invitationStatus;
+      try {
+        // REMOVED: let invitationHandled = false;
+        invitationStatuses = {};
+
+        const tbody = document.querySelector('.table tbody');
+        tbody.innerHTML = '';
+
+        if (!currentTeachers || currentTeachers.length === 0) {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.colSpan = isAdmin ? 5 : 4;
+          cell.textContent = 'Nenhum docente encontrado.';
+          cell.style.textAlign = 'center';
+          row.appendChild(cell);
+          tbody.appendChild(row);
+
+          document.getElementById('export-btn').disabled = true;
+          document.getElementById('export-pdf-btn').disabled = !hasActiveFilters();
+          return;
         }
-      }
 
-      const calledAtHeader = document.getElementById('called-at-header');
-      if (isFilteredByCourse) {
-        calledAtHeader.style.display = '';
-      } else {
-        calledAtHeader.style.display = 'none';
-      }
-
-      let sortedTeachers = [...currentTeachers];
-
-      // Keep existing sorting logic
-      if (isFilteredByCourse && invitationStatus) {
-        sortedTeachers.sort((a, b) => {
-          const aId = parseInt(a.id);
-          const bId = parseInt(b.id);
-
-          const aPending = invitationStatus.pending_teachers ?
-            invitationStatus.pending_teachers.some(id => parseInt(id) === aId) : false;
-          const bPending = invitationStatus.pending_teachers ?
-            invitationStatus.pending_teachers.some(id => parseInt(id) === bId) : false;
-
-          const aRejected = invitationStatus.rejected_teachers ?
-            invitationStatus.rejected_teachers.some(id => parseInt(id) === aId) : false;
-          const bRejected = invitationStatus.rejected_teachers ?
-            invitationStatus.rejected_teachers.some(id => parseInt(id) === bId) : false;
-
-          const aExpired = invitationStatus.expired_teachers ?
-            invitationStatus.expired_teachers.some(id => parseInt(id) === aId) : false;
-          const bExpired = invitationStatus.expired_teachers ?
-            invitationStatus.expired_teachers.some(id => parseInt(id) === bId) : false;
-
-          const aAccepted = invitationStatus.accepted_teachers ?
-            invitationStatus.accepted_teachers.hasOwnProperty(aId.toString()) : false;
-          const bAccepted = invitationStatus.accepted_teachers ?
-            invitationStatus.accepted_teachers.hasOwnProperty(bId.toString()) : false;
-
-          console.log(`Sorting check - Teacher ${aId} (${a.name}): pending=${aPending}, rejected=${aRejected}, expired=${aExpired}, accepted=${aAccepted}`);
-
-          const aIneligible = aPending || aRejected || aExpired || aAccepted;
-          const bIneligible = bPending || bRejected || bExpired || bAccepted;
-
-          if (!aIneligible && bIneligible) return -1;
-          if (aIneligible && !bIneligible) return 1;
-
-          let dateA = '9999-12-31';
-          let dateB = '9999-12-31';
-
-          if (a.discipline_statuses) {
-            const disciplinesA = a.discipline_statuses.split('|~~|');
-            for (const disc of disciplinesA) {
-              const parts = disc.split('|~|');
-              if (parts.length >= 4 && parts[3]) {
-                const dateParts = parts[3].split('/');
-                if (dateParts.length === 3) {
-                  const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                  if (date < dateA) dateA = date;
-                }
-              }
-            }
-          }
-
-          if (b.discipline_statuses) {
-            const disciplinesB = b.discipline_statuses.split('|~~|');
-            for (const disc of disciplinesB) {
-              const parts = disc.split('|~|');
-              if (parts.length >= 4 && parts[3]) {
-                const dateParts = parts[3].split('/');
-                if (dateParts.length === 3) {
-                  const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                  if (date < dateB) dateB = date;
-                }
-              }
-            }
-          }
-
-          return dateA.localeCompare(dateB);
-        });
-      }
-
-      // Render teachers
-      for (let i = 0; i < sortedTeachers.length; i++) {
-        const teacher = sortedTeachers[i];
-        console.log(`Rendering teacher ${i + 1}/${sortedTeachers.length}:`, teacher.name, 'ID:', teacher.id);
-
-        const row = document.createElement('tr');
-        row.dataset.teacherId = teacher.id;
-
-        row.addEventListener('click', function(e) {
-          if (e.target.closest('button, textarea, input, a')) {
-            return;
-          }
-          const targetPage = window.location.pathname.includes('docentes-pos') ?
-            'docente-pos.php' : 'docente.php';
-          window.location.href = `${targetPage}?id=${teacher.id}`;
-        });
-
-        const nameCell = document.createElement('td');
-        nameCell.textContent = teacher.name || '';
-
-        if (isFilteredByCourse && invitationStatus) {
+        let invitationStatus = null;
+        if (isFilteredByCourse) {
           const courseSelect = document.getElementById('course');
           const selectedCourseId = courseSelect.value;
-          const selectedCourseName = courseSelect.options[courseSelect.selectedIndex].text;
 
-          const teacherId = parseInt(teacher.id);
+          if (selectedCourseId) {
+            invitationStatus = await checkInvitationStatus(selectedCourseId);
+            invitationStatuses[selectedCourseId] = invitationStatus;
+          }
+        }
 
-          // NEW: Check if teacher is "apto" for the selected course
-          let hasAptoStatus = false;
-          if (teacher.discipline_statuses) {
-            const disciplines = teacher.discipline_statuses.split('|~~|');
-            disciplines.forEach(disc => {
-              const parts = disc.split('|~|');
-              if (parts.length >= 3) {
-                const disciplineId = parts[0];
-                const status = parts[2];
+        const calledAtHeader = document.getElementById('called-at-header');
+        if (isFilteredByCourse) {
+          calledAtHeader.style.display = '';
+        } else {
+          calledAtHeader.style.display = 'none';
+        }
 
-                // Check if this teacher is "apto" (status = 1) for the selected course
-                if (disciplineId == selectedCourseId && (status === '1' || status === 1)) {
-                  hasAptoStatus = true;
+        let sortedTeachers = [...currentTeachers];
+
+        // Keep existing sorting logic
+        if (isFilteredByCourse && invitationStatus) {
+          sortedTeachers.sort((a, b) => {
+            const aId = parseInt(a.id);
+            const bId = parseInt(b.id);
+
+            const aPending = invitationStatus.pending_teachers ?
+              invitationStatus.pending_teachers.some(id => parseInt(id) === aId) : false;
+            const bPending = invitationStatus.pending_teachers ?
+              invitationStatus.pending_teachers.some(id => parseInt(id) === bId) : false;
+
+            const aRejected = invitationStatus.rejected_teachers ?
+              invitationStatus.rejected_teachers.some(id => parseInt(id) === aId) : false;
+            const bRejected = invitationStatus.rejected_teachers ?
+              invitationStatus.rejected_teachers.some(id => parseInt(id) === bId) : false;
+
+            const aExpired = invitationStatus.expired_teachers ?
+              invitationStatus.expired_teachers.some(id => parseInt(id) === aId) : false;
+            const bExpired = invitationStatus.expired_teachers ?
+              invitationStatus.expired_teachers.some(id => parseInt(id) === bId) : false;
+
+            const aAccepted = invitationStatus.accepted_teachers ?
+              invitationStatus.accepted_teachers.hasOwnProperty(aId.toString()) : false;
+            const bAccepted = invitationStatus.accepted_teachers ?
+              invitationStatus.accepted_teachers.hasOwnProperty(bId.toString()) : false;
+
+            console.log(`Sorting check - Teacher ${aId} (${a.name}): pending=${aPending}, rejected=${aRejected}, expired=${aExpired}, accepted=${aAccepted}`);
+
+            const aIneligible = aPending || aRejected || aExpired || aAccepted;
+            const bIneligible = bPending || bRejected || bExpired || bAccepted;
+
+            if (!aIneligible && bIneligible) return -1;
+            if (aIneligible && !bIneligible) return 1;
+
+            let dateA = '9999-12-31';
+            let dateB = '9999-12-31';
+
+            if (a.discipline_statuses) {
+              const disciplinesA = a.discipline_statuses.split('|~~|');
+              for (const disc of disciplinesA) {
+                const parts = disc.split('|~|');
+                if (parts.length >= 4 && parts[3]) {
+                  const dateParts = parts[3].split('/');
+                  if (dateParts.length === 3) {
+                    const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                    if (date < dateA) dateA = date;
+                  }
                 }
               }
-            });
-          }
+            }
 
-          const hasPendingInvitation = invitationStatus.pending_teachers ?
-            invitationStatus.pending_teachers.some(id => parseInt(id) === teacherId) : false;
-          const hasRejectedInvitation = invitationStatus.rejected_teachers ?
-            invitationStatus.rejected_teachers.some(id => parseInt(id) === teacherId) : false;
-          const hasExpiredInvitation = invitationStatus.expired_teachers ?
-            invitationStatus.expired_teachers.some(id => parseInt(id) === teacherId) : false;
-          const isAcceptedTeacher = invitationStatus.accepted_teachers ?
-            invitationStatus.accepted_teachers.hasOwnProperty(teacherId.toString()) : false;
-
-          console.log(`Teacher ${teacherId} (${teacher.name}) - apto: ${hasAptoStatus}, pending: ${hasPendingInvitation}, rejected: ${hasRejectedInvitation}, expired: ${hasExpiredInvitation}, accepted: ${isAcceptedTeacher}`);
-
-          if (hasExpiredInvitation || hasRejectedInvitation) {
-            const rejectedSpan = document.createElement('span');
-            rejectedSpan.className = 'invitation-rejected';
-            rejectedSpan.textContent = 'Recusado';
-            nameCell.appendChild(rejectedSpan);
-          } else if (hasPendingInvitation) {
-            const pendingSpan = document.createElement('span');
-            pendingSpan.className = 'invitation-pending';
-            pendingSpan.textContent = 'Aguardando resposta';
-            nameCell.appendChild(pendingSpan);
-            console.log(`Added pending status for teacher ${teacherId}`);
-          } else if (isAcceptedTeacher) {
-            // Contract info logic (unchanged)
-            const contractDiv = document.createElement('div');
-            contractDiv.style.display = 'inline-block';
-            contractDiv.style.marginLeft = '10px';
-
-            const label = document.createElement('label');
-            label.className = 'contract-label';
-            label.textContent = 'Contratado:';
-
-            const textarea = document.createElement('textarea');
-            textarea.className = 'contract-textarea';
-            textarea.placeholder = 'Informações do contrato...';
-            textarea.value = invitationStatus.accepted_teachers[teacherId.toString()] || '';
-
-            const saveBtn = document.createElement('button');
-            saveBtn.className = 'contract-save-btn';
-            saveBtn.textContent = 'Salvar';
-            saveBtn.onclick = (e) => {
-              e.stopPropagation();
-              saveContractInfo(teacher.id, selectedCourseId, textarea.value);
-            };
-
-            contractDiv.appendChild(label);
-            contractDiv.appendChild(textarea);
-            contractDiv.appendChild(saveBtn);
-            nameCell.appendChild(contractDiv);
-          } else if (hasAptoStatus && isAdmin) {
-
-
-            const actionButton = document.createElement('button');
-            actionButton.className = 'action-button';
-            actionButton.textContent = 'Enviar Convite';
-            actionButton.onclick = (e) => {
-              e.stopPropagation();
-              const teacherType = window.location.pathname.includes('docentes-pos') ? 'postgraduate' : 'regular';
-              openInvitationModal(
-                teacher.id,
-                teacher.name,
-                teacher.email,
-                selectedCourseId,
-                selectedCourseName,
-                teacherType
-              );
-            };
-
-            nameCell.appendChild(actionButton);
-            // REMOVED: invitationHandled = true; - This was preventing multiple buttons
-
-            console.log(`Added invite button for apto teacher ${teacherId}`);
-          }
-        }
-
-        row.appendChild(nameCell);
-
-        const emailCell = document.createElement('td');
-        emailCell.textContent = teacher.email || '';
-        row.appendChild(emailCell);
-
-        const createdCell = document.createElement('td');
-        createdCell.textContent = formatDate(teacher.created_at);
-        row.appendChild(createdCell);
-
-        const calledCell = document.createElement('td');
-        calledCell.className = 'called-at-cell';
-
-        if (isFilteredByCourse && teacher.discipline_statuses) {
-          const disciplines = teacher.discipline_statuses.split('|~~|');
-          let earliestDate = null;
-
-          disciplines.forEach(disc => {
-            const parts = disc.split('|~|');
-            if (parts.length >= 4 && parts[3]) {
-              if (!earliestDate || parts[3] < earliestDate) {
-                earliestDate = parts[3];
+            if (b.discipline_statuses) {
+              const disciplinesB = b.discipline_statuses.split('|~~|');
+              for (const disc of disciplinesB) {
+                const parts = disc.split('|~|');
+                if (parts.length >= 4 && parts[3]) {
+                  const dateParts = parts[3].split('/');
+                  if (dateParts.length === 3) {
+                    const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                    if (date < dateB) dateB = date;
+                  }
+                }
               }
             }
-          });
 
-          calledCell.textContent = earliestDate || '';
-          calledCell.style.display = '';
-        } else {
-          calledCell.style.display = 'none';
+            return dateA.localeCompare(dateB);
+          });
         }
 
-        row.appendChild(calledCell);
+        // Render teachers
+        for (let i = 0; i < sortedTeachers.length; i++) {
+          const teacher = sortedTeachers[i];
+          console.log(`Rendering teacher ${i + 1}/${sortedTeachers.length}:`, teacher.name, 'ID:', teacher.id);
 
-        const disciplinesCell = document.createElement('td');
-        if (teacher.discipline_statuses) {
-          const disciplineGroups = teacher.discipline_statuses.split('|~~|');
-          disciplineGroups.forEach(group => {
-            const parts = group.split('|~|');
-            if (parts.length >= 3) {
-              const disciplineId = parts[0];
-              const disciplineName = parts[1];
-              const status = parts[2];
+          const row = document.createElement('tr');
+          row.dataset.teacherId = teacher.id;
 
-              const div = document.createElement('div');
-              div.className = 'discipline-status';
-
-              const nameSpan = document.createElement('span');
-              nameSpan.className = 'discipline-name';
-              nameSpan.textContent = disciplineName;
-
-              const statusSpan = document.createElement('span');
-              statusSpan.className = `status-badge ${getStatusClass(status)}`;
-              statusSpan.textContent = parseStatusLabel(status);
-
-              div.appendChild(nameSpan);
-              div.appendChild(statusSpan);
-              disciplinesCell.appendChild(div);
+          row.addEventListener('click', function(e) {
+            if (e.target.closest('button, textarea, input, a')) {
+              return;
             }
+            const targetPage = window.location.pathname.includes('docentes-pos') ?
+              'docente-pos.php' : 'docente.php';
+            window.location.href = `${targetPage}?id=${teacher.id}`;
           });
+
+          const nameCell = document.createElement('td');
+          nameCell.textContent = teacher.name || '';
+
+          if (isFilteredByCourse && invitationStatus) {
+            const courseSelect = document.getElementById('course');
+            const selectedCourseId = courseSelect.value;
+            const selectedCourseName = courseSelect.options[courseSelect.selectedIndex].text;
+
+            const teacherId = parseInt(teacher.id);
+
+            // NEW: Check if teacher is "apto" for the selected course
+            let hasAptoStatus = false;
+            if (teacher.discipline_statuses) {
+              const disciplines = teacher.discipline_statuses.split('|~~|');
+              disciplines.forEach(disc => {
+                const parts = disc.split('|~|');
+                if (parts.length >= 3) {
+                  const disciplineId = parts[0];
+                  const status = parts[2];
+
+                  // Check if this teacher is "apto" (status = 1) for the selected course
+                  if (disciplineId == selectedCourseId && (status === '1' || status === 1)) {
+                    hasAptoStatus = true;
+                  }
+                }
+              });
+            }
+
+            const hasPendingInvitation = invitationStatus.pending_teachers ?
+              invitationStatus.pending_teachers.some(id => parseInt(id) === teacherId) : false;
+            const hasRejectedInvitation = invitationStatus.rejected_teachers ?
+              invitationStatus.rejected_teachers.some(id => parseInt(id) === teacherId) : false;
+            const hasExpiredInvitation = invitationStatus.expired_teachers ?
+              invitationStatus.expired_teachers.some(id => parseInt(id) === teacherId) : false;
+            const isAcceptedTeacher = invitationStatus.accepted_teachers ?
+              invitationStatus.accepted_teachers.hasOwnProperty(teacherId.toString()) : false;
+
+            console.log(`Teacher ${teacherId} (${teacher.name}) - apto: ${hasAptoStatus}, pending: ${hasPendingInvitation}, rejected: ${hasRejectedInvitation}, expired: ${hasExpiredInvitation}, accepted: ${isAcceptedTeacher}`);
+
+            if (hasExpiredInvitation || hasRejectedInvitation) {
+              const rejectedSpan = document.createElement('span');
+              rejectedSpan.className = 'invitation-rejected';
+              rejectedSpan.textContent = 'Recusado';
+              nameCell.appendChild(rejectedSpan);
+            } else if (hasPendingInvitation) {
+              const pendingSpan = document.createElement('span');
+              pendingSpan.className = 'invitation-pending';
+              pendingSpan.textContent = 'Aguardando resposta';
+              nameCell.appendChild(pendingSpan);
+              console.log(`Added pending status for teacher ${teacherId}`);
+            } else if (isAcceptedTeacher) {
+              // First, show the "Contratado" badge (blue)
+              const acceptedSpan = document.createElement('span');
+              acceptedSpan.className = 'invitation-contracted';
+              acceptedSpan.textContent = 'Contratado';
+              acceptedSpan.style.marginLeft = '10px';
+              nameCell.appendChild(acceptedSpan);
+
+              // Only show contract textarea if user has permission (admin or GESE)
+              if (canViewContractInfo()) {
+                const contractDiv = document.createElement('div');
+                contractDiv.style.display = 'inline-block';
+                contractDiv.style.marginLeft = '10px';
+
+                const label = document.createElement('label');
+                label.className = 'contract-label';
+                label.textContent = 'Contrato:';
+
+                const textarea = document.createElement('textarea');
+                textarea.className = 'contract-textarea';
+                textarea.placeholder = 'Informações do contrato...';
+                textarea.value = invitationStatus.accepted_teachers[teacherId.toString()] || '';
+
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'contract-save-btn';
+                saveBtn.textContent = 'Salvar';
+                saveBtn.onclick = (e) => {
+                  e.stopPropagation();
+                  saveContractInfo(teacher.id, selectedCourseId, textarea.value);
+                };
+
+                contractDiv.appendChild(label);
+                contractDiv.appendChild(textarea);
+                contractDiv.appendChild(saveBtn);
+                nameCell.appendChild(contractDiv);
+              }
+              } else if (hasAptoStatus && isAdmin) {
+
+
+                const actionButton = document.createElement('button');
+                actionButton.className = 'action-button';
+                actionButton.textContent = 'Enviar Convite';
+                actionButton.onclick = (e) => {
+                  e.stopPropagation();
+                  const teacherType = window.location.pathname.includes('docentes-pos') ? 'postgraduate' : 'regular';
+                  openInvitationModal(
+                    teacher.id,
+                    teacher.name,
+                    teacher.email,
+                    selectedCourseId,
+                    selectedCourseName,
+                    teacherType
+                  );
+                };
+
+                nameCell.appendChild(actionButton);
+
+                console.log(`Added invite button for apto teacher ${teacherId}`);
+              }
+            }
+
+            row.appendChild(nameCell);
+
+            const emailCell = document.createElement('td');
+            emailCell.textContent = teacher.email || '';
+            row.appendChild(emailCell);
+
+            const createdCell = document.createElement('td');
+            createdCell.textContent = formatDate(teacher.created_at);
+            row.appendChild(createdCell);
+
+            const calledCell = document.createElement('td');
+            calledCell.className = 'called-at-cell';
+
+            if (isFilteredByCourse && teacher.discipline_statuses) {
+              const disciplines = teacher.discipline_statuses.split('|~~|');
+              let earliestDate = null;
+
+              disciplines.forEach(disc => {
+                const parts = disc.split('|~|');
+                if (parts.length >= 4 && parts[3]) {
+                  if (!earliestDate || parts[3] < earliestDate) {
+                    earliestDate = parts[3];
+                  }
+                }
+              });
+
+              calledCell.textContent = earliestDate || '';
+              calledCell.style.display = '';
+            } else {
+              calledCell.style.display = 'none';
+            }
+
+            row.appendChild(calledCell);
+
+            const disciplinesCell = document.createElement('td');
+            if (teacher.discipline_statuses) {
+              const disciplineGroups = teacher.discipline_statuses.split('|~~|');
+              disciplineGroups.forEach(group => {
+                const parts = group.split('|~|');
+                if (parts.length >= 3) {
+                  const disciplineId = parts[0];
+                  const disciplineName = parts[1];
+                  const status = parts[2];
+
+                  const div = document.createElement('div');
+                  div.className = 'discipline-status';
+
+                  const nameSpan = document.createElement('span');
+                  nameSpan.className = 'discipline-name';
+                  nameSpan.textContent = disciplineName;
+
+                  const statusSpan = document.createElement('span');
+                  statusSpan.className = `status-badge ${getStatusClass(status)}`;
+                  statusSpan.textContent = parseStatusLabel(status);
+
+                  div.appendChild(nameSpan);
+                  div.appendChild(statusSpan);
+                  disciplinesCell.appendChild(div);
+                }
+              });
+            } else {
+              disciplinesCell.innerHTML = '<span class="text-muted">Sem disciplinas</span>';
+            }
+            row.appendChild(disciplinesCell);
+
+            tbody.appendChild(row);
+          }
+
+          const hasData = currentTeachers.length > 0;
+          document.getElementById('export-btn').disabled = !hasData;
+          document.getElementById('export-pdf-btn').disabled = !hasActiveFilters();
+
+        } finally {
+          isRendering = false;
+        }
+      }
+
+
+      async function fetchFilteredData() {
+
+        const category = document.getElementById('category').value;
+        const course = document.getElementById('course').value;
+        const status = document.getElementById('status').value;
+        const name = document.getElementById('name').value;
+
+        // Update isFilteredByCourse flag
+        isFilteredByCourse = course !== '';
+
+        // ALWAYS clear invitation statuses when filters change or data is refreshed
+        invitationStatuses = {};
+
+        if (!category && !course && !status && !name) {
+          currentTeachers = [...allTeachers];
+          await updateTable();
+          return;
+        }
+
+        const queryParams = new URLSearchParams();
+        if (category) queryParams.append('category', category);
+        if (course) queryParams.append('course', course);
+        if (status) queryParams.append('status', status);
+        if (name) queryParams.append('name', name);
+
+        try {
+          // FIXED: Changed from get_filtered_teachers.php to get_filtered_teachers_postg.php
+          const response = await fetch('../backend/api/get_filtered_teachers_postg.php?' + queryParams);
+          const data = await response.json();
+
+          currentTeachers = data;
+          await updateTable();
+        } catch (error) {
+          console.error('Error fetching filtered data:', error);
+          currentTeachers = [];
+          await updateTable();
+        }
+
+      }
+
+      setInterval(async () => {
+        if (isFilteredByCourse) {
+          const courseSelect = document.getElementById('course');
+          if (courseSelect.value) {
+            // Clear cache to force fresh check
+            invitationStatuses = {};
+            await updateTable();
+          }
+        }
+      }, 60000);
+
+      function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR');
+      }
+
+      function parseStatusLabel(status) {
+        if (status === null || status === 'null' || status === '') {
+          return 'Aguardando';
+        } else if (status === '1' || status === 1) {
+          return 'Apto';
+        } else if (status === '0' || status === 0) {
+          return 'Inapto';
+        }
+        return 'Aguardando';
+      }
+
+      function getStatusClass(status) {
+        if (status === null || status === 'null' || status === '') {
+          return 'status-pending';
+        } else if (status === '1' || status === 1) {
+          return 'status-approved';
+        } else if (status === '0' || status === 0) {
+          return 'status-not-approved';
+        }
+        return 'status-pending';
+      }
+
+      // Add event listeners
+      document.getElementById('category').addEventListener('change', fetchFilteredData);
+      document.getElementById('course').addEventListener('change', fetchFilteredData);
+      document.getElementById('status').addEventListener('change', fetchFilteredData);
+      document.getElementById('name').addEventListener('input', fetchFilteredData);
+
+      // Export to Excel function
+      function exportToExcel() {
+        const button = document.getElementById('export-btn');
+        const originalText = button.innerHTML;
+
+        // Disable button and show loading
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+
+        // Get current filters
+        const category = document.getElementById('category').value;
+        const course = document.getElementById('course').value;
+        const status = document.getElementById('status').value;
+        const name = document.getElementById('name').value;
+
+        const queryParams = new URLSearchParams();
+        if (category) queryParams.append('category', category);
+        if (course) queryParams.append('course', course);
+        if (status) queryParams.append('status', status);
+        if (name) queryParams.append('name', name);
+
+        // Call the backend API
+        fetch(`../backend/api/export_docentes_excel.php?${queryParams}`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Erro na resposta do servidor');
+            }
+            return response.blob();
+          })
+          .then(blob => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `docentes_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            // Reset button
+            button.disabled = false;
+            button.innerHTML = originalText;
+          })
+          .catch(error => {
+            console.error('Erro na exportação:', error);
+            alert('Erro ao exportar para Excel. Tente novamente.');
+
+            // Reset button
+            button.disabled = false;
+            button.innerHTML = originalText;
+          });
+      }
+
+      // Export to PDF function
+      function exportToPDF() {
+        const button = document.getElementById('export-pdf-btn');
+        const originalText = button.innerHTML;
+
+        // Disable button and show loading
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+
+        // Get current filters
+        const category = document.getElementById('category').value;
+        const course = document.getElementById('course').value;
+        const status = document.getElementById('status').value;
+        const name = document.getElementById('name').value;
+
+        const queryParams = new URLSearchParams();
+        if (category) queryParams.append('category', category);
+        if (course) queryParams.append('course', course);
+        if (status) queryParams.append('status', status);
+        if (name) queryParams.append('name', name);
+
+        // Call the backend API
+        fetch(`../backend/api/export_docentes_pdf.php?${queryParams}`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Erro na resposta do servidor');
+            }
+            return response.blob();
+          })
+          .then(blob => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `docentes_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            // Reset button
+            button.disabled = false;
+            button.innerHTML = originalText;
+          })
+          .catch(error => {
+            console.error('Erro na exportação:', error);
+            alert('Erro ao exportar PDF. Tente novamente.');
+
+            // Reset button
+            button.disabled = false;
+            button.innerHTML = originalText;
+          });
+      }
+      // Modal functions
+      function openInvitationModal(teacherId, teacherName, teacherEmail, courseId, courseName, teacherType) {
+        document.getElementById('teacherId').value = teacherId;
+        document.getElementById('teacherEmail').value = teacherEmail;
+        document.getElementById('courseId').value = courseId;
+        document.getElementById('teacherName').textContent = teacherName;
+        document.getElementById('courseName').textContent = courseName;
+        document.getElementById('teacherType').value = teacherType;
+
+        document.getElementById('invitationModal').style.display = 'block';
+      }
+
+      function closeInvitationModal() {
+        document.getElementById('invitationModal').style.display = 'none';
+        document.getElementById('invitationForm').reset();
+      }
+
+      // Close modal when clicking outside
+      window.onclick = function(event) {
+        const modal = document.getElementById('invitationModal');
+        if (event.target == modal) {
+          closeInvitationModal();
+        }
+      }
+
+      // Replace the form submission handler with this updated version:
+      document.getElementById('invitationForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Enviando...';
+
+        const formData = new FormData(e.target);
+
+        try {
+          const response = await fetch('../backend/api/send_course_invitation.php', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert('Convite enviado com sucesso!');
+            closeInvitationModal();
+
+            // FIXED: Force complete refresh of data
+            console.log('Invitation sent successfully, refreshing data...');
+
+            // Clear ALL caches
+            invitationStatuses = {};
+
+            // Wait a moment for the database to be updated
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Force fresh data fetch
+            await fetchFilteredData();
+
+            console.log('Data refreshed after invitation sent');
+          } else {
+            alert('Erro ao enviar convite: ' + (result.message || 'Erro desconhecido'));
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Erro ao enviar convite. Tente novamente.');
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = originalText;
+        }
+      });
+
+      // After all your functions are defined, at the very end of your script, have just one:
+      document.addEventListener('DOMContentLoaded', function() {
+
+        // Disable both export buttons initially
+        document.getElementById('export-btn').disabled = true;
+        document.getElementById('export-pdf-btn').disabled = true;
+
+        const courseSelect = document.getElementById('course');
+        if (courseSelect && courseSelect.value) {
+          // Small delay to ensure everything is initialized
+          setTimeout(() => {
+            invitationStatuses = {};
+            fetchFilteredData();
+          }, 100);
         } else {
-          disciplinesCell.innerHTML = '<span class="text-muted">Sem disciplinas</span>';
+          // Initialize table without filters
+          updateTable();
         }
-        row.appendChild(disciplinesCell);
-
-        tbody.appendChild(row);
-      }
-
-      const hasData = currentTeachers.length > 0;
-      document.getElementById('export-btn').disabled = !hasData;
-      document.getElementById('export-pdf-btn').disabled = !hasActiveFilters();
-
-    } finally {
-      isRendering = false;
-    }
-  }
-
-
-  async function fetchFilteredData() {
-
-    const category = document.getElementById('category').value;
-    const course = document.getElementById('course').value;
-    const status = document.getElementById('status').value;
-    const name = document.getElementById('name').value;
-
-    // Update isFilteredByCourse flag
-    isFilteredByCourse = course !== '';
-
-    // ALWAYS clear invitation statuses when filters change or data is refreshed
-    invitationStatuses = {};
-
-    if (!category && !course && !status && !name) {
-      currentTeachers = [...allTeachers];
-      await updateTable();
-      return;
-    }
-
-    const queryParams = new URLSearchParams();
-    if (category) queryParams.append('category', category);
-    if (course) queryParams.append('course', course);
-    if (status) queryParams.append('status', status);
-    if (name) queryParams.append('name', name);
-
-    try {
-      // FIXED: Changed from get_filtered_teachers.php to get_filtered_teachers_postg.php
-      const response = await fetch('../backend/api/get_filtered_teachers_postg.php?' + queryParams);
-      const data = await response.json();
-
-      currentTeachers = data;
-      await updateTable();
-    } catch (error) {
-      console.error('Error fetching filtered data:', error);
-      currentTeachers = [];
-      await updateTable();
-    }
-
-  }
-
-  setInterval(async () => {
-    if (isFilteredByCourse) {
-      const courseSelect = document.getElementById('course');
-      if (courseSelect.value) {
-        // Clear cache to force fresh check
-        invitationStatuses = {};
-        await updateTable();
-      }
-    }
-  }, 60000);
-
-  function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-  }
-
-  function parseStatusLabel(status) {
-    if (status === null || status === 'null' || status === '') {
-      return 'Aguardando';
-    } else if (status === '1' || status === 1) {
-      return 'Apto';
-    } else if (status === '0' || status === 0) {
-      return 'Inapto';
-    }
-    return 'Aguardando';
-  }
-
-  function getStatusClass(status) {
-    if (status === null || status === 'null' || status === '') {
-      return 'status-pending';
-    } else if (status === '1' || status === 1) {
-      return 'status-approved';
-    } else if (status === '0' || status === 0) {
-      return 'status-not-approved';
-    }
-    return 'status-pending';
-  }
-
-  // Add event listeners
-  document.getElementById('category').addEventListener('change', fetchFilteredData);
-  document.getElementById('course').addEventListener('change', fetchFilteredData);
-  document.getElementById('status').addEventListener('change', fetchFilteredData);
-  document.getElementById('name').addEventListener('input', fetchFilteredData);
-
-  // Export to Excel function
-  function exportToExcel() {
-    const button = document.getElementById('export-btn');
-    const originalText = button.innerHTML;
-
-    // Disable button and show loading
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-
-    // Get current filters
-    const category = document.getElementById('category').value;
-    const course = document.getElementById('course').value;
-    const status = document.getElementById('status').value;
-    const name = document.getElementById('name').value;
-
-    const queryParams = new URLSearchParams();
-    if (category) queryParams.append('category', category);
-    if (course) queryParams.append('course', course);
-    if (status) queryParams.append('status', status);
-    if (name) queryParams.append('name', name);
-
-    // Call the backend API
-    fetch(`../backend/api/export_docentes_excel.php?${queryParams}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Erro na resposta do servidor');
-        }
-        return response.blob();
-      })
-      .then(blob => {
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `docentes_${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        // Reset button
-        button.disabled = false;
-        button.innerHTML = originalText;
-      })
-      .catch(error => {
-        console.error('Erro na exportação:', error);
-        alert('Erro ao exportar para Excel. Tente novamente.');
-
-        // Reset button
-        button.disabled = false;
-        button.innerHTML = originalText;
       });
-  }
-
-  // Export to PDF function
-  function exportToPDF() {
-    const button = document.getElementById('export-pdf-btn');
-    const originalText = button.innerHTML;
-
-    // Disable button and show loading
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
-
-    // Get current filters
-    const category = document.getElementById('category').value;
-    const course = document.getElementById('course').value;
-    const status = document.getElementById('status').value;
-    const name = document.getElementById('name').value;
-
-    const queryParams = new URLSearchParams();
-    if (category) queryParams.append('category', category);
-    if (course) queryParams.append('course', course);
-    if (status) queryParams.append('status', status);
-    if (name) queryParams.append('name', name);
-
-    // Call the backend API
-    fetch(`../backend/api/export_docentes_pdf.php?${queryParams}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Erro na resposta do servidor');
-        }
-        return response.blob();
-      })
-      .then(blob => {
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `docentes_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        // Reset button
-        button.disabled = false;
-        button.innerHTML = originalText;
-      })
-      .catch(error => {
-        console.error('Erro na exportação:', error);
-        alert('Erro ao exportar PDF. Tente novamente.');
-
-        // Reset button
-        button.disabled = false;
-        button.innerHTML = originalText;
-      });
-  }
-  // Modal functions
-  function openInvitationModal(teacherId, teacherName, teacherEmail, courseId, courseName, teacherType) {
-    document.getElementById('teacherId').value = teacherId;
-    document.getElementById('teacherEmail').value = teacherEmail;
-    document.getElementById('courseId').value = courseId;
-    document.getElementById('teacherName').textContent = teacherName;
-    document.getElementById('courseName').textContent = courseName;
-    document.getElementById('teacherType').value = teacherType;
-
-    document.getElementById('invitationModal').style.display = 'block';
-  }
-
-  function closeInvitationModal() {
-    document.getElementById('invitationModal').style.display = 'none';
-    document.getElementById('invitationForm').reset();
-  }
-
-  // Close modal when clicking outside
-  window.onclick = function(event) {
-    const modal = document.getElementById('invitationModal');
-    if (event.target == modal) {
-      closeInvitationModal();
-    }
-  }
-
-  // Replace the form submission handler with this updated version:
-  document.getElementById('invitationForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-    submitButton.disabled = true;
-    submitButton.textContent = 'Enviando...';
-
-    const formData = new FormData(e.target);
-
-    try {
-      const response = await fetch('../backend/api/send_course_invitation.php', {
-        method: 'POST',
-        body: formData
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert('Convite enviado com sucesso!');
-        closeInvitationModal();
-
-        // FIXED: Force complete refresh of data
-        console.log('Invitation sent successfully, refreshing data...');
-
-        // Clear ALL caches
-        invitationStatuses = {};
-
-        // Wait a moment for the database to be updated
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Force fresh data fetch
-        await fetchFilteredData();
-
-        console.log('Data refreshed after invitation sent');
-      } else {
-        alert('Erro ao enviar convite: ' + (result.message || 'Erro desconhecido'));
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Erro ao enviar convite. Tente novamente.');
-    } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = originalText;
-    }
-  });
-
-  // After all your functions are defined, at the very end of your script, have just one:
-  document.addEventListener('DOMContentLoaded', function() {
-
-    // Disable both export buttons initially
-    document.getElementById('export-btn').disabled = true;
-    document.getElementById('export-pdf-btn').disabled = true;
-
-    const courseSelect = document.getElementById('course');
-    if (courseSelect && courseSelect.value) {
-      // Small delay to ensure everything is initialized
-      setTimeout(() => {
-        invitationStatuses = {};
+      // Add event listeners with debug
+      document.getElementById('category').addEventListener('change', function() {
+        console.log('Category changed, calling fetchFilteredData');
         fetchFilteredData();
-      }, 100);
-    } else {
-      // Initialize table without filters
-      updateTable();
-    }
-  });
-  // Add event listeners with debug
-  document.getElementById('category').addEventListener('change', function() {
-    console.log('Category changed, calling fetchFilteredData');
-    fetchFilteredData();
-  });
-  document.getElementById('course').addEventListener('change', function() {
-    console.log('Course changed, calling fetchFilteredData');
-    fetchFilteredData();
-  });
-  document.getElementById('status').addEventListener('change', function() {
-    console.log('Status changed, calling fetchFilteredData');
-    fetchFilteredData();
-  });
-  document.getElementById('name').addEventListener('input', function() {
-    console.log('Name input, calling fetchFilteredData');
-    fetchFilteredData();
-  });
+      });
+      document.getElementById('course').addEventListener('change', function() {
+        console.log('Course changed, calling fetchFilteredData');
+        fetchFilteredData();
+      });
+      document.getElementById('status').addEventListener('change', function() {
+        console.log('Status changed, calling fetchFilteredData');
+        fetchFilteredData();
+      });
+      document.getElementById('name').addEventListener('input', function() {
+        console.log('Name input, calling fetchFilteredData');
+        fetchFilteredData();
+      });
 </script>
 
 <?php require_once '../components/footer.php'; ?>

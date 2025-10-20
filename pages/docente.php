@@ -819,51 +819,9 @@ if ($is_ajax_request) {
                   </div>
                 <?php endif; ?>
 
-                <!-- Old admin buttons (for backward compatibility) -->
-                <?php if ($show_old_admin): ?>
-                  <div class="alert alert-info mt-2">
-                    <small>
-                      <strong>Status Final:</strong>
-                      <?php if ($gese_eval === null || $ped_eval === null): ?>
-                        Aguardando avaliações
-                      <?php elseif ($gese_eval === 1 && $ped_eval === 1): ?>
-                        <span class="text-success">APTO</span>
-                      <?php else: ?>
-                        <span class="text-danger">INAPTO</span>
-                      <?php endif; ?>
-                      <br>
-                      <em>Nota: Este perfil requer avaliação GESE e Pedagógica.</em>
-                    </small>
-                  </div>
 
-                  <!-- Legacy buttons for old admin without specific roles -->
-                  <button class="btn btn-success btn-sm me-2"
-                    onclick="updateDisciplineStatus(<?= $requested_id ?>, <?= $disc_id ?>, 1)"
-                    <?= $disc_enabled === 1 ? 'disabled' : '' ?>>
-                    Aprovar para este curso (Legacy)
-                  </button>
-                  <button class="btn btn-danger btn-sm me-2"
-                    onclick="updateDisciplineStatus(<?= $requested_id ?>, <?= $disc_id ?>, 0)"
-                    <?= $disc_enabled === 0 ? 'disabled' : '' ?>>
-                    Reprovar para este curso (Legacy)
-                  </button>
-                <?php endif; ?>
 
-                <?php
-                // Debug info (remove in production)
-                if (isset($_GET['debug'])) {
-                  echo "<div class='mt-2 p-2 bg-light'>";
-                  echo "<small>";
-                  echo "Debug: show_gese=" . ($show_gese ? 'true' : 'false') . ", ";
-                  echo "show_ped=" . ($show_ped ? 'true' : 'false') . ", ";
-                  echo "isGESE()=" . (isGESE() ? 'true' : 'false') . ", ";
-                  echo "isPedagogico()=" . (isPedagogico() ? 'true' : 'false') . ", ";
-                  echo "isAdmin()=" . (isAdmin() ? 'true' : 'false') . ", ";
-                  echo "hasRole('gese')=" . (hasRole('gese') ? 'true' : 'false');
-                  echo "</small>";
-                  echo "</div>";
-                }
-                ?>
+
               </div>
             <?php endif; ?>
           </div>

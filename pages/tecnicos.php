@@ -196,6 +196,23 @@ $_SESSION['user-data'] = $technicians;
     font-size: 14px;
   }
 
+  .invitation-contracted {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #cfe2ff;
+    color: #084298;
+    border: 1px solid #9ec5fe;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+    font-weight: 500;
+  }
+
+  .invitation-contracted:before {
+    content: "📋 ";
+    font-size: 14px;
+  }
+
   /* Modal Styles */
   .modal {
     position: fixed;
@@ -518,7 +535,7 @@ $_SESSION['user-data'] = $technicians;
   </div>
 </div>
 <script>
-  // Always add these at the top:
+  // User roles and permissions
   const userRoles = <?php echo json_encode($_SESSION['user_roles'] ?? []); ?>;
 
   function canSendInvites() {
@@ -529,40 +546,10 @@ $_SESSION['user-data'] = $technicians;
     return userRoles.includes('admin') || userRoles.includes('gese');
   }
 
-  // For page access check:
+  // For page access check
   const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
 
-  // Function to check if user can send invites (admin or GEDTH only)
-  function canSendInvites() {
-    return userRoles.includes('admin') || userRoles.includes('gedth');
-  }
-
-  // Function to check if user can view/edit contract info (admin or GESE only)
-  function canViewContractInfo() {
-    return userRoles.includes('admin') || userRoles.includes('gese');
-  }
-  if (invitationStatus.is_accepted) {
-    const acceptedSpan = document.createElement('span');
-    acceptedSpan.className = 'invitation-accepted';
-    acceptedSpan.textContent = 'Contratado';
-    acceptedSpan.style.marginLeft = '10px';
-    nameCell.appendChild(acceptedSpan);
-
-    // Only show contract textarea if user can view contract info
-    if (canViewContractInfo()) {
-      // ... existing contract textarea code
-    }
-  } else if (canSendInvites() && user.enabled == 1) {
-    // Show invite button for admin and GEDTH
-    const inviteBtn = document.createElement('button');
-    inviteBtn.className = 'action-button';
-    inviteBtn.textContent = 'Enviar Convite';
-    inviteBtn.onclick = (e) => {
-      e.stopPropagation();
-      openInvitationModal(user.id, user.name, user.email);
-    };
-    nameCell.appendChild(inviteBtn);
-  }
+  // Data variables
   let allTechnicians = <?= json_encode($technicians) ?>;
   let currentUsers = [...allTechnicians];
   let currentSort = {
@@ -570,8 +557,6 @@ $_SESSION['user-data'] = $technicians;
     direction: 'desc'
   };
   let invitationStatuses = {};
-
-
 
   // Modal functions
   function openInvitationModal(userId, userName, userEmail) {
@@ -637,7 +622,7 @@ $_SESSION['user-data'] = $technicians;
     }
   });
 
-  // Update the checkInvitationStatus function to be more robust
+  // Check invitation status
   async function checkInvitationStatus(technicianId) {
     try {
       const response = await fetch(`../backend/api/check_course_invitation_status.php?user_id=${technicianId}&is_staff=true`);
@@ -661,10 +646,11 @@ $_SESSION['user-data'] = $technicians;
     }
   }
 
+  // Save contract info
   async function saveContractInfo(userId, contractInfo) {
     try {
       const formData = new FormData();
-      formData.append('teacher_id', userId); // Note: using teacher_id as expected by backend
+      formData.append('teacher_id', userId);
       formData.append('contract_info', contractInfo);
       formData.append('is_staff', 'true');
 
@@ -677,7 +663,6 @@ $_SESSION['user-data'] = $technicians;
 
       if (result.success) {
         alert('Informações do contrato salvas com sucesso!');
-        // Refresh the table to show updated information
         await fetchFilteredData();
       } else {
         alert('Erro ao salvar informações do contrato: ' + result.message);
@@ -687,6 +672,8 @@ $_SESSION['user-data'] = $technicians;
       alert('Erro ao salvar informações do contrato.');
     }
   }
+
+  // DOM Content Loaded
   document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.sortable').forEach(th => {
       th.addEventListener('click', () => {
@@ -695,11 +682,11 @@ $_SESSION['user-data'] = $technicians;
       });
     });
 
-    fetchFilteredData(); // This will load data and render table
+    fetchFilteredData();
 
     document.getElementById('status').addEventListener('change', filterTechnicians);
 
-    sortTechnicians(); // This should be enough
+    sortTechnicians();
 
     const calledHeader = document.querySelector('th:nth-child(4)');
     if (calledHeader) {
@@ -709,31 +696,24 @@ $_SESSION['user-data'] = $technicians;
 
   // Sorting function
   function handleSort(column) {
-    // If clicking the same column, toggle direction
     if (currentSort.column === column) {
       currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
     } else {
-      // New column, default to ascending
       currentSort.column = column;
       currentSort.direction = 'asc';
     }
 
-    // Update sort indicators
     updateSortIndicators();
-
-    // Sort and re-render
     sortTechnicians();
     renderTable(currentUsers);
   }
 
   function updateSortIndicators() {
-    // Clear all indicators
     document.querySelectorAll('.sort-indicator').forEach(indicator => {
       indicator.textContent = '';
       indicator.classList.remove('active');
     });
 
-    // Set active indicator
     const activeIndicator = document.getElementById(`sort-${currentSort.column}`);
     if (activeIndicator) {
       activeIndicator.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
@@ -741,27 +721,23 @@ $_SESSION['user-data'] = $technicians;
     }
   }
 
-  // Replace your current sortTechnicians function with this:
   function sortTechnicians() {
     currentUsers.sort((a, b) => {
-      // Priority 1: Users without called_at come first
       const hasCalledAtA = a.called_at && a.called_at.trim() !== '';
       const hasCalledAtB = b.called_at && b.called_at.trim() !== '';
 
-      if (!hasCalledAtA && hasCalledAtB) return -1; // A comes first (no called_at)
-      if (hasCalledAtA && !hasCalledAtB) return 1; // B comes first (no called_at)
+      if (!hasCalledAtA && hasCalledAtB) return -1;
+      if (hasCalledAtA && !hasCalledAtB) return 1;
 
-      // Priority 2: If both have called_at, sort by called_at date (oldest first)
       if (hasCalledAtA && hasCalledAtB) {
         const dateA = parseDate(a.called_at);
         const dateB = parseDate(b.called_at);
-        return dateA - dateB; // Oldest first
+        return dateA - dateB;
       }
 
-      // Priority 3: If neither has called_at, sort by creation date (oldest first)
       const createdA = new Date(a.created_at);
       const createdB = new Date(b.created_at);
-      return createdA - createdB; // Oldest first
+      return createdA - createdB;
     });
   }
 
@@ -776,35 +752,26 @@ $_SESSION['user-data'] = $technicians;
     fetch('../backend/api/get_filtered_technicians.php?' + queryParams.toString())
       .then(response => response.json())
       .then(data => {
-
-        // Store the data
         allTechnicians = data;
         currentTechnicians = [...data];
-
-        // Re-sort and re-render with the new data
         sortTechnicians();
         renderTable(currentUsers);
       })
       .catch(error => console.error('Error:', error));
   }
 
-  // Also add the filterTechnicians function if it doesn't exist
   function filterTechnicians() {
     const statusFilter = document.getElementById('status').value;
     const nameFilter = document.getElementById('name').value.toLowerCase();
-
-    console.log('Filtering with status:', statusFilter, 'name:', nameFilter);
 
     if (!statusFilter && !nameFilter) {
       currentTechnicians = [...allTechnicians];
     } else {
       currentTechnicians = allTechnicians.filter(t => {
-        // Status filter
         const statusMatch = !statusFilter ||
           (statusFilter === 'null' ? (t.enabled === null || t.enabled === '') :
             String(t.enabled) === statusFilter);
 
-        // Name filter
         const nameMatch = !nameFilter ||
           (t.name && t.name.toLowerCase().includes(nameFilter));
 
@@ -812,51 +779,43 @@ $_SESSION['user-data'] = $technicians;
       });
     }
 
-    console.log('Filtered technicians:', currentTechnicians.length);
     sortTechnicians();
     renderTable(currentUsers);
   }
 
-  // Add event listener for the name input
   document.getElementById('name').addEventListener('input', function() {
     clearTimeout(window.nameFilterTimeout);
     window.nameFilterTimeout = setTimeout(fetchFilteredData, 300);
   });
 
-  // Replace the entire renderTable function with this:
-
+  // Render table function
   async function renderTable(users) {
     const tbody = document.getElementById('techniciansTableBody');
-    tbody.innerHTML = ''; // Clear table completely
+    tbody.innerHTML = '';
 
     if (users.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum técnico encontrado</td></tr>';
       return;
     }
 
-    // Sort users by priority: no called_at first, then by oldest created_at
     const sortedUsers = [...users].sort((a, b) => {
-      // Priority 1: Users without called_at come first
       const hasCalledAtA = a.called_at && a.called_at.trim() !== '';
       const hasCalledAtB = b.called_at && b.called_at.trim() !== '';
 
-      if (!hasCalledAtA && hasCalledAtB) return -1; // A comes first (no called_at)
-      if (hasCalledAtA && !hasCalledAtB) return 1; // B comes first (no called_at)
+      if (!hasCalledAtA && hasCalledAtB) return -1;
+      if (hasCalledAtA && !hasCalledAtB) return 1;
 
-      // Priority 2: If both have no called_at, sort by creation date (oldest first)
       if (!hasCalledAtA && !hasCalledAtB) {
         const createdA = new Date(a.created_at);
         const createdB = new Date(b.created_at);
-        return createdA - createdB; // Oldest first
+        return createdA - createdB;
       }
 
-      // Priority 3: If both have called_at, sort by called_at date (oldest first)
       const dateA = parseDate(a.called_at);
       const dateB = parseDate(b.called_at);
-      return dateA - dateB; // Oldest first
+      return dateA - dateB;
     });
 
-    // Check invitation status for all APTO users first
     const userInvitationStatuses = {};
     const aptoUsers = sortedUsers.filter(user => user.enabled == 1);
 
@@ -864,7 +823,6 @@ $_SESSION['user-data'] = $technicians;
       userInvitationStatuses[user.id] = await checkInvitationStatus(user.id);
     }
 
-    // Now render using the sorted users array
     for (const user of sortedUsers) {
       const enabled = user.enabled == 1 ? 'Apto' :
         user.enabled == 0 ? 'Inapto' : 'Aguardando';
@@ -872,7 +830,6 @@ $_SESSION['user-data'] = $technicians;
       const statusClass = user.enabled == 1 ? 'status-approved' :
         user.enabled == 0 ? 'status-not-approved' : 'status-pending';
 
-      // Format dates
       const createdDate = new Date(user.created_at);
       const createdDateF = createdDate.toLocaleDateString('pt-BR') + ' ' +
         createdDate.toLocaleTimeString('pt-BR', {
@@ -880,7 +837,6 @@ $_SESSION['user-data'] = $technicians;
           minute: '2-digit'
         });
 
-      // Date formatting
       let calledDateF = '-';
       if (user.called_at) {
         const calledDate = parseDate(user.called_at);
@@ -892,19 +848,15 @@ $_SESSION['user-data'] = $technicians;
         }
       }
 
-      // Create row element
       const row = document.createElement('tr');
       row.className = 'technician-row';
       row.style.cursor = 'pointer';
 
-      // Name cell with invitation status
       const nameCell = document.createElement('td');
       nameCell.textContent = titleCase(user.name);
 
-      // Get invitation status from our pre-fetched data
       const invitationStatus = userInvitationStatuses[user.id];
 
-      // Add invitation status indicators and buttons
       if (invitationStatus) {
         if (invitationStatus.has_pending) {
           const pendingSpan = document.createElement('span');
@@ -914,14 +866,12 @@ $_SESSION['user-data'] = $technicians;
           nameCell.appendChild(pendingSpan);
         } else if (invitationStatus.is_accepted) {
           const acceptedSpan = document.createElement('span');
-          acceptedSpan.className = 'invitation-accepted';
+          acceptedSpan.className = 'invitation-contracted';
           acceptedSpan.textContent = 'Contratado';
           acceptedSpan.style.marginLeft = '10px';
           nameCell.appendChild(acceptedSpan);
 
-          // Only show contract textarea if user can view contract info
           if (canViewContractInfo()) {
-            // Add contract textarea for accepted staff
             const contractDiv = document.createElement('div');
             contractDiv.style.display = 'inline-block';
             contractDiv.style.marginLeft = '10px';
@@ -955,7 +905,6 @@ $_SESSION['user-data'] = $technicians;
           rejectedSpan.style.marginLeft = '10px';
           nameCell.appendChild(rejectedSpan);
         } else if (canSendInvites() && user.enabled == 1) {
-          // Show invite button for admin and GEDTH (no pending, rejected, or accepted status)
           const inviteBtn = document.createElement('button');
           inviteBtn.className = 'action-button';
           inviteBtn.textContent = 'Enviar Convite';
@@ -966,7 +915,6 @@ $_SESSION['user-data'] = $technicians;
           nameCell.appendChild(inviteBtn);
         }
       } else if (canSendInvites() && user.enabled == 1) {
-        // If no invitation status at all, show button for APTO users
         const inviteBtn = document.createElement('button');
         inviteBtn.className = 'action-button';
         inviteBtn.textContent = 'Enviar Convite';
@@ -979,22 +927,18 @@ $_SESSION['user-data'] = $technicians;
 
       row.appendChild(nameCell);
 
-      // Email cell
       const emailCell = document.createElement('td');
       emailCell.textContent = user.email.toLowerCase();
       row.appendChild(emailCell);
 
-      // Created at cell
       const createdCell = document.createElement('td');
       createdCell.textContent = createdDateF;
       row.appendChild(createdCell);
 
-      // Called at cell
       const calledCell = document.createElement('td');
       calledCell.textContent = calledDateF;
       row.appendChild(calledCell);
 
-      // Status cell
       const statusCell = document.createElement('td');
       const statusSpan = document.createElement('span');
       statusSpan.className = statusClass;
@@ -1002,7 +946,6 @@ $_SESSION['user-data'] = $technicians;
       statusCell.appendChild(statusSpan);
       row.appendChild(statusCell);
 
-      // Click handler for row
       row.onclick = (e) => {
         if (e.target.closest('button, textarea, input')) {
           return;
@@ -1014,16 +957,14 @@ $_SESSION['user-data'] = $technicians;
     }
   }
 
-  // Helper function to parse dates in different formats
+  // Helper functions
   function parseDate(dateString) {
     if (!dateString) return new Date(NaN);
 
     if (dateString.includes('/')) {
-      // Handle "DD/MM/YYYY" format
       const [day, month, year] = dateString.split('/');
       return new Date(`${year}-${month}-${day}`);
     } else if (dateString.includes('-')) {
-      // Handle "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" format
       return new Date(dateString);
     } else {
       console.warn('Unknown date format:', dateString);
@@ -1031,31 +972,6 @@ $_SESSION['user-data'] = $technicians;
     }
   }
 
-  // Title case function
-  function titleCase(str) {
-    if (!str) return '';
-    return str.toLowerCase().replace(/(?:^|\s)\w/g, function(match) {
-      return match.toUpperCase();
-    });
-  }
-  // Helper function to parse dates in different formats
-  function parseDate(dateString) {
-    if (!dateString) return new Date(NaN);
-
-    if (dateString.includes('/')) {
-      // Handle "DD/MM/YYYY" format
-      const [day, month, year] = dateString.split('/');
-      return new Date(`${year}-${month}-${day}`);
-    } else if (dateString.includes('-')) {
-      // Handle "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" format
-      return new Date(dateString);
-    } else {
-      console.warn('Unknown date format:', dateString);
-      return new Date(NaN);
-    }
-  }
-
-  // Title case function
   function titleCase(str) {
     if (!str) return '';
     return str.toLowerCase().replace(/(?:^|\s)\w/g, function(match) {
@@ -1067,17 +983,13 @@ $_SESSION['user-data'] = $technicians;
     const button = document.getElementById('export-btn');
     const originalText = button.innerHTML;
 
-    // Disable button and show loading
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
 
-    // Get current filters
     const status = document.getElementById('status').value;
-
     const queryParams = new URLSearchParams();
     if (status) queryParams.append('status', status);
 
-    // Call the backend API
     fetch(`../backend/api/export_technicians_excel.php?${queryParams}`)
       .then(response => {
         if (!response.ok) {
@@ -1086,7 +998,6 @@ $_SESSION['user-data'] = $technicians;
         return response.blob();
       })
       .then(blob => {
-        // Create download link
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -1096,7 +1007,6 @@ $_SESSION['user-data'] = $technicians;
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-        // Reset button
         button.disabled = false;
         button.innerHTML = originalText;
       })
@@ -1104,7 +1014,6 @@ $_SESSION['user-data'] = $technicians;
         console.error('Erro na exportação:', error);
         alert('Erro ao exportar para Excel. Tente novamente.');
 
-        // Reset button
         button.disabled = false;
         button.innerHTML = originalText;
       });
@@ -1114,17 +1023,13 @@ $_SESSION['user-data'] = $technicians;
     const button = document.getElementById('export-pdf-btn');
     const originalText = button.innerHTML;
 
-    // Disable button and show loading
     button.disabled = true;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
 
-    // Get current filters
     const status = document.getElementById('status').value;
-
     const queryParams = new URLSearchParams();
     if (status) queryParams.append('status', status);
 
-    // Call the backend API
     fetch(`../backend/api/export_technicians_pdf.php?${queryParams}`)
       .then(response => {
         if (!response.ok) {
@@ -1133,7 +1038,6 @@ $_SESSION['user-data'] = $technicians;
         return response.blob();
       })
       .then(blob => {
-        // Create download link
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -1143,7 +1047,6 @@ $_SESSION['user-data'] = $technicians;
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
 
-        // Reset button
         button.disabled = false;
         button.innerHTML = originalText;
       })
@@ -1151,7 +1054,6 @@ $_SESSION['user-data'] = $technicians;
         console.error('Erro na exportação:', error);
         alert('Erro ao exportar PDF. Tente novamente.');
 
-        // Reset button
         button.disabled = false;
         button.innerHTML = originalText;
       });

@@ -208,6 +208,23 @@ $_SESSION['user-data'] = $interpreters;
     font-size: 14px;
   }
 
+  .invitation-contracted {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #cfe2ff;
+    color: #084298;
+    border: 1px solid #9ec5fe;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+    font-weight: 500;
+  }
+
+  .invitation-contracted:before {
+    content: "📋 ";
+    font-size: 14px;
+  }
+
   /* Contract textarea styles */
   .contract-textarea {
     width: 100%;
@@ -860,7 +877,7 @@ $_SESSION['user-data'] = $interpreters;
           nameCell.appendChild(pendingSpan);
         } else if (invitationStatus.is_accepted) {
           const acceptedSpan = document.createElement('span');
-          acceptedSpan.className = 'invitation-accepted';
+          acceptedSpan.className = 'invitation-contracted';
           acceptedSpan.textContent = 'Contratado';
           acceptedSpan.style.marginLeft = '10px';
           nameCell.appendChild(acceptedSpan);
