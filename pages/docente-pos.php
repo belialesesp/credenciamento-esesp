@@ -34,7 +34,7 @@ $stmt = $conn->prepare("
     SELECT u.id 
     FROM user u
     INNER JOIN user_roles ur ON ur.user_id = u.id
-    WHERE u.id = ? AND ur.role = 'docente_pos' AND u.enabled = 1
+    WHERE u.id = ? AND ur.role = 'docente_pos'
 ");
 $stmt->execute([$requested_id]);
 
