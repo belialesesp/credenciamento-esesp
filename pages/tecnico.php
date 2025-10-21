@@ -390,55 +390,45 @@ if ($is_ajax_request) {
 
             <!-- GESE Evaluation Buttons -->
             <?php if ($show_gese): ?>
-                <div class="mb-3">
+                <div class="mb-2">
                     <label class="form-label fw-bold">Avaliação Documental (GESE):</label>
-                    <div class="btn-group" role="group">
-                        <button type="button"
-                            class="btn btn-success"
-                            onclick="updateEvaluation(<?= $requested_id ?>, 'gese', 1)"
-                            <?= $gese_eval === 1 ? 'disabled' : '' ?>>
-                            <i class="fas fa-check"></i> Aprovar Documentação
-                        </button>
-                        <button type="button"
-                            class="btn btn-danger"
-                            onclick="updateEvaluation(<?= $requested_id ?>, 'gese', 0)"
-                            <?= $gese_eval === 0 ? 'disabled' : '' ?>>
-                            <i class="fas fa-times"></i> Reprovar Documentação
-                        </button>
-                        <button type="button"
-                            class="btn btn-secondary"
-                            onclick="updateEvaluation(<?= $requested_id ?>, 'gese', null)"
-                            <?= $gese_eval === null ? 'disabled' : '' ?>>
-                            <i class="fas fa-undo"></i> Resetar
-                        </button>
-                    </div>
+                    <button class="btn btn-success btn-sm me-2"
+                        onclick="updateEvaluation(<?= $requested_id ?>, 'gese', 1)"
+                        <?= $gese_eval === 1 ? 'disabled' : '' ?>>
+                        <i class="fas fa-check"></i> Aprovar Documentação
+                    </button>
+                    <button class="btn btn-danger btn-sm me-2"
+                        onclick="updateEvaluation(<?= $requested_id ?>, 'gese', 0)"
+                        <?= $gese_eval === 0 ? 'disabled' : '' ?>>
+                        <i class="fas fa-times"></i> Reprovar Documentação
+                    </button>
+                    <button class="btn btn-secondary btn-sm"
+                        onclick="updateEvaluation(<?= $requested_id ?>, 'gese', null)"
+                        <?= $gese_eval === null ? 'disabled' : '' ?>>
+                        <i class="fas fa-undo"></i> Resetar
+                    </button>
                 </div>
             <?php endif; ?>
 
             <!-- Pedagogico Evaluation Buttons -->
             <?php if ($show_ped): ?>
-                <div class="mb-3">
+                <div>
                     <label class="form-label fw-bold">Avaliação Pedagógica (Pedagógico):</label>
-                    <div class="btn-group" role="group">
-                        <button type="button"
-                            class="btn btn-success"
-                            onclick="updateEvaluation(<?= $requested_id ?>, 'pedagogico', 1)"
-                            <?= $ped_eval === 1 ? 'disabled' : '' ?>>
-                            <i class="fas fa-check"></i> Aprovar Pedagogia
-                        </button>
-                        <button type="button"
-                            class="btn btn-danger"
-                            onclick="updateEvaluation(<?= $requested_id ?>, 'pedagogico', 0)"
-                            <?= $ped_eval === 0 ? 'disabled' : '' ?>>
-                            <i class="fas fa-times"></i> Reprovar Pedagogia
-                        </button>
-                        <button type="button"
-                            class="btn btn-secondary"
-                            onclick="updateEvaluation(<?= $requested_id ?>, 'pedagogico', null)"
-                            <?= $ped_eval === null ? 'disabled' : '' ?>>
-                            <i class="fas fa-undo"></i> Resetar
-                        </button>
-                    </div>
+                    <button class="btn btn-success btn-sm me-2"
+                        onclick="updateEvaluation(<?= $requested_id ?>, 'pedagogico', 1)"
+                        <?= $ped_eval === 1 ? 'disabled' : '' ?>>
+                        <i class="fas fa-check"></i> Aprovar Pedagogia
+                    </button>
+                    <button class="btn btn-danger btn-sm me-2"
+                        onclick="updateEvaluation(<?= $requested_id ?>, 'pedagogico', 0)"
+                        <?= $ped_eval === 0 ? 'disabled' : '' ?>>
+                        <i class="fas fa-times"></i> Reprovar Pedagogia
+                    </button>
+                    <button class="btn btn-secondary btn-sm"
+                        onclick="updateEvaluation(<?= $requested_id ?>, 'pedagogico', null)"
+                        <?= $ped_eval === null ? 'disabled' : '' ?>>
+                        <i class="fas fa-undo"></i> Resetar
+                    </button>
                 </div>
             <?php endif; ?>
         </div>

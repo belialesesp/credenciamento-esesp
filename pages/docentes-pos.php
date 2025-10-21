@@ -945,7 +945,7 @@ Coordenação de Cursos
                 contractDiv.appendChild(saveBtn);
                 nameCell.appendChild(contractDiv);
               }
-              } else if (hasAptoStatus && isAdmin) {
+              } else if (hasAptoStatus && canSendInvites()) {
 
 
                 const actionButton = document.createElement('button');
