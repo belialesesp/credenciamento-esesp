@@ -318,22 +318,24 @@ $_SESSION['user-data'] = $teachers;
     font-size: 12px;
     margin-left: 10px;
   }
-.invitation-contracted {
-  display: inline-block;
-  padding: 4px 12px;
-  background-color: #cfe2ff;
-  color: #084298;
-  border: 1px solid #9ec5fe;
-  border-radius: 4px;
-  font-size: 12px;
-  margin-left: 10px;
-  font-weight: 500;
-}
 
-.invitation-contracted:before {
-  content: "📋 ";
-  font-size: 14px;
-}
+  .invitation-contracted {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #cfe2ff;
+    color: #084298;
+    border: 1px solid #9ec5fe;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 10px;
+    font-weight: 500;
+  }
+
+  .invitation-contracted:before {
+    content: "📋 ";
+    font-size: 14px;
+  }
+
   /* Called at column specific styles */
   #called-at-header,
   .called-at-cell {
@@ -386,6 +388,69 @@ $_SESSION['user-data'] = $teachers;
   .invitation-rejected:before {
     content: "✗ ";
     font-size: 14px;
+  }
+
+  .discipline-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+
+  .discipline-name {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+
+  .activity-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #3498db;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+
+  .status-approved {
+    color: #27ae60;
+    font-weight: 600;
+    padding: 2px 8px;
+    background: #d5f4e6;
+    border-radius: 4px;
+  }
+
+  .status-not-approved {
+    color: #e74c3c;
+    font-weight: 600;
+    padding: 2px 8px;
+    background: #fadbd8;
+    border-radius: 4px;
+  }
+
+  .status-pending {
+    color: #f39c12;
+    font-weight: 600;
+    padding: 2px 8px;
+    background: #fef5e7;
+    border-radius: 4px;
+  }
+
+  .no-disciplines {
+    color: #95a5a6;
+    font-style: italic;
+  }
+
+  .called-date {
+    font-size: 12px;
+    color: #7f8c8d;
   }
 </style>
 
@@ -518,23 +583,34 @@ $_SESSION['user-data'] = $teachers;
                 $disciplineGroups = explode('|~~|', $teacher['discipline_statuses']);
                 foreach ($disciplineGroups as $group):
                   $parts = explode('|~|', $group);
-                  if (count($parts) >= 3):
+                  if (count($parts) >= 4) {  // Changed from 3 to 4
                     $disciplineId = $parts[0];
                     $disciplineName = $parts[1];
-                    $status = $parts[2];
+                    $activityName = $parts[2];  // NEW: Activity name
+                    $status = isset($parts[3]) ? $parts[3] : null;  // Changed index from 2 to 3
+                    $calledAt = isset($parts[4]) ? $parts[4] : '';  // Changed index from 3 to 4
+
                     $statusLabel = parseStatusLabel($status);
                     $statusClass = getStatusClass($status);
                 ?>
-                    <div class="discipline-status">
-                      <span class="discipline-name"><?= htmlspecialchars($disciplineName) ?></span>
-                      <span class="status-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
+                    <div class="discipline-item">
+                      <span class="discipline-name">
+                        <?= htmlspecialchars($disciplineName) ?>
+                        <?php if (!empty($activityName)): ?>
+                          <span class="activity-badge"><?= htmlspecialchars($activityName) ?></span>
+                        <?php endif; ?>
+                      </span>
+                      <span class="<?= $statusClass ?>"><?= $statusLabel ?></span>
+                      <?php if (!empty($calledAt) && $calledAt !== '00/00/0000'): ?>
+                        <span class="called-date" data-called-at="<?= $calledAt ?>" style="display: none;"><?= $calledAt ?></span>
+                      <?php endif; ?>
                     </div>
                 <?php
-                  endif;
+                  }
                 endforeach;
                 ?>
               <?php else: ?>
-                <span class="text-muted">Sem disciplinas</span>
+                <span class="no-disciplines">Sem disciplinas</span>
               <?php endif; ?>
             </td>
           </tr>

@@ -6,7 +6,8 @@ function get_docente($conn)
                      GROUP_CONCAT(
                          CONCAT_WS('|~|', 
                              d.id, 
-                             d.name, 
+                             d.name,
+                             a.name,
                              td.enabled,
                              DATE_FORMAT(td.called_at, '%d/%m/%Y')
                          ) SEPARATOR '|~~|'
@@ -15,6 +16,7 @@ function get_docente($conn)
               INNER JOIN user_roles ur ON u.id = ur.user_id AND ur.role = 'docente'
               LEFT JOIN teacher_disciplines td ON u.id = td.user_id
               LEFT JOIN disciplinas d ON td.discipline_id = d.id
+              LEFT JOIN activities a ON td.activity_id = a.id
               GROUP BY u.id";
 
   $stmt = $conn->prepare($query);
@@ -24,12 +26,12 @@ function get_docente($conn)
 
 function get_postg_docente($conn)
 {
-
   $query = "SELECT u.id, u.name, u.email, u.created_at,
                      GROUP_CONCAT(
                          CONCAT_WS('|~|',
                              d.id,
                              d.name,
+                             a.name,
                              td.enabled,
                              DATE_FORMAT(td.called_at, '%d/%m/%Y')
                           ) SEPARATOR '|~~|'
@@ -38,6 +40,7 @@ function get_postg_docente($conn)
               INNER JOIN user_roles ur ON u.id = ur.user_id
               LEFT JOIN postg_teacher_disciplines td ON u.id = td.user_id
               LEFT JOIN postg_disciplinas d ON td.discipline_id = d.id
+              LEFT JOIN activities a ON td.activity_id = a.id
               WHERE ur.role = 'docente_pos'
               GROUP BY u.id, u.name, u.email, u.created_at
               ORDER BY u.name";
