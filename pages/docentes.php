@@ -583,24 +583,27 @@ $_SESSION['user-data'] = $teachers;
                 $disciplineGroups = explode('|~~|', $teacher['discipline_statuses']);
                 foreach ($disciplineGroups as $group):
                   $parts = explode('|~|', $group);
-                  if (count($parts) >= 4) {  // Changed from 3 to 4
+                  $partCount = count($parts);
+
+                  if ($partCount >= 5) {
                     $disciplineId = $parts[0];
                     $disciplineName = $parts[1];
-                    $activityName = $parts[2];  // NEW: Activity name
-                    $status = isset($parts[3]) ? $parts[3] : null;  // Changed index from 2 to 3
-                    $calledAt = isset($parts[4]) ? $parts[4] : '';  // Changed index from 3 to 4
+                    $activityName = $parts[2];  // Activity name
+                    $status = isset($parts[3]) ? $parts[3] : null;
+                    $calledAt = isset($parts[4]) ? $parts[4] : '';
+
+                    // DEBUG: Show what's in activityName
+                    echo "<!-- Activity: '" . htmlspecialchars($activityName) . "' | Empty: " . (empty($activityName) ? 'YES' : 'NO') . " -->";
 
                     $statusLabel = parseStatusLabel($status);
                     $statusClass = getStatusClass($status);
                 ?>
-                    <div class="discipline-item">
+                    <div class="discipline-status">
                       <span class="discipline-name">
                         <?= htmlspecialchars($disciplineName) ?>
-                        <?php if (!empty($activityName)): ?>
-                          <span class="activity-badge"><?= htmlspecialchars($activityName) ?></span>
-                        <?php endif; ?>
+                        <span class="activity-badge"><?= htmlspecialchars($activityName) ?></span>
                       </span>
-                      <span class="<?= $statusClass ?>"><?= $statusLabel ?></span>
+                      <span class="status-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
                       <?php if (!empty($calledAt) && $calledAt !== '00/00/0000'): ?>
                         <span class="called-date" data-called-at="<?= $calledAt ?>" style="display: none;"><?= $calledAt ?></span>
                       <?php endif; ?>
