@@ -57,38 +57,41 @@ $_SESSION['user-data'] = $teachers;
   }
 
   /* Status badge styles */
-  .status-approved,
-  .status-badge.status-approved {
-    background-color: #d4edda;
+  .status-badge {
     padding: 4px 8px;
     border-radius: 4px;
-    font-size: 12px;
-    display: inline-block;
+    font-size: 0.9em;
+    font-weight: 500;
+    white-space: nowrap;
   }
 
-  .status-not-approved,
-  .status-badge.status-not-approved {
-    background-color: #f8d7da;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    display: inline-block;
+  .status-pending {
+    background-color: #ffc107;
+    color: #212529;
   }
 
-  .status-pending,
-  .status-badge.status-pending {
-    background-color: #fff3cd;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    display: inline-block;
+  .status-approved {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .status-not-approved {
+    background-color: #dc3545;
+    color: white;
   }
 
   .discipline-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 5px;
+    padding: 5px 0;
   }
 
   .discipline-name {
+    display: flex;
+    align-items: center;
+    flex: 1;
     margin-right: 10px;
   }
 
@@ -452,6 +455,21 @@ $_SESSION['user-data'] = $teachers;
     font-size: 12px;
     color: #7f8c8d;
   }
+  @media (max-width: 768px) {
+    .discipline-status {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .discipline-name {
+        margin-bottom: 5px;
+    }
+    
+    .activity-badge {
+        margin-top: 5px;
+        margin-left: 0;
+    }
+}
 </style>
 
 <div class="container">

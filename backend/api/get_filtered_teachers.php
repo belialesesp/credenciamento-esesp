@@ -1,13 +1,8 @@
 <?php
-// backend/api/get_filtered_teachers.php - FIXED VERSION WITHOUT CPF
+// backend/api/get_filtered_teachers.php - FIXED VERSION WITH ACTIVITIES
 require_once '../classes/database.class.php';
 
 header('Content-Type: application/json; charset=utf-8');
-
-// Enable error reporting for debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 $name = $_GET['name'] ?? '';
 $category = $_GET['category'] ?? '';
@@ -108,17 +103,21 @@ try {
     $stmt->execute($params);
     $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Process each teacher to get their disciplines
+    // Process each teacher to get their disciplines WITH ACTIVITIES
     $result = [];
     foreach ($teachers as $teacher) {
+        // FIXED: Query now joins with activities table to get activity names
         $discSql = "
             SELECT 
                 d.id,
                 d.name,
                 td.enabled,
-                td.called_at
+                td.called_at,
+                GROUP_CONCAT(DISTINCT a.name SEPARATOR ', ') as activities
             FROM teacher_disciplines td
             INNER JOIN disciplinas d ON td.discipline_id = d.id
+            LEFT JOIN teacher_activities ta ON ta.user_id = td.user_id
+            LEFT JOIN activities a ON a.id = ta.activity_id
             WHERE td.user_id = :user_id
         ";
 
@@ -138,7 +137,8 @@ try {
             $discSql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
         }
 
-        $discSql .= " ORDER BY d.name";
+        // Group by discipline to aggregate activities
+        $discSql .= " GROUP BY d.id, d.name, td.enabled, td.called_at ORDER BY d.name";
 
         $discStmt = $conn->prepare($discSql);
         $discStmt->execute($discParams);
@@ -150,6 +150,9 @@ try {
             foreach ($disciplines as $disc) {
                 // Clean name to avoid delimiter conflicts
                 $cleanName = str_replace(['|~|', '|~~|'], ' ', $disc['name']);
+                
+                // Get activities or set default
+                $activityName = !empty($disc['activities']) ? $disc['activities'] : 'Redação Oficial';
 
                 // Determine status value with strict type checking
                 $enabledRaw = $disc['enabled'];
@@ -169,7 +172,8 @@ try {
                 // Format called_at date
                 $calledAt = $disc['called_at'] ? date('d/m/Y', strtotime($disc['called_at'])) : '';
 
-                $disciplineStatuses[] = $disc['id'] . '|~|' . $cleanName . '|~|' . $statusValue . '|~|' . $calledAt;
+                // FIXED: Now including 5 parts with activity name at index 2
+                $disciplineStatuses[] = $disc['id'] . '|~|' . $cleanName . '|~|' . $activityName . '|~|' . $statusValue . '|~|' . $calledAt;
             }
 
             $teacher['discipline_statuses'] = implode('|~~|', $disciplineStatuses);
