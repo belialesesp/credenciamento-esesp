@@ -455,21 +455,22 @@ $_SESSION['user-data'] = $teachers;
     font-size: 12px;
     color: #7f8c8d;
   }
+
   @media (max-width: 768px) {
     .discipline-status {
-        flex-direction: column;
-        align-items: flex-start;
+      flex-direction: column;
+      align-items: flex-start;
     }
-    
+
     .discipline-name {
-        margin-bottom: 5px;
+      margin-bottom: 5px;
     }
-    
+
     .activity-badge {
-        margin-top: 5px;
-        margin-left: 0;
+      margin-top: 5px;
+      margin-left: 0;
     }
-}
+  }
 </style>
 
 <div class="container">
@@ -607,11 +608,12 @@ $_SESSION['user-data'] = $teachers;
                     $disciplineId = $parts[0];
                     $disciplineName = $parts[1];
                     $activityName = $parts[2];  // Activity name
-                    $status = isset($parts[3]) ? $parts[3] : null;
-                    $calledAt = isset($parts[4]) ? $parts[4] : '';
+                    $status = $parts[3];
+                    $calledAt = $parts[4];
+                    if (empty(trim($disciplineName))) {
+                      continue;
+                    }
 
-                    // DEBUG: Show what's in activityName
-                    echo "<!-- Activity: '" . htmlspecialchars($activityName) . "' | Empty: " . (empty($activityName) ? 'YES' : 'NO') . " -->";
 
                     $statusLabel = parseStatusLabel($status);
                     $statusClass = getStatusClass($status);
@@ -619,7 +621,9 @@ $_SESSION['user-data'] = $teachers;
                     <div class="discipline-status">
                       <span class="discipline-name">
                         <?= htmlspecialchars($disciplineName) ?>
-                        <span class="activity-badge"><?= htmlspecialchars($activityName) ?></span>
+                        <?php if (!empty(trim($activityName))): ?>
+                          <span class="activity-badge"><?= htmlspecialchars($activityName) ?></span>
+                        <?php endif; ?>
                       </span>
                       <span class="status-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
                       <?php if (!empty($calledAt) && $calledAt !== '00/00/0000'): ?>
@@ -949,9 +953,12 @@ $_SESSION['user-data'] = $teachers;
             const disciplines = teacher.discipline_statuses.split('|~~|');
             disciplines.forEach(disc => {
               const parts = disc.split('|~|');
-              if (parts.length >= 3) {
+              if (parts.length >= 5) { // Changed from 3 to 5
                 const disciplineId = parts[0];
-                const status = parts[2];
+                const disciplineName = parts[1];
+                const activityName = parts[2]; // ADD THIS LINE
+                const status = parts[3]; // Change from parts[2] to parts[3]
+                const calledAt = parts[4];
 
                 // Check if this teacher is "apto" (status = 1) for the selected course
                 if (disciplineId == selectedCourseId && (status === '1' || status === 1)) {
@@ -1089,6 +1096,7 @@ $_SESSION['user-data'] = $teachers;
               const nameSpan = document.createElement('span');
               nameSpan.className = 'discipline-name';
               nameSpan.textContent = disciplineName;
+
 
               const statusSpan = document.createElement('span');
               statusSpan.className = `status-badge ${getStatusClass(status)}`;
