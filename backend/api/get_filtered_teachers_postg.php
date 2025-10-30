@@ -1,198 +1,198 @@
 <?php
-// backend/api/get_filtered_teachers_postg.php - COMPLETELY FIXED VERSION
+// backend/api/get_filtered_postg_teachers.php - FIXED VERSION
+// This file should replace the filtering logic in docentes-pos.php
+
+header('Content-Type: application/json');
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+
 require_once '../classes/database.class.php';
-
-header('Content-Type: application/json; charset=utf-8');
-
-$name = $_GET['name'] ?? '';
-$category = $_GET['category'] ?? '';
-$course = $_GET['course'] ?? '';
-$status = $_GET['status'] ?? '';
 
 try {
     $conection = new Database();
     $conn = $conection->connect();
-
-    // Handle 'sem disciplinas' (no-disciplines) filter separately
-    if ($status === 'no-disciplines') {
-        // Get postgraduate teachers (users with role 'docente_pos') with NO disciplines at all
-        $sql = "SELECT u.id, u.name, u.email, u.phone, u.created_at, 
-                u.document_number, u.document_emissor, u.document_uf, 
-                u.special_needs, u.address_id 
-                FROM user u
-                INNER JOIN user_roles ur ON u.id = ur.user_id
-                WHERE ur.role = 'docente_pos'
-                AND NOT EXISTS (
-                    SELECT 1 FROM postg_teacher_disciplines td 
-                    WHERE td.user_id = u.id
-                )";
-
-        $params = [];
-
-        // Apply category filter if present
-        if ($category !== '') {
-            $sql .= " AND EXISTS (
-                SELECT 1 FROM postg_teacher_activities ta 
-                WHERE ta.user_id = u.id AND ta.activity_id = :category
-            )";
-            $params[':category'] = $category;
-        }
-
-        // Apply name filter if present
-        if ($name !== '') {
-            $sql .= " AND u.name LIKE :name";
-            $params[':name'] = '%' . $name . '%';
-        }
-
-        $sql .= " ORDER BY u.created_at ASC";
-
-        $stmt = $conn->prepare($sql);
-        $stmt->execute($params);
-        $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Add empty discipline_statuses field for consistency
-        foreach ($teachers as &$teacher) {
-            $teacher['discipline_statuses'] = '';
-        }
-
-        echo json_encode($teachers, JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    // FIXED: Main query for postgraduate teachers
-    // Build base query - get all postgraduate teachers first
-    $sql = "SELECT DISTINCT u.id, u.name, u.email, u.phone, u.created_at,
-            u.document_number, u.document_emissor, u.document_uf, 
-            u.special_needs, u.address_id 
-            FROM user u
-            INNER JOIN user_roles ur ON u.id = ur.user_id
-            WHERE ur.role = 'docente_pos'";
     
+    // Get parameters
+    $category = $_GET['category'] ?? '';
+    $course = $_GET['course'] ?? '';
+    $status = $_GET['status'] ?? '';
+    $name = $_GET['name'] ?? '';
+    
+    // Build main query - get all matching teachers
+    $sql = "SELECT DISTINCT t.id, t.name, t.email, t.created_at, t.called_at 
+            FROM postg_teacher t";
+    
+    $joins = [];
+    $conditions = [];
     $params = [];
-
-    // Apply name filter
+    
+    // Handle name filter
     if ($name !== '') {
-        $sql .= " AND u.name LIKE :name";
+        $conditions[] = "t.name LIKE :name";
         $params[':name'] = '%' . $name . '%';
     }
-
-    // Apply category filter if specified
-    if ($category !== '') {
-        $sql .= " AND EXISTS (
-            SELECT 1 FROM postg_teacher_activities ta 
-            WHERE ta.user_id = u.id AND ta.activity_id = :category
-        )";
-        $params[':category'] = $category;
-    }
-
-    // FIXED: When filtering by course or status, check if teacher has matching disciplines
-    if ($course !== '' || $status !== '') {
-        $sql .= " AND EXISTS (
-            SELECT 1 FROM postg_teacher_disciplines td
-            WHERE td.user_id = u.id";
+    
+    // Handle 'sem disciplinas' (no disciplines) filter
+    if ($status === 'no-disciplines') {
+        $joins[] = "LEFT JOIN postg_teacher_disciplines td ON t.id = td.teacher_id";
+        $conditions[] = "td.teacher_id IS NULL";
         
-        if ($course !== '') {
-            $sql .= " AND td.discipline_id = :course";
-            $params[':course'] = $course;
+        if ($category !== '') {
+            $joins[] = "INNER JOIN postg_teacher_activities ta ON t.id = ta.teacher_id";
+            $conditions[] = "ta.activity_id = :category";
+            $params[':category'] = $category;
+        }
+    } else {
+        // Handle category filter
+        if ($category !== '') {
+            $joins[] = "LEFT JOIN postg_teacher_activities ta ON t.id = ta.teacher_id";
+            $conditions[] = "ta.activity_id = :category";
+            $params[':category'] = $category;
         }
         
-        if ($status === '1') {
-            $sql .= " AND BINARY td.enabled = '1'";
-        } else if ($status === '0') {
-            $sql .= " AND BINARY td.enabled = '0'";
-        } else if ($status === 'null') {
-            $sql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
+        // Handle status/course filters - need to join disciplines
+        if ($status !== '' || $course !== '') {
+            $joins[] = "INNER JOIN postg_teacher_disciplines td ON t.id = td.teacher_id";
+            
+            if ($course !== '') {
+                $conditions[] = "td.discipline_id = :course";
+                $params[':course'] = $course;
+            }
+            
+            // CRITICAL FIX: Calculate final status from BOTH evaluations
+            if ($status === '1') {
+                // Apto: both evaluations must be approved (1)
+                $conditions[] = "(td.gese_evaluation = 1 AND td.pedagogico_evaluation = 1)";
+            } else if ($status === '0') {
+                // Inapto: at least one evaluation is rejected (0)
+                $conditions[] = "((td.gese_evaluation = 0 OR td.pedagogico_evaluation = 0) AND (td.gese_evaluation IS NOT NULL OR td.pedagogico_evaluation IS NOT NULL))";
+            } else if ($status === 'null') {
+                // Aguardando: both evaluations are NULL
+                $conditions[] = "(td.gese_evaluation IS NULL AND td.pedagogico_evaluation IS NULL)";
+            }
         }
-        
-        $sql .= ")";
     }
     
-    $sql .= ' ORDER BY u.created_at ASC';
-
+    // Build complete query
+    if (!empty($joins)) {
+        $sql .= ' ' . implode(' ', array_unique($joins));
+    }
+    if (!empty($conditions)) {
+        $sql .= ' WHERE ' . implode(' AND ', $conditions);
+    }
+    $sql .= ' ORDER BY t.created_at DESC';
+    
+    // Execute main query
     $stmt = $conn->prepare($sql);
     $stmt->execute($params);
     $teachers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Process each teacher to get their disciplines with proper filtering
+    
+    // Process each teacher to get their disciplines with correct status
     $result = [];
     foreach ($teachers as $teacher) {
+        // Special handling for 'no-disciplines' status
+        if ($status === 'no-disciplines') {
+            $teacher['discipline_statuses'] = '';
+            $result[] = $teacher;
+            continue;
+        }
+        
         // Get disciplines for this teacher
         $discSql = "
             SELECT 
                 d.id,
                 d.name,
-                td.enabled,
-                td.called_at
+                td.gese_evaluation,
+                td.pedagogico_evaluation,
+                td.called_at,
+                GROUP_CONCAT(DISTINCT a.name SEPARATOR ', ') as activities
             FROM postg_teacher_disciplines td
             INNER JOIN postg_disciplinas d ON td.discipline_id = d.id
-            WHERE td.user_id = :user_id
+            LEFT JOIN postg_teacher_activities ta ON ta.teacher_id = td.teacher_id
+            LEFT JOIN activities a ON a.id = ta.activity_id
+            WHERE td.teacher_id = :user_id
         ";
-
+        
         $discParams = [':user_id' => $teacher['id']];
-
-        // If filtering by specific course, only get that course
+        
         if ($course !== '') {
             $discSql .= " AND d.id = :course";
             $discParams[':course'] = $course;
         }
-
-        // Apply status filter to disciplines
+        
+        // CRITICAL FIX: Apply status filter based on BOTH evaluations
         if ($status === '1') {
-            $discSql .= " AND BINARY td.enabled = '1'";
+            // Apto: both evaluations must be approved
+            $discSql .= " AND td.gese_evaluation = 1 AND td.pedagogico_evaluation = 1";
         } else if ($status === '0') {
-            $discSql .= " AND BINARY td.enabled = '0'";
+            // Inapto: at least one evaluation is rejected
+            $discSql .= " AND (td.gese_evaluation = 0 OR td.pedagogico_evaluation = 0) AND (td.gese_evaluation IS NOT NULL OR td.pedagogico_evaluation IS NOT NULL)";
         } else if ($status === 'null') {
-            $discSql .= " AND (td.enabled IS NULL OR BINARY td.enabled = '')";
+            // Aguardando: both evaluations are NULL
+            $discSql .= " AND td.gese_evaluation IS NULL AND td.pedagogico_evaluation IS NULL";
         }
-
-        $discSql .= " ORDER BY d.name";
-
+        
+        $discSql .= " GROUP BY d.id, d.name, td.gese_evaluation, td.pedagogico_evaluation, td.called_at ORDER BY d.name";
+        
         $discStmt = $conn->prepare($discSql);
         $discStmt->execute($discParams);
         $disciplines = $discStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Build discipline_statuses string
+        
         if (!empty($disciplines)) {
             $disciplineStatuses = [];
-
+            
             foreach ($disciplines as $disc) {
                 // Clean name to avoid delimiter conflicts
                 $cleanName = str_replace(['|~|', '|~~|'], ' ', $disc['name']);
-
-                // Determine status value with strict type checking
-                $enabledRaw = $disc['enabled'];
-
-                if ($enabledRaw === null) {
-                    $statusValue = 'null';
-                } elseif ($enabledRaw === '') {
-                    $statusValue = 'null';
-                } elseif ($enabledRaw === '0' || $enabledRaw === 0) {
-                    $statusValue = '0';
-                } elseif ($enabledRaw === '1' || $enabledRaw === 1) {
-                    $statusValue = '1';
+                
+                // Get activities or set default
+                $activityName = !empty($disc['activities']) ? $disc['activities'] : 'Sem atividade';
+                
+                // Calculate final status from BOTH evaluations (matching display logic)
+                $gese_eval = $disc['gese_evaluation'];
+                $ped_eval = $disc['pedagogico_evaluation'];
+                
+                if ($gese_eval === null && $ped_eval === null) {
+                    $statusValue = 'null'; // Aguardando
+                } elseif ($gese_eval === 1 && $ped_eval === 1) {
+                    $statusValue = '1'; // Apto
+                } elseif ($gese_eval === 0 || $ped_eval === 0) {
+                    $statusValue = '0'; // Inapto
                 } else {
-                    $statusValue = 'null';
+                    // Partial evaluation (one is set, the other is not)
+                    $statusValue = 'partial'; // Em avaliação
                 }
-
+                
                 // Format called_at date
                 $calledAt = $disc['called_at'] ? date('d/m/Y', strtotime($disc['called_at'])) : '';
-
-                $disciplineStatuses[] = $disc['id'] . '|~|' . $cleanName . '|~|' . $statusValue . '|~|' . $calledAt;
+                
+                // Build discipline status string
+                $disciplineStatuses[] = $disc['id'] . '|~|' . $cleanName . '|~|' . $activityName . '|~|' . $statusValue . '|~|' . $calledAt;
             }
-
+            
             $teacher['discipline_statuses'] = implode('|~~|', $disciplineStatuses);
             $result[] = $teacher;
-        } else if ($status === '' && $course === '') {
-            // Include teachers without disciplines only when NO status or course filter is applied
+        } else if ($status === '') {
+            // Include teachers without matching disciplines only when no status filter is applied
             $teacher['discipline_statuses'] = '';
             $result[] = $teacher;
         }
-        // If status or course filter is active and teacher has no matching disciplines, exclude them
     }
-
+    
     echo json_encode($result, JSON_UNESCAPED_UNICODE);
-} catch (Exception $e) {
-    error_log("Error in get_filtered_teachers_postg.php: " . $e->getMessage());
+    
+} catch (PDOException $e) {
+    error_log("Database Error in get_filtered_postg_teachers.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode([
+        'error' => 'Database error occurred',
+        'message' => $e->getMessage()
+    ]);
+} catch (Exception $e) {
+    error_log("General Error in get_filtered_postg_teachers.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'An unexpected error occurred',
+        'message' => $e->getMessage()
+    ]);
 }
