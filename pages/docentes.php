@@ -607,7 +607,7 @@ $_SESSION['user-data'] = $teachers;
                   if ($partCount >= 5) {
                     $disciplineId = $parts[0];
                     $disciplineName = $parts[1];
-                    $activityName = $parts[2];  // Activity name
+                    $activityName = $parts[2];
                     $status = $parts[3];
                     $calledAt = $parts[4];
                     if (empty(trim($disciplineName))) {
@@ -812,8 +812,7 @@ $_SESSION['user-data'] = $teachers;
     isRendering = true;
 
     try {
-      // Remove this line - we don't need it anymore
-      // let invitationHandled = false;
+
       invitationStatuses = {};
 
       const tbody = document.querySelector('.table tbody');
@@ -893,8 +892,8 @@ $_SESSION['user-data'] = $teachers;
             const disciplinesA = a.discipline_statuses.split('|~~|');
             for (const disc of disciplinesA) {
               const parts = disc.split('|~|');
-              if (parts.length >= 4 && parts[3]) {
-                const dateParts = parts[3].split('/');
+              if (parts.length >= 5 && parts[4]) {
+                const dateParts = parts[4].split('/');
                 if (dateParts.length === 3) {
                   const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
                   if (date < dateA) dateA = date;
@@ -907,8 +906,8 @@ $_SESSION['user-data'] = $teachers;
             const disciplinesB = b.discipline_statuses.split('|~~|');
             for (const disc of disciplinesB) {
               const parts = disc.split('|~|');
-              if (parts.length >= 4 && parts[3]) {
-                const dateParts = parts[3].split('/');
+              if (parts.length >= 5 && parts[4]) {
+                const dateParts = parts[4].split('/');
                 if (dateParts.length === 3) {
                   const date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
                   if (date < dateB) dateB = date;
@@ -953,11 +952,11 @@ $_SESSION['user-data'] = $teachers;
             const disciplines = teacher.discipline_statuses.split('|~~|');
             disciplines.forEach(disc => {
               const parts = disc.split('|~|');
-              if (parts.length >= 5) { // Changed from 3 to 5
+              if (parts.length >= 5) {
                 const disciplineId = parts[0];
                 const disciplineName = parts[1];
-                const activityName = parts[2]; // ADD THIS LINE
-                const status = parts[3]; // Change from parts[2] to parts[3]
+                const activityName = parts[2];
+                const status = parts[3];
                 const calledAt = parts[4];
 
                 // Check if this teacher is "apto" (status = 1) for the selected course
@@ -1065,9 +1064,9 @@ $_SESSION['user-data'] = $teachers;
 
           disciplines.forEach(disc => {
             const parts = disc.split('|~|');
-            if (parts.length >= 4 && parts[3]) {
-              if (!earliestDate || parts[3] < earliestDate) {
-                earliestDate = parts[3];
+            if (parts.length >= 5 && parts[4]) { // Changed from >= 4 to >= 5, and parts[3] to parts[4]
+              if (!earliestDate || parts[4] < earliestDate) {
+                earliestDate = parts[4];
               }
             }
           });
@@ -1085,10 +1084,39 @@ $_SESSION['user-data'] = $teachers;
           const disciplineGroups = teacher.discipline_statuses.split('|~~|');
           disciplineGroups.forEach(group => {
             const parts = group.split('|~|');
+            
+            // The actual data format appears to be:
+            // [0] = discipline ID
+            // [1] = discipline name  
+            // [2] = activity name (Docente, Docente Conteudista, etc.)
+            // [3] = called date or status (if numeric/null) or date (if contains /)
+            
             if (parts.length >= 3) {
               const disciplineId = parts[0];
               const disciplineName = parts[1];
-              const status = parts[2];
+              let activityName = '';
+              let status = 'null'; // Default to Aguardando
+              let calledAt = '';
+              
+              if (parts.length === 4) {
+                // Format: id|~|name|~|activityName|~|dateOrStatus
+                activityName = parts[2];
+                // Check if last part is a date or status
+                if (parts[3] && parts[3].includes('/')) {
+                  calledAt = parts[3];
+                  status = 'null'; // If we have a date but no status, default to Aguardando
+                } else {
+                  status = parts[3] || 'null';
+                }
+              } else if (parts.length === 5) {
+                // Format: id|~|name|~|activityName|~|status|~|calledAt
+                activityName = parts[2];
+                status = parts[3] || 'null';
+                calledAt = parts[4] || '';
+              } else if (parts.length === 3) {
+                // Format: id|~|name|~|status
+                status = parts[2] || 'null';
+              }
 
               const div = document.createElement('div');
               div.className = 'discipline-status';
@@ -1097,6 +1125,14 @@ $_SESSION['user-data'] = $teachers;
               nameSpan.className = 'discipline-name';
               nameSpan.textContent = disciplineName;
 
+              // Add activity badge if activity name exists
+              if (activityName && activityName.trim() !== '') {
+                const activityBadge = document.createElement('span');
+                activityBadge.className = 'activity-badge';
+                activityBadge.textContent = activityName;
+                nameSpan.appendChild(document.createTextNode(' ')); // Add space
+                nameSpan.appendChild(activityBadge);
+              }
 
               const statusSpan = document.createElement('span');
               statusSpan.className = `status-badge ${getStatusClass(status)}`;
