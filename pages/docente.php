@@ -279,157 +279,142 @@ if ($is_ajax_request) {
         $disc_modules = method_exists($discipline, 'getModules') ?
           $discipline->getModules() : (property_exists($discipline, 'modules') ? $discipline->modules : []);
 
-        // Get evaluation status for display only
-        $gese_eval = $discipline->gese_evaluation ?? null;
-        $ped_eval = $discipline->pedagogico_evaluation ?? null;
-
-        // Determine final status based on evaluations
-        $finalStatusText = 'Aguardando';
-        $finalStatusClass = 'status-pending';
-
-        if ($gese_eval !== null && $ped_eval !== null) {
-          if ($gese_eval === 1 && $ped_eval === 1) {
-            $finalStatusText = 'Apto';
-            $finalStatusClass = 'status-approved';
-          } elseif ($gese_eval === 0 || $ped_eval === 0) {
-            $finalStatusText = 'Inapto';
-            $finalStatusClass = 'status-not-approved';
-          }
-        } elseif ($gese_eval !== null || $ped_eval !== null) {
-          $finalStatusText = 'Em avaliação';
-          $finalStatusClass = 'status-pending';
-        }
-
         // Get activities for this discipline
         $disc_activities = property_exists($discipline, 'activities') ? $discipline->activities : [];
+        echo "<pre style='background:#f0f0f0;padding:10px;border:1px solid #ccc;margin:10px 0;'>";
+        echo "DEBUG INFO for Discipline: " . htmlspecialchars($disc_name) . "\n";
+        echo "Activities property exists: " . (property_exists($discipline, 'activities') ? 'YES' : 'NO') . "\n";
+        echo "Activities count: " . count($disc_activities) . "\n";
+        echo "Activities content:\n";
+        print_r($disc_activities);
+        echo "</pre>";
       ?>
 
-        <div class="discipline-item mb-3">
-          <div class="discipline-header">
-            <p><strong><?= htmlspecialchars($disc_name) ?></strong>
-              <span class="user-status <?= $finalStatusClass ?> ms-3"><?= $finalStatusText ?></span>
-            </p>
-          </div>
+        <?php if (!empty($disc_activities)): ?>
+          <!-- SHOW DISCIPLINE ONCE PER ACTIVITY -->
+          <?php foreach ($disc_activities as $activity):
+            // Calculate status for this specific activity
+            $act_gese = $activity['gese_evaluation'] ?? null;
+            $act_ped = $activity['pedagogico_evaluation'] ?? null;
 
-          <?php if ($disc_eixo || $disc_estacao): ?>
-            <div class="discipline-details">
-              <p class="text-muted">
-                <?php if ($disc_eixo): ?>Eixo: <?= htmlspecialchars($disc_eixo) ?><?php endif; ?>
-                <?php if ($disc_eixo && $disc_estacao): ?> | <?php endif; ?>
-                <?php if ($disc_estacao): ?>Estação: <?= htmlspecialchars($disc_estacao) ?><?php endif; ?>
+            $activityStatusText = 'Aguardando';
+            $activityStatusClass = 'status-pending';
+
+            if ($act_gese !== null && $act_ped !== null) {
+              if ($act_gese === 1 && $act_ped === 1) {
+                $activityStatusText = 'Apto';
+                $activityStatusClass = 'status-approved';
+              } elseif ($act_gese === 0 || $act_ped === 0) {
+                $activityStatusText = 'Inapto';
+                $activityStatusClass = 'status-not-approved';
+              }
+            } elseif ($act_gese !== null || $act_ped !== null) {
+              $activityStatusText = 'Em avaliação';
+              $activityStatusClass = 'status-pending';
+            }
+          ?>
+            <div class="discipline-item mb-3" style="border-left: 4px solid #3498db; padding-left: 15px;">
+              <div class="discipline-header">
+                <p>
+                  <strong><?= htmlspecialchars($disc_name) ?></strong>
+                  <span class="badge" style="background: #3498db; color: white; font-size: 11px; margin-left: 10px;">
+                    <?= htmlspecialchars($activity['name']) ?>
+                  </span>
+                  <span class="user-status <?= $activityStatusClass ?> ms-3"><?= $activityStatusText ?></span>
+                </p>
+              </div>
+
+              <?php if ($disc_eixo || $disc_estacao): ?>
+                <div class="discipline-details">
+                  <p class="text-muted">
+                    <?php if ($disc_eixo): ?>Eixo: <?= htmlspecialchars($disc_eixo) ?><?php endif; ?>
+                    <?php if ($disc_eixo && $disc_estacao): ?> | <?php endif; ?>
+                    <?php if ($disc_estacao): ?>Estação: <?= htmlspecialchars($disc_estacao) ?><?php endif; ?>
+                  </p>
+                </div>
+              <?php endif; ?>
+
+              <?php if (!empty($disc_modules)): ?>
+                <p class="text-muted">Módulos: <?= implode(', ', $disc_modules) ?></p>
+              <?php endif; ?>
+
+              <?php
+              // Check if user should see evaluation buttons
+              $show_gese = (isGESE() || (isAdmin() && !isGEDTH())) && !isGEDTH();
+              $show_ped = (isPedagogico() || (isAdmin() && !isGEDTH())) && !isGEDTH();
+              ?>
+
+              <?php if ($show_gese || $show_ped): ?>
+                <div class="discipline-actions mt-2" style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                  <!-- Evaluation status badges -->
+                  <div class="evaluation-status mb-2">
+                    <span class="badge <?= $act_gese === 1 ? 'bg-success' : ($act_gese === 0 ? 'bg-danger' : 'bg-warning') ?>">
+                      Avaliação Documental: <?= $act_gese === 1 ? 'Aprovado' : ($act_gese === 0 ? 'Reprovado' : 'Pendente') ?>
+                    </span>
+                    <span class="badge <?= $act_ped === 1 ? 'bg-success' : ($act_ped === 0 ? 'bg-danger' : 'bg-warning') ?> ms-2">
+                      Avaliação Pedagógica: <?= $act_ped === 1 ? 'Aprovado' : ($act_ped === 0 ? 'Reprovado' : 'Pendente') ?>
+                    </span>
+                  </div>
+
+                  <!-- GESE Evaluation Buttons -->
+                  <?php if ($show_gese): ?>
+                    <div class="mb-2">
+                      <label class="form-label fw-bold small">Avaliação Documental (GESE):</label>
+                      <button class="btn btn-success btn-sm me-2"
+                        onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', 1)"
+                        <?= $act_gese === 1 ? 'disabled' : '' ?>>
+                        <i class="fas fa-check"></i> Aprovar
+                      </button>
+                      <button class="btn btn-danger btn-sm me-2"
+                        onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', 0)"
+                        <?= $act_gese === 0 ? 'disabled' : '' ?>>
+                        <i class="fas fa-times"></i> Reprovar
+                      </button>
+                      <button class="btn btn-secondary btn-sm"
+                        onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', null)"
+                        <?= $act_gese === null ? 'disabled' : '' ?>>
+                        <i class="fas fa-undo"></i> Resetar
+                      </button>
+                    </div>
+                  <?php endif; ?>
+
+                  <!-- Pedagogico Evaluation Buttons -->
+                  <?php if ($show_ped): ?>
+                    <div>
+                      <label class="form-label fw-bold small">Avaliação Pedagógica:</label>
+                      <button class="btn btn-success btn-sm me-2"
+                        onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', 1)"
+                        <?= $act_ped === 1 ? 'disabled' : '' ?>>
+                        <i class="fas fa-check"></i> Aprovar
+                      </button>
+                      <button class="btn btn-danger btn-sm me-2"
+                        onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', 0)"
+                        <?= $act_ped === 0 ? 'disabled' : '' ?>>
+                        <i class="fas fa-times"></i> Reprovar
+                      </button>
+                      <button class="btn btn-secondary btn-sm"
+                        onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', null)"
+                        <?= $act_ped === null ? 'disabled' : '' ?>>
+                        <i class="fas fa-undo"></i> Resetar
+                      </button>
+                    </div>
+                  <?php endif; ?>
+                </div>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <!-- NO ACTIVITIES - Show discipline without activity badge -->
+          <div class="discipline-item mb-3">
+            <div class="discipline-header">
+              <p><strong><?= htmlspecialchars($disc_name) ?></strong>
+                <span class="text-muted ms-3">(Sem atividades cadastradas)</span>
               </p>
             </div>
-          <?php endif; ?>
+          </div>
+        <?php endif; ?>
 
-          <?php if (!empty($disc_modules)): ?>
-            <p class="text-muted">Módulos: <?= implode(', ', $disc_modules) ?></p>
-          <?php endif; ?>
-
-          <!-- NEW: Display activities for this discipline -->
-          <?php if (!empty($disc_activities)): ?>
-            <div class="activities-section mt-2">
-              <p class="fw-bold mb-2">Atividades cadastradas para esta disciplina:</p>
-              <div class="activities-list">
-                <?php foreach ($disc_activities as $activity):
-                  // Calculate status for this specific activity
-                  $act_gese = $activity['gese_evaluation'] ?? null;
-                  $act_ped = $activity['pedagogico_evaluation'] ?? null;
-
-                  $activityStatusText = 'Aguardando';
-                  $activityStatusClass = 'status-pending';
-
-                  if ($act_gese !== null && $act_ped !== null) {
-                    if ($act_gese === 1 && $act_ped === 1) {
-                      $activityStatusText = 'Apto';
-                      $activityStatusClass = 'status-approved';
-                    } elseif ($act_gese === 0 || $act_ped === 0) {
-                      $activityStatusText = 'Inapto';
-                      $activityStatusClass = 'status-not-approved';
-                    }
-                  } elseif ($act_gese !== null || $act_ped !== null) {
-                    $activityStatusText = 'Em avaliação';
-                    $activityStatusClass = 'status-pending';
-                  }
-                ?>
-                  <div class="activity-item mb-2 p-2 border rounded">
-                    <div class="d-flex justify-content-between align-items-center">
-                      <span>
-                        <i class="fas fa-clipboard-list me-2"></i>
-                        <strong><?= htmlspecialchars($activity['name']) ?></strong>
-                      </span>
-                      <span class="user-status <?= $activityStatusClass ?>"><?= $activityStatusText ?></span>
-                    </div>
-
-                    <?php
-                    // Check if user should see evaluation buttons for this activity
-                    $show_gese = (isGESE() || (isAdmin() && !isGEDTH())) && !isGEDTH();
-                    $show_ped = (isPedagogico() || (isAdmin() && !isGEDTH())) && !isGEDTH();
-                    ?>
-
-                    <?php if ($show_gese || $show_ped): ?>
-                      <div class="activity-evaluation mt-2 ms-4">
-                        <!-- Evaluation status badges -->
-                        <div class="evaluation-status mb-2">
-                          <span class="badge <?= $act_gese === 1 ? 'bg-success' : ($act_gese === 0 ? 'bg-danger' : 'bg-warning') ?>">
-                            Aval. Documental: <?= $act_gese === 1 ? 'Aprovado' : ($act_gese === 0 ? 'Reprovado' : 'Pendente') ?>
-                          </span>
-                          <span class="badge <?= $act_ped === 1 ? 'bg-success' : ($act_ped === 0 ? 'bg-danger' : 'bg-warning') ?> ms-2">
-                            Aval. Pedagógica: <?= $act_ped === 1 ? 'Aprovado' : ($act_ped === 0 ? 'Reprovado' : 'Pendente') ?>
-                          </span>
-                        </div>
-
-                        <!-- GESE Evaluation Buttons -->
-                        <?php if ($show_gese): ?>
-                          <div class="mb-2">
-                            <label class="form-label fw-bold small">Avaliação Documental (GESE):</label>
-                            <button class="btn btn-success btn-sm me-2"
-                              onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', 1)"
-                              <?= $act_gese === 1 ? 'disabled' : '' ?>>
-                              <i class="fas fa-check"></i> Aprovar
-                            </button>
-                            <button class="btn btn-danger btn-sm me-2"
-                              onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', 0)"
-                              <?= $act_gese === 0 ? 'disabled' : '' ?>>
-                              <i class="fas fa-times"></i> Reprovar
-                            </button>
-                            <button class="btn btn-secondary btn-sm"
-                              onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', null)"
-                              <?= $act_gese === null ? 'disabled' : '' ?>>
-                              <i class="fas fa-undo"></i> Resetar
-                            </button>
-                          </div>
-                        <?php endif; ?>
-
-                        <!-- Pedagogico Evaluation Buttons -->
-                        <?php if ($show_ped): ?>
-                          <div>
-                            <label class="form-label fw-bold small">Avaliação Pedagógica:</label>
-                            <button class="btn btn-success btn-sm me-2"
-                              onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', 1)"
-                              <?= $act_ped === 1 ? 'disabled' : '' ?>>
-                              <i class="fas fa-check"></i> Aprovar
-                            </button>
-                            <button class="btn btn-danger btn-sm me-2"
-                              onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', 0)"
-                              <?= $act_ped === 0 ? 'disabled' : '' ?>>
-                              <i class="fas fa-times"></i> Reprovar
-                            </button>
-                            <button class="btn btn-secondary btn-sm"
-                              onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', null)"
-                              <?= $act_ped === null ? 'disabled' : '' ?>>
-                              <i class="fas fa-undo"></i> Resetar
-                            </button>
-                          </div>
-                        <?php endif; ?>
-                      </div>
-                    <?php endif; ?>
-                  </div>
-                <?php endforeach; ?>
-              </div>
-            </div>
-          <?php endif; ?>
-        </div>
-      <?php endforeach ?>
+      <?php endforeach; ?>
     <?php else: ?>
       <p>Nenhum curso cadastrado.</p>
     <?php endif; ?>
@@ -460,309 +445,6 @@ if ($is_ajax_request) {
     <?php endif; ?>
   </div>
 
-  <script>
-    // Function to check if user can send invites (admin or GEDTH only)
-    function canSendInvites() {
-      return userRoles.includes('admin') || userRoles.includes('gedth');
-    }
-
-    // Function to check if user can view/edit contract info (admin or GESE only)
-    function canViewContractInfo() {
-      return (userRoles.includes('admin') && !userRoles.includes('gedth')) || userRoles.includes('gese');
-    }
-
-    function togglePassword(fieldId) {
-      const field = document.getElementById(fieldId);
-      const icon = document.getElementById(fieldId + '_icon');
-
-      if (field.type === 'password') {
-        field.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
-      } else {
-        field.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
-      }
-    }
-
-    <?php if ($is_admin): ?>
-
-      function updateEvaluation(teacherId, disciplineId, evaluationType, status) {
-        const evaluationLabels = {
-          'gese': 'Avaliação Documental',
-          'pedagogico': 'Avaliação Pedagógica'
-        };
-
-        const statusText = status === 1 ? 'aprovar' : (status === 0 ? 'reprovar' : 'resetar');
-        const evaluationLabel = evaluationLabels[evaluationType] || evaluationType;
-
-        const confirmMessage = `Tem certeza que deseja ${statusText} a ${evaluationLabel} para esta disciplina?`;
-
-        if (!confirm(confirmMessage)) {
-          return;
-        }
-
-        // Get the button that was clicked
-        const clickedButton = event.target;
-        const buttonContainer = clickedButton.closest('.discipline-actions');
-        const allButtons = buttonContainer.querySelectorAll('button');
-
-        // Disable all buttons and show loading
-        allButtons.forEach(btn => {
-          btn.disabled = true;
-          if (btn === clickedButton) {
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
-          }
-        });
-
-        fetch('../backend/api/update_teacher_evaluation.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              teacher_id: teacherId,
-              discipline_id: disciplineId,
-              evaluation_type: evaluationType,
-              status: status
-            })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              showNotification(`${evaluationLabel} atualizada com sucesso!`, 'success');
-
-              // Update the badges immediately without full page reload
-              updateEvaluationBadges(buttonContainer, evaluationType, status, data.verification);
-
-              // Re-enable buttons based on new status
-              updateButtonStates(buttonContainer, evaluationType, status);
-            } else {
-              showNotification('Erro ao atualizar avaliação: ' + (data.message || 'Erro desconhecido'), 'danger');
-
-              // Re-enable buttons on error
-              allButtons.forEach(btn => {
-                btn.disabled = false;
-                // Restore original button text
-                restoreButtonText(btn, evaluationType, status);
-              });
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            showNotification('Erro ao processar solicitação', 'danger');
-
-            // Re-enable buttons on error
-            allButtons.forEach(btn => {
-              btn.disabled = false;
-              restoreButtonText(btn, evaluationType, status);
-            });
-          });
-      }
-
-      function updateEvaluationBadges(container, evaluationType, status, verification) {
-        const badges = container.closest('.discipline-item').querySelector('.evaluation-status');
-
-        if (evaluationType === 'gese') {
-          const geseBadge = badges.querySelector('span:first-child');
-          if (status === 1) {
-            geseBadge.className = 'badge bg-success';
-            geseBadge.textContent = 'Avaliação Documental: Aprovado';
-          } else if (status === 0) {
-            geseBadge.className = 'badge bg-danger';
-            geseBadge.textContent = 'Avaliação Documental: Reprovado';
-          } else {
-            geseBadge.className = 'badge bg-warning';
-            geseBadge.textContent = 'Avaliação Documental: Pendente';
-          }
-        } else if (evaluationType === 'pedagogico') {
-          const pedBadge = badges.querySelector('span:last-child');
-          if (status === 1) {
-            pedBadge.className = 'badge bg-success ms-2';
-            pedBadge.textContent = 'Avaliação Pedagógica: Aprovado';
-          } else if (status === 0) {
-            pedBadge.className = 'badge bg-danger ms-2';
-            pedBadge.textContent = 'Avaliação Pedagógica: Reprovado';
-          } else {
-            pedBadge.className = 'badge bg-warning ms-2';
-            pedBadge.textContent = 'Avaliação Pedagógica: Pendente';
-          }
-        }
-
-        // Update the main status badge at the top
-        if (verification) {
-          updateMainStatusBadge(container, verification);
-        }
-      }
-
-      function updateMainStatusBadge(container, verification) {
-        const mainStatusBadge = container.closest('.discipline-item').querySelector('.user-status');
-        const geseEval = verification.gese_evaluation;
-        const pedEval = verification.pedagogico_evaluation;
-
-        let statusText = 'Aguardando';
-        let statusClass = 'status-pending';
-
-        if (geseEval !== null && pedEval !== null) {
-          if (geseEval === 1 && pedEval === 1) {
-            statusText = 'Apto';
-            statusClass = 'status-approved';
-          } else if (geseEval === 0 || pedEval === 0) {
-            statusText = 'Inapto';
-            statusClass = 'status-not-approved';
-          } else {
-            statusText = 'Em avaliação';
-            statusClass = 'status-pending';
-          }
-        } else if (geseEval !== null || pedEval !== null) {
-          statusText = 'Em avaliação';
-          statusClass = 'status-pending';
-        }
-
-        mainStatusBadge.className = 'user-status ' + statusClass + ' ms-3';
-        mainStatusBadge.textContent = statusText;
-      }
-
-      function updateButtonStates(container, evaluationType, newStatus) {
-        // Find all buttons for this evaluation type
-        const buttons = container.querySelectorAll(`button[onclick*="${evaluationType}"]`);
-
-        buttons.forEach(btn => {
-          const btnStatus = btn.onclick.toString().match(/,\s*(\d+|null)\s*\)/);
-          if (btnStatus) {
-            const btnStatusValue = btnStatus[1] === 'null' ? null : parseInt(btnStatus[1]);
-
-            // Disable the button that matches the new status, enable others
-            if (btnStatusValue === newStatus) {
-              btn.disabled = true;
-            } else {
-              btn.disabled = false;
-            }
-
-            // Restore original button text
-            restoreButtonText(btn, evaluationType, btnStatusValue);
-          }
-        });
-      }
-
-      function restoreButtonText(btn, evaluationType, status) {
-        // Restore original button text based on type and status
-        const icons = {
-          1: '<i class="fas fa-check"></i>',
-          0: '<i class="fas fa-times"></i>',
-          null: '<i class="fas fa-undo"></i>'
-        };
-
-        const texts = {
-          gese: {
-            1: 'Aprovar Documentação',
-            0: 'Reprovar Documentação',
-            null: 'Resetar'
-          },
-          pedagogico: {
-            1: 'Aprovar Pedagogia',
-            0: 'Reprovar Pedagogia',
-            null: 'Resetar'
-          }
-        };
-
-        const icon = icons[status] || icons[null];
-        const text = texts[evaluationType]?.[status] || 'Resetar';
-
-        btn.innerHTML = `${icon} ${text}`;
-      }
-
-      function showNotification(message, type) {
-        // Create notification element
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        alertDiv.innerHTML = `
-    ${message}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
-        document.body.appendChild(alertDiv);
-
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-          alertDiv.remove();
-        }, 5000);
-      }
-
-      function showNotification(message, type) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
-        alertDiv.style.zIndex = '9999';
-        alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-        document.body.appendChild(alertDiv);
-
-        setTimeout(() => {
-          alertDiv.remove();
-        }, 5000);
-      }
-
-      function updateTeacherStatus(userId, status) {
-        if (confirm('Tem certeza que deseja ' + (status ? 'aprovar' : 'reprovar') + ' este docente?')) {
-          fetch('../backend/api/update_teacher_status.php', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                user_id: userId,
-                status: status
-              })
-            })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                alert('Status geral atualizado com sucesso!');
-                location.reload();
-              } else {
-                alert('Erro ao atualizar status: ' + (data.message || 'Erro desconhecido'));
-              }
-            })
-            .catch(error => {
-              alert('Erro ao processar requisição');
-              console.error('Error:', error);
-            });
-        }
-      }
-    <?php endif; ?>
-    async function updateEvaluationForActivity(teacherId, disciplineId, activityId, evaluationType, status) {
-      try {
-        const response = await fetch('../backend/api/update_teacher_evaluation.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            teacher_id: teacherId,
-            discipline_id: disciplineId,
-            activity_id: activityId,
-            evaluation_type: evaluationType,
-            status: status
-          })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          alert('Avaliação atualizada com sucesso!');
-          location.reload();
-        } else {
-          alert('Erro ao atualizar avaliação: ' + (result.message || 'Erro desconhecido'));
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Erro ao atualizar avaliação: ' + error.message);
-      }
-    }
-  </script>
 
 <?php
   // For AJAX requests, output the buffered content and exit
@@ -1127,8 +809,9 @@ if ($is_ajax_request) {
     }
 
     <?php if ($is_admin): ?>
-
-      // Add this JavaScript at the bottom of docente.php, inside the <script> tags
+      // =================================================================
+      // ADMIN FUNCTIONS
+      // =================================================================
 
       function updateEvaluation(teacherId, disciplineId, evaluationType, status) {
         const evaluationLabels = {
@@ -1264,7 +947,41 @@ if ($is_ajax_request) {
         }
       }
     <?php endif; ?>
+
+    // =================================================================
+    // ACTIVITY-SPECIFIC EVALUATION FUNCTION (For Per-Activity Approvals)
+    // =================================================================
+    async function updateEvaluationForActivity(teacherId, disciplineId, activityId, evaluationType, status) {
+      try {
+        const response = await fetch('../backend/api/update_teacher_evaluation.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            teacher_id: teacherId,
+            discipline_id: disciplineId,
+            activity_id: activityId,
+            evaluation_type: evaluationType,
+            status: status
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert('Avaliação atualizada com sucesso!');
+          location.reload();
+        } else {
+          alert('Erro ao atualizar avaliação: ' + (result.message || 'Erro desconhecido'));
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Erro ao atualizar avaliação: ' + error.message);
+      }
+    }
   </script>
+
 <?php include '../components/footer.php';
   ob_end_flush();
 }
