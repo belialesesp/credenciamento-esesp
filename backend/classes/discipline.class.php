@@ -1,5 +1,5 @@
 <?php
-// backend/classes/discipline.class.php
+// backend/classes/discipline.class.php - UPDATED WITH ACTIVITIES PROPERTY
 
 class Discipline {
   public $id;
@@ -15,6 +15,7 @@ class Discipline {
   public $pedagogico_evaluation; // Pedagogico evaluation status
   public $pedagogico_evaluated_at;
   public $pedagogico_evaluated_by;
+  public $activities = []; // NEW: Activities array for this discipline
 
   function __construct($id, $name, $eixo, $estacao, $modules = [], $enabled = null, $called_at = null,
                        $gese_evaluation = null, $gese_evaluated_at = null, $gese_evaluated_by = null,
@@ -36,6 +37,26 @@ class Discipline {
 
   function getId() {
     return $this->id;
+  }
+
+  function getName() {
+    return $this->name;
+  }
+
+  function getEixo() {
+    return $this->eixo;
+  }
+
+  function getEstacao() {
+    return $this->estacao;
+  }
+
+  function getModules() {
+    return $this->modules;
+  }
+
+  function getEnabled() {
+    return $this->enabled;
   }
 
   function getStatusText() {

@@ -1,5 +1,5 @@
 <?php
-// backend/api/update_teacher_evaluation.php - FIXED VERSION
+// backend/api/update_teacher_evaluation.php - UPDATED WITH ACTIVITY_ID SUPPORT
 
 session_start();
 require_once __DIR__ . '/../classes/database.class.php';
@@ -28,11 +28,12 @@ try {
     
     $user_id = intval($data['teacher_id']); 
     $discipline_id = intval($data['discipline_id']);
+    $activity_id = isset($data['activity_id']) ? intval($data['activity_id']) : null;
     $evaluation_type = $data['evaluation_type'];
     $status = $data['status'] === null || $data['status'] === 'null' ? null : intval($data['status']);
     $evaluator_id = $_SESSION['user_id'];
     
-    error_log("PARSED VALUES: user_id=$user_id, discipline_id=$discipline_id, evaluation_type=$evaluation_type, status=" . var_export($status, true));
+    error_log("PARSED VALUES: user_id=$user_id, discipline_id=$discipline_id, activity_id=$activity_id, evaluation_type=$evaluation_type, status=" . var_export($status, true));
     
     // Validate evaluation type
     if (!in_array($evaluation_type, ['gese', 'pedagogico'])) {
@@ -59,114 +60,177 @@ try {
     }
     
     if ($status !== null && !in_array($status, [0, 1])) {
-        throw new Exception('Status inválido: ' . $status);
+        throw new Exception('Status inválido: ' . var_export($status, true));
     }
     
-    $connection = new Database();
-    $conn = $connection->connect();
+    // Connect to database
+    $database = new Database();
+    $conn = $database->connect();
     
-    // FIXED: Determine table by checking which table has this user_id + discipline_id combination
-    // First check teacher_disciplines (regular teachers)
-    $checkRegularSql = "SELECT COUNT(*) FROM teacher_disciplines WHERE user_id = :user_id AND discipline_id = :discipline_id";
-    $checkRegularStmt = $conn->prepare($checkRegularSql);
-    $checkRegularStmt->execute([':user_id' => $user_id, ':discipline_id' => $discipline_id]);
-    $existsInRegular = $checkRegularStmt->fetchColumn() > 0;
+    // Determine which table to use based on teacher type
+    $checkRoleSql = "SELECT role FROM user_roles WHERE user_id = :user_id LIMIT 1";
+    $checkStmt = $conn->prepare($checkRoleSql);
+    $checkStmt->execute([':user_id' => $user_id]);
+    $roleResult = $checkStmt->fetch(PDO::FETCH_ASSOC);
     
-    // Then check postg_teacher_disciplines (postgraduate teachers)
-    $checkPostgSql = "SELECT COUNT(*) FROM postg_teacher_disciplines WHERE user_id = :user_id AND discipline_id = :discipline_id";
-    $checkPostgStmt = $conn->prepare($checkPostgSql);
-    $checkPostgStmt->execute([':user_id' => $user_id, ':discipline_id' => $discipline_id]);
-    $existsInPostg = $checkPostgStmt->fetchColumn() > 0;
+    if (!$roleResult) {
+        throw new Exception('Usuário não encontrado');
+    }
     
-    // Determine which table to use based on where the record actually exists
-    if ($existsInRegular && !$existsInPostg) {
-        $table = 'teacher_disciplines';
-        $isPostg = false;
-    } elseif ($existsInPostg && !$existsInRegular) {
-        $table = 'postg_teacher_disciplines';
-        $isPostg = true;
-    } elseif ($existsInRegular && $existsInPostg) {
-        // Edge case: exists in both (shouldn't happen, but handle it)
-        // Prefer the table that matches the discipline table
-        $disciplineTableCheck = "SELECT COUNT(*) FROM postg_disciplinas WHERE id = :discipline_id";
-        $disciplineStmt = $conn->prepare($disciplineTableCheck);
-        $disciplineStmt->execute([':discipline_id' => $discipline_id]);
-        $isPostgDiscipline = $disciplineStmt->fetchColumn() > 0;
-        
-        $table = $isPostgDiscipline ? 'postg_teacher_disciplines' : 'teacher_disciplines';
-        $isPostg = $isPostgDiscipline;
-        error_log("WARNING: Record exists in both tables. Using $table based on discipline type.");
+    $is_postgrad = ($roleResult['role'] === 'docente_pos');
+    $table = $is_postgrad ? 'postg_teacher_disciplines' : 'teacher_disciplines';
+    $teacher_id_field = $is_postgrad ? 'teacher_id' : 'teacher_id';
+    
+    error_log("Using table: $table, is_postgrad: " . ($is_postgrad ? 'yes' : 'no'));
+    
+    // Build the UPDATE query
+    $field_map = [
+        'gese' => [
+            'evaluation' => 'gese_evaluation',
+            'evaluated_at' => 'gese_evaluated_at',
+            'evaluated_by' => 'gese_evaluated_by'
+        ],
+        'pedagogico' => [
+            'evaluation' => 'pedagogico_evaluation',
+            'evaluated_at' => 'pedagogico_evaluated_at',
+            'evaluated_by' => 'pedagogico_evaluated_by'
+        ]
+    ];
+    
+    $fields = $field_map[$evaluation_type];
+    
+    // If status is NULL, we're resetting the evaluation
+    if ($status === null) {
+        $sql = "UPDATE $table 
+                SET {$fields['evaluation']} = NULL,
+                    {$fields['evaluated_at']} = NULL,
+                    {$fields['evaluated_by']} = NULL
+                WHERE user_id = :user_id 
+                AND discipline_id = :discipline_id";
     } else {
-        throw new Exception("Registro não encontrado em nenhuma tabela para user_id=$user_id e discipline_id=$discipline_id");
+        $sql = "UPDATE $table 
+                SET {$fields['evaluation']} = :status,
+                    {$fields['evaluated_at']} = NOW(),
+                    {$fields['evaluated_by']} = :evaluator_id
+                WHERE user_id = :user_id 
+                AND discipline_id = :discipline_id";
     }
     
-    error_log("TABLE TO UPDATE: $table (existsInRegular: $existsInRegular, existsInPostg: $existsInPostg)");
+    // Add activity_id condition if provided (for specific activity evaluation)
+    if ($activity_id !== null) {
+        $sql .= " AND activity_id = :activity_id";
+    }
     
-    // Build update query
-    $column_prefix = $evaluation_type === 'gese' ? 'gese' : 'pedagogico';
+    error_log("SQL: " . $sql);
     
-    $sql = "
-        UPDATE $table 
-        SET 
-            {$column_prefix}_evaluation = :status,
-            {$column_prefix}_evaluated_at = :evaluated_at,
-            {$column_prefix}_evaluated_by = :evaluator_id
-        WHERE user_id = :user_id 
-        AND discipline_id = :discipline_id
-    ";
-    
+    $stmt = $conn->prepare($sql);
     $params = [
-        ':status' => $status,
-        ':evaluated_at' => $status !== null ? date('Y-m-d H:i:s') : null,
-        ':evaluator_id' => $status !== null ? $evaluator_id : null,
         ':user_id' => $user_id,
         ':discipline_id' => $discipline_id
     ];
     
-    error_log("SQL: $sql");
-    error_log("PARAMS: " . print_r($params, true));
-    
-    $stmt = $conn->prepare($sql);
-    $result = $stmt->execute($params);
-    $rowsAffected = $stmt->rowCount();
-    
-    error_log("UPDATE RESULT: result=$result, rowsAffected=$rowsAffected");
-    
-    if ($rowsAffected === 0) {
-        error_log("WARNING: No rows were updated. Values may already be the same.");
+    if ($status !== null) {
+        $params[':status'] = $status;
+        $params[':evaluator_id'] = $evaluator_id;
     }
     
-    // Verify the update
-    $verifySql = "SELECT {$column_prefix}_evaluation, {$column_prefix}_evaluated_at, {$column_prefix}_evaluated_by, enabled FROM $table WHERE user_id = :user_id AND discipline_id = :discipline_id";
-    $verifyStmt = $conn->prepare($verifySql);
-    $verifyStmt->execute([':user_id' => $user_id, ':discipline_id' => $discipline_id]);
-    $verifyResult = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+    if ($activity_id !== null) {
+        $params[':activity_id'] = $activity_id;
+    }
     
-    error_log("VERIFICATION: " . print_r($verifyResult, true));
+    error_log("PARAMS: " . print_r($params, true));
     
-    // Success response
-    $response = [
-        'success' => true,
-        'message' => 'Avaliação atualizada com sucesso',
-        'rows_affected' => $rowsAffected,
-        'verification' => $verifyResult
+    $result = $stmt->execute($params);
+    $rowCount = $stmt->rowCount();
+    
+    error_log("Execute result: " . ($result ? 'success' : 'failure') . ", rows affected: " . $rowCount);
+    
+    if ($rowCount === 0) {
+        // No rows updated - might not exist
+        throw new Exception('Nenhum registro foi atualizado. Verifique se a disciplina e atividade estão cadastradas para este docente.');
+    }
+    
+    // Also update the legacy 'enabled' field based on both evaluations
+    // Only do this if BOTH evaluations are now set
+    $checkBothSql = "SELECT gese_evaluation, pedagogico_evaluation 
+                     FROM $table 
+                     WHERE user_id = :user_id 
+                     AND discipline_id = :discipline_id";
+    
+    if ($activity_id !== null) {
+        $checkBothSql .= " AND activity_id = :activity_id";
+    }
+    
+    $checkStmt = $conn->prepare($checkBothSql);
+    $checkParams = [
+        ':user_id' => $user_id,
+        ':discipline_id' => $discipline_id
     ];
     
-    error_log("SUCCESS RESPONSE: " . print_r($response, true));
+    if ($activity_id !== null) {
+        $checkParams[':activity_id'] = $activity_id;
+    }
     
-    echo json_encode($response);
-    exit();
+    $checkStmt->execute($checkParams);
+    $evals = $checkStmt->fetch(PDO::FETCH_ASSOC);
     
+    // Update enabled field based on both evaluations
+    if ($evals && $evals['gese_evaluation'] !== null && $evals['pedagogico_evaluation'] !== null) {
+        $enabled_value = null;
+        
+        if ($evals['gese_evaluation'] == 1 && $evals['pedagogico_evaluation'] == 1) {
+            $enabled_value = 1; // Apto
+        } elseif ($evals['gese_evaluation'] == 0 || $evals['pedagogico_evaluation'] == 0) {
+            $enabled_value = 0; // Inapto
+        }
+        
+        if ($enabled_value !== null) {
+            $updateEnabledSql = "UPDATE $table 
+                                 SET enabled = :enabled 
+                                 WHERE user_id = :user_id 
+                                 AND discipline_id = :discipline_id";
+            
+            if ($activity_id !== null) {
+                $updateEnabledSql .= " AND activity_id = :activity_id";
+            }
+            
+            $updateEnabledStmt = $conn->prepare($updateEnabledSql);
+            $updateEnabledParams = [
+                ':enabled' => $enabled_value,
+                ':user_id' => $user_id,
+                ':discipline_id' => $discipline_id
+            ];
+            
+            if ($activity_id !== null) {
+                $updateEnabledParams[':activity_id'] = $activity_id;
+            }
+            
+            $updateEnabledStmt->execute($updateEnabledParams);
+            error_log("Updated enabled field to: " . $enabled_value);
+        }
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'message' => 'Avaliação atualizada com sucesso',
+        'rows_affected' => $rowCount
+    ]);
+    
+} catch (PDOException $e) {
+    error_log("Database Error: " . $e->getMessage());
+    error_log("SQL State: " . $e->errorInfo[0]);
+    error_log("Error Code: " . $e->errorInfo[1]);
+    error_log("Error Message: " . $e->errorInfo[2]);
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Erro no banco de dados: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
-    $errorMessage = $e->getMessage();
-    error_log("ERROR CAUGHT: " . $errorMessage);
-    error_log("ERROR TRACE: " . $e->getTraceAsString());
-    
+    error_log("Error: " . $e->getMessage());
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => $errorMessage
+        'message' => $e->getMessage()
     ]);
-    exit();
 }
-?>

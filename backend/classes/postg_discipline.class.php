@@ -1,5 +1,5 @@
 <?php
-// backend/classes/postg_discipline.class.php
+// backend/classes/postg_discipline.class.php - UPDATED WITH ACTIVITIES PROPERTY
 
 class DisciplinePostg {
   private $id;
@@ -14,6 +14,7 @@ class DisciplinePostg {
   public $pedagogico_evaluation;
   public $pedagogico_evaluated_at;
   public $pedagogico_evaluated_by;
+  public $activities = []; // NEW: Activities array for this discipline
 
   public function __construct(
     $id, 
@@ -45,6 +46,14 @@ class DisciplinePostg {
 
   public function getId() {
     return $this->id;
+  }
+
+  public function getName() {
+    return $this->name;
+  }
+
+  public function getEixo() {
+    return $this->eixo;
   }
 
   public function getStatusText() {

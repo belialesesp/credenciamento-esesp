@@ -1,11 +1,10 @@
 <?php
-// backend/services/teacherpos.service.php
+// backend/services/teacher_postg.service.php - FINAL VERSION
 
 require_once __DIR__ . '/../classes/address.class.php';
 require_once __DIR__ . '/../classes/postg_discipline.class.php';
 require_once __DIR__ . '/../classes/education.class.php';
 require_once __DIR__ . '/../classes/postg_teacher.class.php';
-require_once __DIR__ . '/../classes/lecture.class.php';
 
 class TeacherPostGService
 {
@@ -40,14 +39,14 @@ class TeacherPostGService
                 u.neighborhood,
                 d.path AS file_path
             FROM
-        user AS u
-    INNER JOIN
-        user_roles AS ur ON ur.user_id = u.id
-    LEFT JOIN
-        documents AS d ON d.user_id = u.id
-    WHERE 
-        u.id = :user_id
-        AND ur.role IN ('docente', 'docente_pos')
+                user AS u
+            INNER JOIN
+                user_roles AS ur ON ur.user_id = u.id
+            LEFT JOIN
+                documents AS d ON d.user_id = u.id
+            WHERE 
+                u.id = :user_id
+                AND ur.role = 'docente_pos'
         ";
 
         $stmt = $this->db->prepare($sql);
@@ -71,8 +70,9 @@ class TeacherPostGService
             $disciplines = $this->getTeacherPostGDisciplines($user_id);
             $educations = $this->getTeacherEducation($user_id);
             $activities = $this->getTeacherActivities($user_id);
-            $lectures = $this->getTeacherLectures($user_id);
 
+            // TeacherPostG extends Teacher and has additional $post_graduation property
+            // $disciplines returns [$regular_disciplines, $post_graduations]
             $teacher = new TeacherPostG(
                 $user_id,
                 $result["name"],
@@ -86,11 +86,12 @@ class TeacherPostGService
                 $result['created_at'],
                 $address,
                 $result['file_path'],
-                $disciplines,
+                $disciplines[0], // regular disciplines
                 $educations,
                 $activities,
-                $lectures,
-                $result['enabled']
+                [], // lectures (not used in postgrad)
+                $result['enabled'],
+                $disciplines[1] // post_graduations
             );
 
             return $teacher;
@@ -100,13 +101,16 @@ class TeacherPostGService
     }
 
     function getTeacherPostGDisciplines($user_id)
-{
-    $sql = "
+    {
+        // Fetch activity information for each discipline approval
+        $sql = "
         SELECT
             d.id AS discipline_id,
             d.name AS discipline_name,
-            ex.name AS eixo_name,
-            pg.name AS postg_name,
+            d.post_graduation,
+            d.eixo AS eixo_name,
+            dt.activity_id,
+            a.name AS activity_name,
             dt.enabled AS discipline_status,
             dt.called_at AS discipline_called_at,
             dt.gese_evaluation,
@@ -116,113 +120,104 @@ class TeacherPostGService
             dt.pedagogico_evaluated_at,
             dt.pedagogico_evaluated_by
         FROM 
-            postg_disciplinas AS d
-        LEFT JOIN 
-            postg_eixo AS ex ON ex.id = d.eixo_id
+            postg_teacher_disciplines AS dt
+        INNER JOIN
+            postg_disciplinas AS d ON dt.discipline_id = d.id
         LEFT JOIN
-            postgraduation AS pg ON ex.postg_id = pg.id
-        LEFT JOIN 
-            postg_teacher_disciplines AS dt ON dt.discipline_id = d.id AND dt.user_id = :user_id
+            activities AS a ON a.id = dt.activity_id
         WHERE 
-            EXISTS (SELECT 1 FROM postg_teacher_disciplines WHERE discipline_id = d.id AND user_id = :user_id)
-        GROUP BY d.id, d.name, ex.name, pg.name, dt.enabled, dt.called_at, 
-                 dt.gese_evaluation, dt.gese_evaluated_at, dt.gese_evaluated_by,
-                 dt.pedagogico_evaluation, dt.pedagogico_evaluated_at, dt.pedagogico_evaluated_by
-        ORDER BY ex.name, d.name
+            dt.user_id = :user_id
+        ORDER BY d.name, a.name
     ";
 
-    $stmt = $this->db->prepare($sql);
-    $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
-    $stmt->execute();
-
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    $disciplines = [];
-    $post_graduation = [];
-
-    foreach ($results as $result) {
-        $disciplines[] = new DisciplinePostg(
-            $result["discipline_id"],
-            $result["discipline_name"],
-            $result["postg_name"],
-            $result["eixo_name"],
-            $result["discipline_status"],
-            $result["discipline_called_at"],
-            $result["gese_evaluation"] ?? null,
-            $result["gese_evaluated_at"] ?? null,
-            $result["gese_evaluated_by"] ?? null,
-            $result["pedagogico_evaluation"] ?? null,
-            $result["pedagogico_evaluated_at"] ?? null,
-            $result["pedagogico_evaluated_by"] ?? null
-        );
-
-        if (!in_array($result['postg_name'], $post_graduation)) {
-            $post_graduation[] = $result['postg_name'];
-        }
-    }
-
-    return array($disciplines, $post_graduation);
-}
-
-    function getTeacherLectures($user_id)
-    {
-        $sql = "
-            SELECT 
-                l.id AS lecture_id,
-                l.name AS lecture_name,
-                l.details AS lecture_details
-            FROM 
-                lecture AS l
-            WHERE 
-                l.user_id = :user_id
-        ";
-
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
 
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $disciplines = [];
+        $post_graduations = [];
+        $disciplineMap = []; // To group by discipline ID
 
-        $lectures = [];
-
-        foreach ($results as $result) {
-            $lectures[] = new Lecture(
-                $result["lecture_name"],
-                $result["lecture_details"]
-            );
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $discipline_id = $row["discipline_id"];
+            
+            // Initialize discipline if not exists
+            if (!isset($disciplineMap[$discipline_id])) {
+                // Create discipline object (activities property is already declared in class)
+                $discipline = new DisciplinePostg(
+                    $row["discipline_id"],
+                    $row["discipline_name"],
+                    $row["post_graduation"] ?? '',
+                    $row["eixo_name"] ?? '',
+                    $row["discipline_status"],
+                    $row["discipline_called_at"] ?? null,
+                    $row["gese_evaluation"] ?? null,
+                    $row["gese_evaluated_at"] ?? null,
+                    $row["gese_evaluated_by"] ?? null,
+                    $row["pedagogico_evaluation"] ?? null,
+                    $row["pedagogico_evaluated_at"] ?? null,
+                    $row["pedagogico_evaluated_by"] ?? null
+                );
+                
+                $disciplineMap[$discipline_id] = $discipline;
+            }
+            
+            // Add activity to this discipline
+            if (!empty($row["activity_name"])) {
+                $disciplineMap[$discipline_id]->activities[] = [
+                    'id' => $row["activity_id"],
+                    'name' => $row["activity_name"],
+                    'status' => $row["discipline_status"],
+                    'gese_evaluation' => $row["gese_evaluation"],
+                    'pedagogico_evaluation' => $row["pedagogico_evaluation"],
+                    'called_at' => $row["discipline_called_at"]
+                ];
+            }
         }
 
-        return $lectures;
+        // Convert map to arrays - separate disciplines and post-graduations
+        foreach ($disciplineMap as $discipline) {
+            if (!empty($discipline->post_graduation)) {
+                $post_graduations[] = $discipline;
+            } else {
+                $disciplines[] = $discipline;
+            }
+        }
+
+        // Return array with both types
+        return [$disciplines, $post_graduations];
     }
 
     function getTeacherEducation($user_id)
     {
         $sql = "
-            SELECT 
-                e.id as id, 
-                e.course_name as name, 
-                e.degree as degree, 
-                e.institution as institution 
-            FROM 
-                education_degree as e 
-            WHERE e.user_id = :user_id
+            SELECT
+                ed.id,
+                ed.course_name,
+                ed.degree,
+                ed.institution,
+                ed.graduation_year,
+                ed.created_at,
+                ed.updated_at
+            FROM
+                education_degree AS ed
+            WHERE
+                ed.user_id = :user_id
         ";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
 
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         $educations = [];
-
-        foreach ($results as $result) {
-            $educations[] = new Education(
-                $result["id"],
-                $result["name"],
-                $result["degree"],
-                $result["institution"]
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $education = new Education(
+                $row["id"],
+                $row["course_name"],
+                $row["degree"],
+                $row["institution"]
             );
+            $educations[] = $education;
         }
 
         return $educations;
@@ -231,45 +226,17 @@ class TeacherPostGService
     function getTeacherActivities($user_id)
     {
         $sql = "
-            SELECT 
-                a.name as name
-            FROM 
-                activities as a
-            LEFT JOIN
-                postg_teacher_activities ta ON ta.activity_id = a.id
-            WHERE ta.user_id = :user_id
+            SELECT a.id, a.name 
+            FROM activities a
+            INNER JOIN postg_teacher_activities ta ON ta.activity_id = a.id
+            WHERE ta.teacher_id = :user_id
+            ORDER BY a.name
         ";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(":user_id", $user_id, PDO::PARAM_INT);
         $stmt->execute();
 
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $activities = [];
-
-        foreach ($results as $result) {
-            $activities[] = $result;
-        }
-
-        return $activities;
-    }
-
-    function updateStatus($user_id, $status)
-    {
-        $sql = "
-            UPDATE user 
-            SET enabled = :status
-            WHERE id = :id 
-            AND EXISTS (SELECT 1 FROM user_roles WHERE user_id = :id AND role IN ('docente', 'docente_pos'))
-        ";
-
-        $query_run = $this->db->prepare($sql);
-        $data = [
-            ':status' => $status,
-            ':id' => $user_id
-        ];
-
-        return $query_run->execute($data);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
