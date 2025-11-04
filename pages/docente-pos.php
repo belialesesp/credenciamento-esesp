@@ -392,16 +392,7 @@ ob_start();
     <p>Nenhum curso cadastrado.</p>
   <?php endif; ?>
 </div>
-  <div class="info-section">
-    <h3>Categoria</h3>
-    <?php if (!empty($activities)): ?>
-      <?php foreach ($activities as $activity): ?>
-        <p><?= $activity['name'] ?></p>
-      <?php endforeach ?>
-    <?php else: ?>
-      <p>Nenhuma categoria cadastrada.</p>
-    <?php endif; ?>
-  </div>
+  
 
   <div class="info-section">
     <h3>Documentos</h3>
