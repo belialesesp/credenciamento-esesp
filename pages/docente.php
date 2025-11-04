@@ -281,6 +281,25 @@ if ($is_ajax_request) {
 
         // Get activities for this discipline
         $disc_activities = property_exists($discipline, 'activities') ? $discipline->activities : [];
+        
+        // Debug: Show what's in the discipline object (only for admins)
+        if ($is_admin): ?>
+          <div class="alert alert-info" style="font-size: 12px; margin: 10px 0;">
+            <strong>Debug - Disciplina: <?= htmlspecialchars($disc_name) ?></strong><br>
+            ID: <?= $disc_id ?><br>
+            Atividades encontradas: <?= count($disc_activities) ?><br>
+            <?php if (!empty($disc_activities)): ?>
+              <?php foreach ($disc_activities as $idx => $act): ?>
+                Atividade <?= $idx + 1 ?>: ID=<?= $act['id'] ?? 'N/A' ?>, 
+                Nome=<?= $act['name'] ?? 'N/A' ?>, 
+                GESE=<?= $act['gese_evaluation'] ?? 'null' ?>, 
+                PED=<?= $act['pedagogico_evaluation'] ?? 'null' ?><br>
+              <?php endforeach; ?>
+            <?php else: ?>
+              Nenhuma atividade cadastrada para esta disciplina.<br>
+            <?php endif; ?>
+          </div>
+        <?php endif;
       ?>
 
         <?php if (!empty($disc_activities)): ?>
@@ -309,7 +328,7 @@ if ($is_ajax_request) {
             <div class="discipline-item mb-3" style="border-left: 4px solid #3498db; padding-left: 15px;">
               <div class="discipline-header">
                 <p>
-                  <strong>Redação Oficial</strong>
+                  <strong><?= htmlspecialchars($disc_name) ?></strong>
                   <span class="badge" style="background: #3498db; color: white; font-size: 11px; margin-left: 10px;">
                     <?= htmlspecialchars($activity['name']) ?>
                   </span>
