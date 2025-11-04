@@ -102,53 +102,62 @@ class TeacherPostGService
 
     function getTeacherPostGDisciplines($user_id)
     {
+        // ===================================================================
+        // CRITICAL: Initialize return arrays FIRST, before any logic
+        // ===================================================================
+        $disciplines = [];
+        $post_graduations = [];
+
         // Fetch activity information for each discipline approval
+        // Fixed to properly JOIN through postg_eixo to get postgraduation name
         $sql = "
-        SELECT
-            d.id AS discipline_id,
-            d.name AS discipline_name,
-            d.post_graduation,
-            d.eixo AS eixo_name,
-            dt.activity_id,
-            a.name AS activity_name,
-            dt.enabled AS discipline_status,
-            dt.called_at AS discipline_called_at,
-            dt.gese_evaluation,
-            dt.gese_evaluated_at,
-            dt.gese_evaluated_by,
-            dt.pedagogico_evaluation,
-            dt.pedagogico_evaluated_at,
-            dt.pedagogico_evaluated_by
-        FROM 
-            postg_teacher_disciplines AS dt
-        INNER JOIN
-            postg_disciplinas AS d ON dt.discipline_id = d.id
-        LEFT JOIN
-            activities AS a ON a.id = dt.activity_id
-        WHERE 
-            dt.user_id = :user_id
-        ORDER BY d.name, a.name
+    SELECT
+        d.id AS discipline_id,
+        d.name AS discipline_name,
+        pg.name AS post_graduation,
+        pe.name AS eixo_name,
+        dt.activity_id,
+        a.name AS activity_name,
+        dt.enabled AS discipline_status,
+        dt.called_at AS discipline_called_at,
+        dt.gese_evaluation,
+        dt.gese_evaluated_at,
+        dt.gese_evaluated_by,
+        dt.pedagogico_evaluation,
+        dt.pedagogico_evaluated_at,
+        dt.pedagogico_evaluated_by
+    FROM 
+        postg_teacher_disciplines AS dt
+    INNER JOIN
+        postg_disciplinas AS d ON dt.discipline_id = d.id
+    LEFT JOIN
+        postg_eixo AS pe ON d.eixo_id = pe.id
+    LEFT JOIN
+        postgraduation AS pg ON pe.postg_id = pg.id
+    LEFT JOIN
+        activities AS a ON a.id = dt.activity_id
+    WHERE 
+        dt.user_id = :user_id
+    ORDER BY d.name, a.name
     ";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':user_id', $user_id);
         $stmt->execute();
 
-        $disciplines = [];
-        $post_graduations = [];
         $disciplineMap = []; // To group by discipline ID
 
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $discipline_id = $row["discipline_id"];
-            
+
             // Initialize discipline if not exists
             if (!isset($disciplineMap[$discipline_id])) {
-                // Create discipline object (activities property is already declared in class)
+                // Create discipline object
                 $discipline = new DisciplinePostg(
                     $row["discipline_id"],
                     $row["discipline_name"],
-                    $row["post_graduation"] ?? '',
-                    $row["eixo_name"] ?? '',
+                    $row["post_graduation"] ?? '', // From postgraduation table via JOIN
+                    $row["eixo_name"] ?? '',       // From postg_eixo table via JOIN
                     $row["discipline_status"],
                     $row["discipline_called_at"] ?? null,
                     $row["gese_evaluation"] ?? null,
@@ -158,12 +167,15 @@ class TeacherPostGService
                     $row["pedagogico_evaluated_at"] ?? null,
                     $row["pedagogico_evaluated_by"] ?? null
                 );
-                
+
+                // CRITICAL: Initialize activities array explicitly
+                $discipline->activities = [];
+
                 $disciplineMap[$discipline_id] = $discipline;
             }
-            
-            // Add activity to this discipline
-            if (!empty($row["activity_name"])) {
+
+            // Add activity to this discipline if it exists
+            if (!empty($row["activity_id"]) && !empty($row["activity_name"])) {
                 $disciplineMap[$discipline_id]->activities[] = [
                     'id' => $row["activity_id"],
                     'name' => $row["activity_name"],
@@ -176,6 +188,7 @@ class TeacherPostGService
         }
 
         // Convert map to arrays - separate disciplines and post-graduations
+        // Note: $disciplines and $post_graduations already initialized above
         foreach ($disciplineMap as $discipline) {
             if (!empty($discipline->post_graduation)) {
                 $post_graduations[] = $discipline;
@@ -184,9 +197,18 @@ class TeacherPostGService
             }
         }
 
-        // Return array with both types
+        // ===================================================================
+        // CRITICAL: Always return array with exactly 2 elements
+        // Even if both are empty arrays, we return [$disciplines, $post_graduations]
+        // This prevents "Undefined array key 0/1" errors
+        // ===================================================================
         return [$disciplines, $post_graduations];
     }
+
+
+
+
+
 
     function getTeacherEducation($user_id)
     {

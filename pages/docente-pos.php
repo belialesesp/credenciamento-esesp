@@ -88,8 +88,8 @@ try {
   $zip = $teacher->address->zip;
   $file_path = $teacher->file_path;
   $education_degree = $teacher->educations;
-  $disciplines = $teacher->disciplines[0];
-  $post_graduation = $teacher->disciplines[1];
+  $disciplines = $teacher->disciplines;    
+  $post_graduation = $teacher->post_graduation;
   $activities = $teacher->activities;
   $special_needs = $teacher->special_needs;
   $enabled = $teacher->enabled;
