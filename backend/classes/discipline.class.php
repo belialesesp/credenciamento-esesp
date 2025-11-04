@@ -1,5 +1,5 @@
 <?php
-// backend/classes/discipline.class.php - UPDATED WITH ACTIVITIES PROPERTY
+// backend/classes/discipline.class.php
 
 class Discipline {
   public $id;

@@ -100,114 +100,129 @@ class TeacherService
     }
 
     function getTeacherDisciplines($user_id)
-    {
-        // Fetch activity information for each discipline approval
-        $sql = "
-        SELECT
-            d.id AS discipline_id,
-            d.name AS discipline_name,
-            eixo.name AS eixo_name,
-            est.name AS estacao_name,
-            dt.activity_id,
-            a.name AS activity_name,
-            dt.enabled AS discipline_status,
-            dt.called_at AS discipline_called_at,
-            dt.gese_evaluation,
-            dt.gese_evaluated_at,
-            dt.gese_evaluated_by,
-            dt.pedagogico_evaluation,
-            dt.pedagogico_evaluated_at,
-            dt.pedagogico_evaluated_by
-        FROM 
-            teacher_disciplines AS dt
-        INNER JOIN
-            disciplinas AS d ON dt.discipline_id = d.id
-        LEFT JOIN 
-            estacao AS est ON est.id = d.estacao_id
-        LEFT JOIN 
-            eixo ON eixo.id = est.eixo_id
-        LEFT JOIN
-            activities AS a ON a.id = dt.activity_id
-        WHERE 
-            dt.user_id = :user_id
-        ORDER BY d.name, a.name
+{
+    // Fetch activity information for each discipline approval
+    $sql = "
+    SELECT
+        d.id AS discipline_id,
+        d.name AS discipline_name,
+        eixo.name AS eixo_name,
+        est.name AS estacao_name,
+        dt.activity_id,
+        a.name AS activity_name,
+        dt.enabled AS discipline_status,
+        dt.called_at AS discipline_called_at,
+        dt.gese_evaluation,
+        dt.gese_evaluated_at,
+        dt.gese_evaluated_by,
+        dt.pedagogico_evaluation,
+        dt.pedagogico_evaluated_at,
+        dt.pedagogico_evaluated_by
+    FROM 
+        teacher_disciplines AS dt
+    INNER JOIN
+        disciplinas AS d ON dt.discipline_id = d.id
+    LEFT JOIN 
+        estacao AS est ON est.id = d.estacao_id
+    LEFT JOIN 
+        eixo ON eixo.id = est.eixo_id
+    LEFT JOIN
+        activities AS a ON a.id = dt.activity_id
+    WHERE 
+        dt.user_id = :user_id
+    ORDER BY d.name, a.name
     ";
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->execute();
+    $stmt = $this->db->prepare($sql);
+    $stmt->bindParam(':user_id', $user_id);
+    $stmt->execute();
 
-        $disciplines = [];
-        $disciplineMap = []; // To group by discipline ID
+    $disciplines = [];
+    $disciplineMap = []; // To group by discipline ID
 
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $discipline_id = $row["discipline_id"];
-            
-            // Initialize discipline if not exists
-            if (!isset($disciplineMap[$discipline_id])) {
-                // Get modules for this discipline
-                $module_sql = "
-                SELECT 
-                    m.name AS module_name 
-                FROM 
-                    module AS m
-                INNER JOIN 
-                    teacher_module AS tm ON tm.module_id = m.id
-                WHERE 
-                    tm.user_id = :user_id 
-                    AND m.discipline_id = :discipline_id
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $discipline_id = $row["discipline_id"];
+        
+        // Initialize discipline if not exists
+        if (!isset($disciplineMap[$discipline_id])) {
+            // Get modules for this discipline
+            $moduleSql = "
+                SELECT DISTINCT m.name
+                FROM teacher_module tm
+                INNER JOIN module m ON tm.module_id = m.id
+                WHERE tm.user_id = :user_id
+                AND m.discipline_id = :discipline_id
+                ORDER BY m.name
             ";
+            
+            $moduleStmt = $this->db->prepare($moduleSql);
+            $moduleStmt->bindParam(':user_id', $user_id);
+            $moduleStmt->bindParam(':discipline_id', $discipline_id);
+            $moduleStmt->execute();
+            
+            $modules = [];
+            while ($moduleRow = $moduleStmt->fetch(PDO::FETCH_ASSOC)) {
+                $modules[] = $moduleRow['name'];
+            }
 
-                $module_stmt = $this->db->prepare($module_sql);
-                $module_stmt->bindParam(':user_id', $user_id);
-                $module_stmt->bindParam(':discipline_id', $discipline_id);
-                $module_stmt->execute();
-
-                $modules = [];
-                while ($module_row = $module_stmt->fetch(PDO::FETCH_ASSOC)) {
-                    $modules[] = $module_row["module_name"];
+            // Create discipline object
+            $discipline = new Discipline(
+                $row["discipline_id"],
+                $row["discipline_name"],
+                $row["eixo_name"] ?? '',
+                $row["estacao_name"] ?? '',
+                $modules,
+                $row["discipline_status"],
+                $row["discipline_called_at"] ?? null,
+                $row["gese_evaluation"] ?? null,
+                $row["gese_evaluated_at"] ?? null,
+                $row["gese_evaluated_by"] ?? null,
+                $row["pedagogico_evaluation"] ?? null,
+                $row["pedagogico_evaluated_at"] ?? null,
+                $row["pedagogico_evaluated_by"] ?? null
+            );
+            
+            // CRITICAL: Initialize activities array explicitly
+            // This ensures the property exists even if it's not in the constructor
+            $discipline->activities = [];
+            
+            $disciplineMap[$discipline_id] = $discipline;
+        }
+        
+        // Add activity to this discipline's activities array
+        // CRITICAL FIX: Check if activity_id is not null before adding
+        if (!empty($row["activity_id"]) && !empty($row["activity_name"])) {
+            $newActivity = [
+                'id' => $row["activity_id"],
+                'name' => $row["activity_name"],
+                'status' => $row["discipline_status"],
+                'gese_evaluation' => $row["gese_evaluation"],
+                'pedagogico_evaluation' => $row["pedagogico_evaluation"],
+                'called_at' => $row["discipline_called_at"]
+            ];
+            
+            // Avoid duplicates (check if this activity ID already exists)
+            $exists = false;
+            foreach ($disciplineMap[$discipline_id]->activities as $existingActivity) {
+                if ($existingActivity['id'] === $newActivity['id']) {
+                    $exists = true;
+                    break;
                 }
-
-                // Create discipline object (activities property is already declared in class)
-                $discipline = new Discipline(
-                    $row["discipline_id"],
-                    $row["discipline_name"],
-                    $row["eixo_name"] ?? '',
-                    $row["estacao_name"] ?? '',
-                    $modules,
-                    $row["discipline_status"],
-                    $row["discipline_called_at"] ?? null,
-                    $row["gese_evaluation"] ?? null,
-                    $row["gese_evaluated_at"] ?? null,
-                    $row["gese_evaluated_by"] ?? null,
-                    $row["pedagogico_evaluation"] ?? null,
-                    $row["pedagogico_evaluated_at"] ?? null,
-                    $row["pedagogico_evaluated_by"] ?? null
-                );
-                
-                $disciplineMap[$discipline_id] = $discipline;
             }
             
-            // Add activity to this discipline
-            if (!empty($row["activity_name"])) {
-                $disciplineMap[$discipline_id]->activities[] = [
-                    'id' => $row["activity_id"],
-                    'name' => $row["activity_name"],
-                    'status' => $row["discipline_status"],
-                    'gese_evaluation' => $row["gese_evaluation"],
-                    'pedagogico_evaluation' => $row["pedagogico_evaluation"],
-                    'called_at' => $row["discipline_called_at"]
-                ];
+            if (!$exists) {
+                $disciplineMap[$discipline_id]->activities[] = $newActivity;
             }
         }
-
-        // Convert map to array
-        foreach ($disciplineMap as $discipline) {
-            $disciplines[] = $discipline;
-        }
-
-        return $disciplines;
     }
+
+    // Convert map to array
+    foreach ($disciplineMap as $discipline) {
+        $disciplines[] = $discipline;
+    }
+
+    return $disciplines;
+}
 
     function getTeacherEducation($user_id)
     {
