@@ -186,12 +186,7 @@ if ($is_ajax_request) {
     <a href="docentes.php" class="back-link">Voltar</a>
   <?php endif; ?>
   <style>
-    .activities-section {
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-radius: 5px;
-    }
-
+    /* Keep only the styles that aren't handled by Bootstrap */
     .activity-item {
       background-color: white;
     }
@@ -200,38 +195,17 @@ if ($is_ajax_request) {
       border-left: 3px solid #dee2e6;
       padding-left: 10px;
     }
-
-    .discipline-header {
-      cursor: pointer;
-      transition: background-color 0.2s;
-      padding: 10px;
+    
+    /* Custom styling for accordion items */
+    .accordion-item {
       border-radius: 5px;
-      user-select: none;
-    }
-
-    .discipline-header:hover {
-      background-color: #e9ecef;
-    }
-
-    .discipline-header .chevron {
-      transition: transform 0.3s ease;
-      display: inline-block;
-      margin-right: 8px;
-    }
-
-    .discipline-header.active .chevron {
-      transform: rotate(90deg);
-    }
-
-    .activities-section {
-      max-height: 0;
       overflow: hidden;
-      transition: max-height 0.3s ease-out;
+      margin-bottom: 1rem;
     }
-
-    .activities-section.show {
-      max-height: 5000px;
-      transition: max-height 0.5s ease-in;
+    
+    .accordion-button:not(.collapsed) {
+      background-color: #e9ecef;
+      color: #212529;
     }
   </style>
   <h1 class="main-title">Dados do Docente</h1>
@@ -314,6 +288,8 @@ if ($is_ajax_request) {
       $discipline_index = 0;
       ?>
 
+      <!-- Bootstrap Accordion Wrapper -->
+      <div class="accordion" id="disciplinesAccordion">
       <?php foreach ($courses_map as $discipline):
         $discipline_index++;
         $disc_id = method_exists($discipline, 'getId') ? $discipline->getId() : (property_exists($discipline, 'id') ? $discipline->id : 0);
@@ -329,18 +305,18 @@ if ($is_ajax_request) {
       ?>
 
         <?php if (!empty($disc_activities)): ?>
-          <!-- ACCORDION COURSE ITEM -->
-          <div class="discipline-item mb-3" style="border-left: 4px solid #3498db; border-radius: 5px; overflow: hidden;">
-            <!-- Clickable Header -->
-            <div class="discipline-header" onclick="toggleDiscipline('<?= $accordion_id ?>')" id="header-<?= $accordion_id ?>">
-              <span class="chevron">▶</span>
-              <strong><?= htmlspecialchars($disc_name) ?></strong>
-              <span class="badge bg-secondary ms-2"><?= count($disc_activities) ?> atividade<?= count($disc_activities) > 1 ? 's' : '' ?></span>
-            </div>
-
+          <!-- BOOTSTRAP ACCORDION ITEM -->
+          <div class="accordion-item mb-3" style="border-left: 4px solid #3498db;">
+            <h2 class="accordion-header" id="heading-<?= $accordion_id ?>">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#<?= $accordion_id ?>" aria-expanded="false" aria-controls="<?= $accordion_id ?>">
+                <strong><?= htmlspecialchars($disc_name) ?></strong>
+                <span class="badge bg-secondary ms-2"><?= count($disc_activities) ?> atividade<?= count($disc_activities) > 1 ? 's' : '' ?></span>
+              </button>
+            </h2>
+            
             <!-- Collapsible Details Section -->
-            <div class="activities-section" id="<?= $accordion_id ?>">
-              <div style="padding: 15px; background: #f8f9fa;">
+            <div id="<?= $accordion_id ?>" class="accordion-collapse collapse" aria-labelledby="heading-<?= $accordion_id ?>" data-bs-parent="#disciplinesAccordion">
+              <div class="accordion-body" style="background: #f8f9fa;">
 
                 <?php if ($disc_eixo || $disc_estacao): ?>
                   <div class="discipline-details mb-2">
@@ -480,6 +456,7 @@ if ($is_ajax_request) {
         <?php endif; ?>
 
       <?php endforeach; ?>
+      </div> <!-- Close accordion wrapper -->
     <?php else: ?>
       <p>Nenhum curso cadastrado.</p>
     <?php endif; ?>
@@ -592,192 +569,196 @@ if ($is_ajax_request) {
     </div>
 
     <div class="info-section">
-      <h3>Cursos</h3>
-      <?php if (!empty($disciplines)): ?>
-        <?php
-        // Group disciplines by ID to show each course only once
-        $courses_map = [];
-        foreach ($disciplines as $discipline) {
-          $disc_id = method_exists($discipline, 'getId') ? $discipline->getId() : (property_exists($discipline, 'id') ? $discipline->id : 0);
+    <h3>Cursos</h3>
+    <?php if (!empty($disciplines)): ?>
+      <?php
+      // Group disciplines by ID to show each course only once
+      $courses_map = [];
+      foreach ($disciplines as $discipline) {
+        $disc_id = method_exists($discipline, 'getId') ? $discipline->getId() : (property_exists($discipline, 'id') ? $discipline->id : 0);
 
-          if (!isset($courses_map[$disc_id])) {
-            $courses_map[$disc_id] = $discipline;
-          }
+        if (!isset($courses_map[$disc_id])) {
+          $courses_map[$disc_id] = $discipline;
         }
+      }
 
-        $discipline_index = 0;
-        ?>
+      $discipline_index = 0;
+      ?>
 
-        <?php foreach ($courses_map as $discipline):
-          $discipline_index++;
-          $disc_id = method_exists($discipline, 'getId') ? $discipline->getId() : (property_exists($discipline, 'id') ? $discipline->id : 0);
-          $disc_name = method_exists($discipline, 'getName') ? $discipline->getName() : (property_exists($discipline, 'name') ? $discipline->name : 'Nome não disponível');
-          $disc_eixo = method_exists($discipline, 'getEixo') ? $discipline->getEixo() : (property_exists($discipline, 'eixo') ? $discipline->eixo : null);
-          $disc_estacao = method_exists($discipline, 'getEstacao') ? $discipline->getEstacao() : (property_exists($discipline, 'estacao') ? $discipline->estacao : null);
-          $disc_modules = method_exists($discipline, 'getModules') ? $discipline->getModules() : (property_exists($discipline, 'modules') ? $discipline->modules : []);
+      <!-- Bootstrap Accordion Wrapper -->
+      <div class="accordion" id="disciplinesAccordion">
+      <?php foreach ($courses_map as $discipline):
+        $discipline_index++;
+        $disc_id = method_exists($discipline, 'getId') ? $discipline->getId() : (property_exists($discipline, 'id') ? $discipline->id : 0);
+        $disc_name = method_exists($discipline, 'getName') ? $discipline->getName() : (property_exists($discipline, 'name') ? $discipline->name : 'Nome não disponível');
+        $disc_eixo = method_exists($discipline, 'getEixo') ? $discipline->getEixo() : (property_exists($discipline, 'eixo') ? $discipline->eixo : null);
+        $disc_estacao = method_exists($discipline, 'getEstacao') ? $discipline->getEstacao() : (property_exists($discipline, 'estacao') ? $discipline->estacao : null);
+        $disc_modules = method_exists($discipline, 'getModules') ? $discipline->getModules() : (property_exists($discipline, 'modules') ? $discipline->modules : []);
 
-          // Get activities for this discipline
-          $disc_activities = property_exists($discipline, 'activities') ? $discipline->activities : [];
+        // Get activities for this discipline
+        $disc_activities = property_exists($discipline, 'activities') ? $discipline->activities : [];
 
-          $accordion_id = 'discipline-' . $discipline_index;
-        ?>
+        $accordion_id = 'discipline-' . $discipline_index;
+      ?>
 
-          <?php if (!empty($disc_activities)): ?>
-            <!-- ACCORDION COURSE ITEM -->
-            <div class="discipline-item mb-3" style="border-left: 4px solid #3498db; border-radius: 5px; overflow: hidden;">
-              <!-- Clickable Header -->
-              <div class="discipline-header" onclick="toggleDiscipline('<?= $accordion_id ?>')" id="header-<?= $accordion_id ?>">
-                <span class="chevron">▶</span>
+        <?php if (!empty($disc_activities)): ?>
+          <!-- BOOTSTRAP ACCORDION ITEM -->
+          <div class="accordion-item mb-3" style="border-left: 4px solid #3498db;">
+            <h2 class="accordion-header" id="heading-<?= $accordion_id ?>">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#<?= $accordion_id ?>" aria-expanded="false" aria-controls="<?= $accordion_id ?>">
                 <strong><?= htmlspecialchars($disc_name) ?></strong>
                 <span class="badge bg-secondary ms-2"><?= count($disc_activities) ?> atividade<?= count($disc_activities) > 1 ? 's' : '' ?></span>
-              </div>
+              </button>
+            </h2>
+            
+            <!-- Collapsible Details Section -->
+            <div id="<?= $accordion_id ?>" class="accordion-collapse collapse" aria-labelledby="heading-<?= $accordion_id ?>" data-bs-parent="#disciplinesAccordion">
+              <div class="accordion-body" style="background: #f8f9fa;">
 
-              <!-- Collapsible Details Section -->
-              <div class="activities-section" id="<?= $accordion_id ?>">
-                <div style="padding: 15px; background: #f8f9fa;">
-
-                  <?php if ($disc_eixo || $disc_estacao): ?>
-                    <div class="discipline-details mb-2">
-                      <p class="text-muted" style="margin-bottom: 0; font-size: 14px;">
-                        <?php if ($disc_eixo): ?>Eixo: <?= htmlspecialchars($disc_eixo) ?><?php endif; ?>
-                        <?php if ($disc_eixo && $disc_estacao): ?> | <?php endif; ?>
-                        <?php if ($disc_estacao): ?>Estação: <?= htmlspecialchars($disc_estacao) ?><?php endif; ?>
-                      </p>
-                    </div>
-                  <?php endif; ?>
-
-                  <?php if (!empty($disc_modules)): ?>
-                    <p class="text-muted mb-3" style="font-size: 14px;">Módulos: <?= implode(', ', $disc_modules) ?></p>
-                  <?php endif; ?>
-
-                  <!-- Activities List -->
-                  <div class="activities-list mt-3">
-                    <?php foreach ($disc_activities as $activity):
-                      // Calculate status for this specific activity
-                      $act_gese = $activity['gese_evaluation'] ?? null;
-                      $act_ped = $activity['pedagogico_evaluation'] ?? null;
-
-                      $activityStatusText = 'Em avaliação';
-                      $activityStatusClass = 'status-pending';
-
-                      if ($act_gese !== null && $act_ped !== null) {
-                        if ($act_gese === 1 && $act_ped === 1) {
-                          $activityStatusText = 'Apto';
-                          $activityStatusClass = 'status-approved';
-                        } elseif ($act_gese === 0 || $act_ped === 0) {
-                          $activityStatusText = 'Inapto';
-                          $activityStatusClass = 'status-not-approved';
-                        }
-                      } elseif ($act_gese === null && $act_ped === null) {
-                        $activityStatusText = 'Aguardando';
-                        $activityStatusClass = 'status-pending';
-                      }
-                    ?>
-                      <div class="activity-item mb-2 p-3 border rounded" style="background: white;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                          <span>
-                            <i class="fas fa-clipboard-list me-2"></i>
-                            <strong><?= htmlspecialchars($activity['name']) ?></strong>
-                          </span>
-                          <span class="user-status <?= $activityStatusClass ?>"><?= $activityStatusText ?></span>
-                        </div>
-
-                        <?php
-                        // Check if user should see evaluation buttons
-                        $show_gese = (isGESE() || (isAdmin() && !isGEDTH())) && !isGEDTH();
-                        $show_ped = (isPedagogico() || (isAdmin() && !isGEDTH())) && !isGEDTH();
-                        ?>
-
-                        <?php if ($show_gese || $show_ped): ?>
-                          <div class="activity-evaluation mt-2" style="background: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 3px solid #dee2e6;">
-                            <!-- Evaluation status badges -->
-                            <div class="evaluation-status mb-2">
-                              <span class="badge <?= $act_gese === 1 ? 'bg-success' : ($act_gese === 0 ? 'bg-danger' : 'bg-warning') ?>">
-                                Aval. Documental: <?= $act_gese === 1 ? 'Aprovado' : ($act_gese === 0 ? 'Reprovado' : 'Pendente') ?>
-                              </span>
-                              <span class="badge <?= $act_ped === 1 ? 'bg-success' : ($act_ped === 0 ? 'bg-danger' : 'bg-warning') ?> ms-2">
-                                Aval. Pedagógica: <?= $act_ped === 1 ? 'Aprovado' : ($act_ped === 0 ? 'Reprovado' : 'Pendente') ?>
-                              </span>
-                            </div>
-
-                            <!-- GESE Evaluation buttons -->
-                            <?php if ($show_gese): ?>
-                              <div class="mb-2">
-                                <label class="form-label mb-1"><strong>Avaliação Documental (GESE):</strong></label>
-                                <div class="btn-group btn-group-sm" role="group">
-                                  <button class="btn btn-success btn-sm"
-                                    onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', 1)"
-                                    <?= $act_gese === 1 ? 'disabled' : '' ?>>
-                                    <i class="fas fa-check"></i> Aprovar
-                                  </button>
-                                  <button class="btn btn-danger btn-sm"
-                                    onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', 0)"
-                                    <?= $act_gese === 0 ? 'disabled' : '' ?>>
-                                    <i class="fas fa-times"></i> Reprovar
-                                  </button>
-                                  <button class="btn btn-secondary btn-sm"
-                                    onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', null)"
-                                    <?= $act_gese === null ? 'disabled' : '' ?>>
-                                    <i class="fas fa-undo"></i> Resetar
-                                  </button>
-                                </div>
-                              </div>
-                            <?php endif; ?>
-
-                            <!-- Pedagogical Evaluation buttons -->
-                            <?php if ($show_ped): ?>
-                              <div>
-                                <label class="form-label mb-1"><strong>Avaliação Pedagógica:</strong></label>
-                                <div class="btn-group btn-group-sm" role="group">
-                                  <button class="btn btn-success btn-sm"
-                                    onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', 1)"
-                                    <?= $act_ped === 1 ? 'disabled' : '' ?>>
-                                    <i class="fas fa-check"></i> Aprovar
-                                  </button>
-                                  <button class="btn btn-danger btn-sm"
-                                    onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', 0)"
-                                    <?= $act_ped === 0 ? 'disabled' : '' ?>>
-                                    <i class="fas fa-times"></i> Reprovar
-                                  </button>
-                                  <button class="btn btn-secondary btn-sm"
-                                    onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', null)"
-                                    <?= $act_ped === null ? 'disabled' : '' ?>>
-                                    <i class="fas fa-undo"></i> Resetar
-                                  </button>
-                                </div>
-                              </div>
-                            <?php endif; ?>
-                          </div>
-                        <?php endif; ?>
-                      </div>
-                    <?php endforeach; ?>
+                <?php if ($disc_eixo || $disc_estacao): ?>
+                  <div class="discipline-details mb-2">
+                    <p class="text-muted" style="margin-bottom: 0; font-size: 14px;">
+                      <?php if ($disc_eixo): ?>Eixo: <?= htmlspecialchars($disc_eixo) ?><?php endif; ?>
+                      <?php if ($disc_eixo && $disc_estacao): ?> | <?php endif; ?>
+                      <?php if ($disc_estacao): ?>Estação: <?= htmlspecialchars($disc_estacao) ?><?php endif; ?>
+                    </p>
                   </div>
+                <?php endif; ?>
+
+                <?php if (!empty($disc_modules)): ?>
+                  <p class="text-muted mb-3" style="font-size: 14px;">Módulos: <?= implode(', ', $disc_modules) ?></p>
+                <?php endif; ?>
+
+                <!-- Activities List -->
+                <div class="activities-list mt-3">
+                  <?php foreach ($disc_activities as $activity):
+                    // Calculate status for this specific activity
+                    $act_gese = $activity['gese_evaluation'] ?? null;
+                    $act_ped = $activity['pedagogico_evaluation'] ?? null;
+
+                    $activityStatusText = 'Em avaliação';
+                    $activityStatusClass = 'status-pending';
+
+                    if ($act_gese !== null && $act_ped !== null) {
+                      if ($act_gese === 1 && $act_ped === 1) {
+                        $activityStatusText = 'Apto';
+                        $activityStatusClass = 'status-approved';
+                      } elseif ($act_gese === 0 || $act_ped === 0) {
+                        $activityStatusText = 'Inapto';
+                        $activityStatusClass = 'status-not-approved';
+                      }
+                    } elseif ($act_gese === null && $act_ped === null) {
+                      $activityStatusText = 'Aguardando';
+                      $activityStatusClass = 'status-pending';
+                    }
+                  ?>
+                    <div class="activity-item mb-2 p-3 border rounded" style="background: white;">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>
+                          <i class="fas fa-clipboard-list me-2"></i>
+                          <strong><?= htmlspecialchars($activity['name']) ?></strong>
+                        </span>
+                        <span class="user-status <?= $activityStatusClass ?>"><?= $activityStatusText ?></span>
+                      </div>
+
+                      <?php
+                      // Check if user should see evaluation buttons
+                      $show_gese = (isGESE() || (isAdmin() && !isGEDTH())) && !isGEDTH();
+                      $show_ped = (isPedagogico() || (isAdmin() && !isGEDTH())) && !isGEDTH();
+                      ?>
+
+                      <?php if ($show_gese || $show_ped): ?>
+                        <div class="activity-evaluation mt-2" style="background: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 3px solid #dee2e6;">
+                          <!-- Evaluation status badges -->
+                          <div class="evaluation-status mb-2">
+                            <span class="badge <?= $act_gese === 1 ? 'bg-success' : ($act_gese === 0 ? 'bg-danger' : 'bg-warning') ?>">
+                              Aval. Documental: <?= $act_gese === 1 ? 'Aprovado' : ($act_gese === 0 ? 'Reprovado' : 'Pendente') ?>
+                            </span>
+                            <span class="badge <?= $act_ped === 1 ? 'bg-success' : ($act_ped === 0 ? 'bg-danger' : 'bg-warning') ?> ms-2">
+                              Aval. Pedagógica: <?= $act_ped === 1 ? 'Aprovado' : ($act_ped === 0 ? 'Reprovado' : 'Pendente') ?>
+                            </span>
+                          </div>
+
+                          <!-- GESE Evaluation buttons -->
+                          <?php if ($show_gese): ?>
+                            <div class="mb-2">
+                              <label class="form-label mb-1"><strong>Avaliação Documental (GESE):</strong></label>
+                              <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-success btn-sm"
+                                  onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', 1)"
+                                  <?= $act_gese === 1 ? 'disabled' : '' ?>>
+                                  <i class="fas fa-check"></i> Aprovar
+                                </button>
+                                <button class="btn btn-danger btn-sm"
+                                  onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', 0)"
+                                  <?= $act_gese === 0 ? 'disabled' : '' ?>>
+                                  <i class="fas fa-times"></i> Reprovar
+                                </button>
+                                <button class="btn btn-secondary btn-sm"
+                                  onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'gese', null)"
+                                  <?= $act_gese === null ? 'disabled' : '' ?>>
+                                  <i class="fas fa-undo"></i> Resetar
+                                </button>
+                              </div>
+                            </div>
+                          <?php endif; ?>
+
+                          <!-- Pedagogical Evaluation buttons -->
+                          <?php if ($show_ped): ?>
+                            <div>
+                              <label class="form-label mb-1"><strong>Avaliação Pedagógica:</strong></label>
+                              <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-success btn-sm"
+                                  onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', 1)"
+                                  <?= $act_ped === 1 ? 'disabled' : '' ?>>
+                                  <i class="fas fa-check"></i> Aprovar
+                                </button>
+                                <button class="btn btn-danger btn-sm"
+                                  onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', 0)"
+                                  <?= $act_ped === 0 ? 'disabled' : '' ?>>
+                                  <i class="fas fa-times"></i> Reprovar
+                                </button>
+                                <button class="btn btn-secondary btn-sm"
+                                  onclick="updateEvaluationForActivity(<?= $requested_id ?>, <?= $disc_id ?>, <?= $activity['id'] ?>, 'pedagogico', null)"
+                                  <?= $act_ped === null ? 'disabled' : '' ?>>
+                                  <i class="fas fa-undo"></i> Resetar
+                                </button>
+                              </div>
+                            </div>
+                          <?php endif; ?>
+                        </div>
+                      <?php endif; ?>
+                    </div>
+                  <?php endforeach; ?>
                 </div>
               </div>
             </div>
-          <?php else: ?>
-            <!-- NO ACTIVITIES - Show course without accordion -->
-            <div class="discipline-item mb-3" style="border-left: 4px solid #999; padding: 15px; background: #f8f9fa; border-radius: 5px;">
-              <div class="discipline-header-static">
-                <p class="mb-0"><strong><?= htmlspecialchars($disc_name) ?></strong>
-                  <span class="text-muted ms-3">(Sem atividades cadastradas)</span>
-                </p>
-              </div>
-              <?php if ($disc_eixo || $disc_estacao): ?>
-                <p class="text-muted mt-2 mb-0" style="font-size: 14px;">
-                  <?php if ($disc_eixo): ?>Eixo: <?= htmlspecialchars($disc_eixo) ?><?php endif; ?>
-                  <?php if ($disc_eixo && $disc_estacao): ?> | <?php endif; ?>
-                  <?php if ($disc_estacao): ?>Estação: <?= htmlspecialchars($disc_estacao) ?><?php endif; ?>
-                </p>
-              <?php endif; ?>
+          </div>
+        <?php else: ?>
+          <!-- NO ACTIVITIES - Show course without accordion -->
+          <div class="discipline-item mb-3" style="border-left: 4px solid #999; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+            <div class="discipline-header-static">
+              <p class="mb-0"><strong><?= htmlspecialchars($disc_name) ?></strong>
+                <span class="text-muted ms-3">(Sem atividades cadastradas)</span>
+              </p>
             </div>
-          <?php endif; ?>
+            <?php if ($disc_eixo || $disc_estacao): ?>
+              <p class="text-muted mt-2 mb-0" style="font-size: 14px;">
+                <?php if ($disc_eixo): ?>Eixo: <?= htmlspecialchars($disc_eixo) ?><?php endif; ?>
+                <?php if ($disc_eixo && $disc_estacao): ?> | <?php endif; ?>
+                <?php if ($disc_estacao): ?>Estação: <?= htmlspecialchars($disc_estacao) ?><?php endif; ?>
+              </p>
+            <?php endif; ?>
+          </div>
+        <?php endif; ?>
 
-        <?php endforeach; ?>
-      <?php else: ?>
-        <p>Nenhum curso cadastrado.</p>
-      <?php endif; ?>
-    </div>
+      <?php endforeach; ?>
+      </div> <!-- Close accordion wrapper -->
+    <?php else: ?>
+      <p>Nenhum curso cadastrado.</p>
+    <?php endif; ?>
+  </div>
+
 
     <?php if (!empty($lectures)): ?>
       <div class="info-section">
@@ -891,7 +872,10 @@ if ($is_ajax_request) {
 
   </div>
   <script>
+    
     const userRoles = <?php echo json_encode($_SESSION['user_roles'] ?? []); ?>;
+    // For page access check:
+    const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
 
     function canSendInvites() {
       return userRoles.includes('admin') || userRoles.includes('gedth');
@@ -900,9 +884,6 @@ if ($is_ajax_request) {
     function canViewContractInfo() {
       return userRoles.includes('admin') || userRoles.includes('gese');
     }
-
-    // For page access check:
-    const isAdmin = <?= json_encode(isAdministrativeRole()) ?>;
 
     function togglePassword(fieldId) {
       const field = document.getElementById(fieldId);
@@ -921,7 +902,6 @@ if ($is_ajax_request) {
 
     <?php if ($is_admin): ?>
 
-
       function showNotification(message, type) {
         // Create notification element
         const alertDiv = document.createElement('div');
@@ -939,97 +919,83 @@ if ($is_ajax_request) {
         }, 5000);
       }
 
-    <?php endif; ?>
+      function updateGeneralStatus(userId, status) {
+        const url = '../backend/api/update_teacher_status.php';
+        const data = new FormData();
+        data.append('user_id', userId);
+        data.append('status', status !== null ? status : '');
 
-    function updateGeneralStatus(userId, status) {
-      const url = '../backend/api/update_teacher_status.php';
-      const data = new FormData();
-      data.append('user_id', userId);
-      data.append('status', status !== null ? status : '');
-
-      fetch(url, {
-          method: 'POST',
-          body: data
-        })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            alert('Status geral atualizado com sucesso!');
-            location.reload();
-          } else {
-            alert('Erro ao atualizar status: ' + (result.message || 'Erro desconhecido'));
-          }
-        })
-        .catch(error => {
-          alert('Erro na requisição: ' + error);
-        });
-    }
-
-    function updateEvaluation(userId, disciplineId, evaluationType, value) {
-      const url = '../backend/api/update_teacher_evaluation.php';
-      const data = new FormData();
-      data.append('user_id', userId);
-      data.append('discipline_id', disciplineId);
-      data.append('evaluation_type', evaluationType);
-      data.append('value', value !== null ? value : '');
-
-      fetch(url, {
-          method: 'POST',
-          body: data
-        })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            alert('Avaliação atualizada com sucesso!');
-            location.reload();
-          } else {
-            alert('Erro ao atualizar avaliação: ' + (result.message || 'Erro desconhecido'));
-          }
-        })
-        .catch(error => {
-          alert('Erro na requisição: ' + error);
-        });
-    }
-
-    function updateEvaluationForActivity(userId, disciplineId, activityId, evaluationType, value) {
-      const url = '../backend/api/update_teacher_evaluation_activity.php';
-      const data = new FormData();
-      data.append('user_id', userId);
-      data.append('discipline_id', disciplineId);
-      data.append('activity_id', activityId);
-      data.append('evaluation_type', evaluationType);
-      data.append('value', value !== null ? value : '');
-
-      fetch(url, {
-          method: 'POST',
-          body: data
-        })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            alert('Avaliação da atividade atualizada com sucesso!');
-            location.reload();
-          } else {
-            alert('Erro ao atualizar avaliação: ' + (result.message || 'Erro desconhecido'));
-          }
-        })
-        .catch(error => {
-          alert('Erro na requisição: ' + error);
-        });
-    }
-
-    function toggleDiscipline(id) {
-      const element = document.getElementById(id);
-      const header = document.getElementById('header-' + id);
-
-      if (element.classList.contains('show')) {
-        element.classList.remove('show');
-        header.classList.remove('active');
-      } else {
-        element.classList.add('show');
-        header.classList.add('active');
+        fetch(url, {
+            method: 'POST',
+            body: data
+          })
+          .then(response => response.json())
+          .then(result => {
+            if (result.success) {
+              alert('Status geral atualizado com sucesso!');
+              location.reload();
+            } else {
+              alert('Erro ao atualizar status: ' + (result.message || 'Erro desconhecido'));
+            }
+          })
+          .catch(error => {
+            alert('Erro na requisição: ' + error);
+          });
       }
-    }
+
+      function updateEvaluation(userId, disciplineId, evaluationType, value) {
+        const url = '../backend/api/update_teacher_evaluation.php';
+        const data = new FormData();
+        data.append('user_id', userId);
+        data.append('discipline_id', disciplineId);
+        data.append('evaluation_type', evaluationType);
+        data.append('value', value !== null ? value : '');
+
+        fetch(url, {
+            method: 'POST',
+            body: data
+          })
+          .then(response => response.json())
+          .then(result => {
+            if (result.success) {
+              alert('Avaliação atualizada com sucesso!');
+              location.reload();
+            } else {
+              alert('Erro ao atualizar avaliação: ' + (result.message || 'Erro desconhecido'));
+            }
+          })
+          .catch(error => {
+            alert('Erro na requisição: ' + error);
+          });
+      }
+
+      function updateEvaluationForActivity(userId, disciplineId, activityId, evaluationType, value) {
+        const url = '../backend/api/update_teacher_evaluation_activity.php';
+        const data = new FormData();
+        data.append('user_id', userId);
+        data.append('discipline_id', disciplineId);
+        data.append('activity_id', activityId);
+        data.append('evaluation_type', evaluationType);
+        data.append('value', value !== null ? value : '');
+
+        fetch(url, {
+            method: 'POST',
+            body: data
+          })
+          .then(response => response.json())
+          .then(result => {
+            if (result.success) {
+              alert('Avaliação da atividade atualizada com sucesso!');
+              location.reload();
+            } else {
+              alert('Erro ao atualizar avaliação: ' + (result.message || 'Erro desconhecido'));
+            }
+          })
+          .catch(error => {
+            alert('Erro na requisição: ' + error);
+          });
+      }
+    <?php endif; ?>
   </script>
 
 <?php include '../components/footer.php';

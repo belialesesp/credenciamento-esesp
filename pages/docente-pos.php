@@ -748,7 +748,7 @@ ob_start();
       alertDiv.innerHTML = `
     ${message}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
+    `;
       document.body.appendChild(alertDiv);
 
       // Auto-remove after 5 seconds
@@ -757,6 +757,7 @@ ob_start();
       }, 5000);
     }
   <?php endif; ?>
+
   async function updateEvaluationForActivity(teacherId, disciplineId, activityId, evaluationType, status) {
     try {
       const response = await fetch('../backend/api/update_teacher_evaluation.php', {
@@ -787,9 +788,32 @@ ob_start();
     }
   }
 
+  function toggleDiscipline(id) {
+    const element = document.getElementById(id);
+    const header = document.getElementById('header-' + id);
+
+    if (!element || !header) {
+      console.error('Element not found:', id);
+      return;
+    }
+
+    if (element.classList.contains('show')) {
+      element.classList.remove('show');
+      header.classList.remove('active');
+    } else {
+      element.classList.add('show');
+      header.classList.add('active');
+    }
+  }
+
   function toggleCourse(id) {
     const element = document.getElementById(id);
     const header = document.getElementById('header-' + id);
+
+    if (!element || !header) {
+      console.error('Element not found:', id);
+      return;
+    }
 
     if (element.classList.contains('show')) {
       element.classList.remove('show');
