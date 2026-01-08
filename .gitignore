@@ -55,3 +55,8 @@ node_modules/
 **/config/*local*.php
 **/config/*credentials*.php
 **/config/*secret*.php
+
+# Arquivos de ambiente (NÃO commitar)
+.env
+.env.local
+.env.*.local
