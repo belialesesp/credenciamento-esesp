@@ -3,9 +3,8 @@
  * Processa o código de autenticação e obtém os tokens
  */
 
-session_start();
 
-require_once __DIR__ . '/auth/AcessoCidadaoAuth.php';
+session_start();
 
 // Verificar se tem o código de autenticação
 if (!isset($_SESSION['auth_code'])) {
@@ -20,19 +19,29 @@ unset($_SESSION['auth_code']);
 unset($_SESSION['auth_state']);
 
 try {
-    // Carregar configuração
-    $config = require __DIR__ . '/config/acesso_cidadao.php';
+    // Configuração (usando valores fixos por segurança)
+    $config = [
+        'client_id' => '12ee5e77-81b3-4b70-872f-bd32f5f8a9cc',
+        'client_secret' => 'ZF3*Ort@p$MDONxabFjTB8Cn1Owg2X', // ← Coloque o CLIENT_SECRET aqui!
+        'redirect_uri' => 'https://credenciamento.esesp.es.gov.br/callback.php',
+        'token_endpoint' => 'https://acessocidadao.es.gov.br/is/connect/token',
+        'userinfo_endpoint' => 'https://acessocidadao.es.gov.br/is/connect/userinfo'
+    ];
+    
+   
     
     // Trocar o code por tokens
     $tokenData = exchangeCodeForTokens($code, $config);
     
+    
     // Obter informações do usuário
     $userInfo = getUserInfo($tokenData['access_token'], $config);
+    
     
     // Salvar na sessão
     $user = [
         'id' => $userInfo['subNovo'] ?? $userInfo['sub'],
-        'cpf' => $userInfo['sub'] ?? null,
+        'cpf' => $userInfo['sub'] ?? $userInfo['cpf'] ?? null,
         'nome' => $userInfo['nome'] ?? $userInfo['name'] ?? 'Usuário',
         'apelido' => $userInfo['apelido'] ?? $userInfo['nome'] ?? $userInfo['name'],
         'email' => $userInfo['email'] ?? null,
@@ -46,17 +55,19 @@ try {
     $_SESSION['access_token'] = $tokenData['access_token'];
     $_SESSION['last_activity'] = time();
     
+    
     // Redirecionar para onde o usuário queria ir
     $returnUrl = $_SESSION['return_url'] ?? '/index.php';
     unset($_SESSION['return_url']);
     
-    header("Location: " . $returnUrl);
-    exit;
+    
+    // Redirecionar após 3 segundos
+    header("Refresh: 3; url=" . $returnUrl);
     
 } catch (Exception $e) {
-    echo "<h1>Erro ao Processar Login</h1>";
-    echo "<p>" . htmlspecialchars($e->getMessage()) . "</p>";
-    echo "<a href='/login.php'>Tentar novamente</a>";
+    echo "<h1>❌ Erro ao Processar Login</h1>";
+    echo "<p><strong>Mensagem:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
+    echo "<p><a href='/login.php'>Tentar novamente</a></p>";
     
     // Log do erro
     error_log("Erro no process-login: " . $e->getMessage());
@@ -67,7 +78,7 @@ try {
  */
 function exchangeCodeForTokens($code, $config) {
     // Preparar requisição
-    $tokenUrl = $config['endpoints']['token'];
+    $tokenUrl = $config['token_endpoint'];
     
     // Criar Basic Auth (CLIENT_ID:CLIENT_SECRET em base64)
     $auth = base64_encode($config['client_id'] . ':' . $config['client_secret']);
@@ -78,6 +89,8 @@ function exchangeCodeForTokens($code, $config) {
         'code' => $code,
         'redirect_uri' => $config['redirect_uri']
     ]);
+    
+ 
     
     // Fazer requisição
     $ch = curl_init($tokenUrl);
@@ -95,7 +108,7 @@ function exchangeCodeForTokens($code, $config) {
     
     if ($httpCode !== 200) {
         $error = json_decode($response, true);
-        throw new Exception("Erro ao obter token: " . ($error['error_description'] ?? $response));
+        throw new Exception("Erro ao obter token: " . $response);
     }
     
     $data = json_decode($response, true);
@@ -111,7 +124,7 @@ function exchangeCodeForTokens($code, $config) {
  * Obtém informações do usuário usando o access_token
  */
 function getUserInfo($accessToken, $config) {
-    $userinfoUrl = $config['endpoints']['userinfo'];
+    $userinfoUrl = $config['userinfo_endpoint'];
     
     $ch = curl_init($userinfoUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -124,7 +137,7 @@ function getUserInfo($accessToken, $config) {
     curl_close($ch);
     
     if ($httpCode !== 200) {
-        throw new Exception("Erro ao obter informações do usuário");
+        throw new Exception("Erro ao obter informações do usuário: " . $response);
     }
     
     return json_decode($response, true);
