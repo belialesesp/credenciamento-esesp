@@ -4,10 +4,10 @@
  */
 
 // Configurações do Banco de Dados MySQL
-define('DB_HOST', 'localhost');
+define('DB_HOST', '201.62.46.162');
 define('DB_NAME', 'esesp_pesquisas');
-define('DB_USER', 'root');  // MUDAR para seu usuário MySQL
-define('DB_PASS', 'ead@GOV2015');      // MUDAR para sua senha MySQL
+define('DB_USER', 'root'); 
+define('DB_PASS', '');  
 define('DB_CHARSET', 'utf8mb4');
 
 // Configurações do Site
