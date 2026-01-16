@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./pdf-style.css" />
+
+    <style>
+      .header {
+        display: flex;
+      }
+    </style>
+  </head>
+  <body>
+    <table style="width: 100%; border-collapse: collapse">
+      <tr>
+        <td style="width: 7%; text-align: center; vertical-align: middle">
+          <img
+            src="./assets/Logo-06 brasao.png"
+            alt="Logo governo do estado"
+            style="max-width: 100%; height: auto"
+          />
+        </td>
+        <td style="width: 80%; text-align: left; vertical-align: middle">
+          <p style="margin: 0; font-weight: bold; text-align: center">
+            COMPROVANTE DE CREDENCIAMENTO
+          </p>
+          <p
+            style="
+              margin: 0;
+              text-align: center;
+              font-weight: bold;
+              font-size: 16px;
+            "
+          >
+            ESESP - Edital nº 001/2024
+          </p>
+        </td>
+      </tr>
+    </table>
+    <h3 style="text-align: center">
+      EDITAL DE CREDENCIAMENTO DE DOCENTE, DOCENTE CONTEUDISTA, DOCENTES
+      ASSISTENTE, INTÉRPRETE DE LIBRAS, COORDENADOR TÉCNICO, APOIO TÉCNICO,
+      CONFERENCISTA/PALESTRANTE, PAINELISTA/DEBATEDOR, MODERADOR, REUNIÃO
+      TÉCNICA, ASSESSORAMENTO TÉCNICO, REVISÃO DE TEXTO E ENTREVISTA
+    </h3>
+
+    <table style="width: 100%; border-collapse: collapse">
+      <tr style="width: 100%">
+        <td style="width: 50%; vertical-align: middle">
+          <p style="font-weight: bold">Profissionais de Nível Médio</p>
+        </td>
+        <td>
+          <p style="font-weight: bold; text-align: end">
+            Data de Inscrição: {{date}}
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <table
+      style="
+        width: 100%;
+        border-collapse: collapse;
+        border: 2px solid black;
+        margin: 10px 0px;
+      "
+    >
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 16px">Dados Pessoais</p>
+        </td>
+      </tr>
+
+      <tr style="width: 100%">
+        <td
+          colspan="4"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">Nome:</p>
+        </td>
+        <td
+          colspan="2"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">RG:</p>
+        </td>
+        <td
+          colspan="1"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">Emissor:</p>
+        </td>
+        <td
+          colspan="1"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">UF:</p>
+        </td>
+      </tr>
+
+      <tr style="width: 100%">
+        <td
+          colspan="4"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{name}}</p>
+        </td>
+        <td
+          colspan="2"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{document_number}}</p>
+        </td>
+        <td
+          colspan="1"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{document_emissor}}</p>
+        </td>
+        <td
+          colspan="1"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{document_uf}}</p>
+        </td>
+      </tr>
+
+      <tr style="width: 100%">
+        <td
+          colspan="2"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">CPF:</p>
+        </td>
+        <td
+          colspan="3"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">Telefone:</p>
+        </td>
+        <td
+          colspan="3"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">Email:</p>
+        </td>
+      </tr>
+
+      <tr style="width: 100%">
+        <td
+          colspan="2"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{cpf}}</p>
+        </td>
+        <td
+          colspan="3"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{phone}}</p>
+        </td>
+        <td
+          colspan="3"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{email}}</p>
+        </td>
+      </tr>
+
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">Endereço:</p>
+        </td>
+      </tr>
+
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{address}}</p>
+        </td>
+      </tr>
+
+      <tr style="width: 100%">
+        <td
+          colspan="4"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">Cidade:</p>
+        </td>
+        <td
+          colspan="2"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">Estado:</p>
+        </td>
+        <td
+          colspan="2"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 14px">CEP:</p>
+        </td>
+      </tr>
+
+      <tr style="width: 100%">
+        <td
+          colspan="4"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{city}}</p>
+        </td>
+        <td
+          colspan="2"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{state}}</p>
+        </td>
+        <td
+          colspan="2"
+          style="vertical-align: middle; padding: 5px; padding-top: 0px"
+        >
+          <p style="margin-top: 0px; font-size: 14px">{{zip}}</p>
+        </td>
+      </tr>
+    </table>
+
+    <table
+      style="
+        width: 100%;
+        border-collapse: collapse;
+        border: 2px solid black;
+        margin: 10px 0px;
+      "
+    >
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 16px">Dados da Inscrição</p>
+        </td>
+      </tr>
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 16px; font-size: 14px">
+            Cargo:
+          </p>
+        </td>
+      </tr>
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-size: 14px; margin-top: 0px">Apoio Técnico</p>
+        </td>
+      </tr>
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 16px; font-size: 14px">
+            Habilitação:
+          </p>
+        </td>
+      </tr>
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-size: 14px; margin-top: 0px">{{scholarship}}</p>
+        </td>
+      </tr>
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-weight: bold; font-size: 16px; font-size: 14px">
+            Requisitos:
+          </p>
+        </td>
+      </tr>
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-size: 14px; margin-top: 0px; text-align: justify">
+            • Declaro que possuo as Habilitações requeridas no Edital e autorizo
+            o tratamento dos meus dados pessoais exclusivamente para os fins do
+            presente Edital
+          </p>
+        </td>
+      </tr>
+      <tr style="width: 100%">
+        <td
+          colspan="8"
+          style="vertical-align: middle; padding: 5px; padding-bottom: 0px"
+        >
+          <p style="font-size: 14px; margin-top: 0px; text-align: justify">
+            • Declaro, sob as penas da lei, que não possuo vínculo de natureza
+            técnica, comercial, econômica, financeira, trabalhista ou civil com
+            dirigente do órgão ou da entidade credenciante ou com agente público
+            que desempenhe função no processo de contratação ou atue na
+            fiscalização ou na gestão do contrato, ou que deles seja cônjuge,
+            companheiro ou parente em linha reta, colateral ou por afinidade,
+            até o terceiro grau.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

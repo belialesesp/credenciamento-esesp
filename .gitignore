@@ -1,0 +1,62 @@
+# Composer dependencies
+/vendor/
+composer.lock
+
+# IMPORTANT: Email configuration contains sensitive credentials
+# Never commit the actual config file, only the example
+backend/config/email.config.php
+
+# Environment files with credentials
+.env
+.env.local
+.env.production
+
+# Test files
+test-email.php
+test-email-connection.php
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+error_log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+*~
+
+# Upload directories (if you store uploads in repo)
+uploads/*
+!uploads/.gitkeep
+
+# Database dumps
+*.sql
+!schema.sql
+!credenciamento_esesp*.sql
+
+# Node modules (if using npm/yarn)
+node_modules/
+
+# Any other sensitive config files
+**/config/*local*.php
+**/config/*credentials*.php
+**/config/*secret*.php
+
+# Arquivos de ambiente (NÃO commitar)
+.env
+.env.local
+.env.*.local
