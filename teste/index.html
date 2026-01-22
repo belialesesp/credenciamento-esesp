@@ -1,29 +1,10 @@
-<?php
-
-/**
- * Página Inicial - Sistema de Credenciamento ESESP
- * Protegido por Acesso Cidadão
- */
-
-session_start();
-require_once __DIR__ . '/auth/AuthMiddleware.php';
-
-// Proteger a página - redireciona para login se não autenticado
-AuthMiddleware::requireAuth();
-
-// Obter dados do usuário autenticado via Acesso Cidadão
-$user = AcessoCidadaoAuth::getUser();
-
-// Nome do usuário para exibição
-$nomeUsuario = $user['apelido'] ?? $user['nome'] ?? 'Credenciado(a)';
-?>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href='https://fonts.googleapis.com/css?family=Rubik' rel='stylesheet'>
-<link rel="stylesheet" href="assets/styles/inicio.css">
+<link rel="stylesheet" href="styles/inicio.css">
 <title>Credenciamento ESESP</title>
 </head>
 <body>
@@ -37,7 +18,7 @@ $nomeUsuario = $user['apelido'] ?? $user['nome'] ?? 'Credenciado(a)';
         <a href="#" class="topo-notificacoes">
             <img src="assets/imagens/Olá Credenciado(a).png" class="icone-branco" alt="Usuário">
         </a>
-        <span>Olá <?php echo htmlspecialchars($nomeUsuario); ?></span>
+        <span>Olá Credenciado(a)</span>
     </div>
 </header>
 
@@ -61,7 +42,7 @@ $nomeUsuario = $user['apelido'] ?? $user['nome'] ?? 'Credenciado(a)';
         <li><a href="#">Credenciamento</a></li>
         <li><a href="#">Trilhas e Eixos</a></li>
         <li><a href="#">Tutoriais</a></li>
-        <li><a href="/teste/pages/duvidasfrequentes.html">Dúvidas Frequentes</a></li>
+        <li><a href="Pages/Duvidas frequentes.html">Dúvidas Frequentes</a></li>
         <li><a href="#">Fale Conosco</a></li>
     </ul>
 
@@ -87,10 +68,10 @@ $nomeUsuario = $user['apelido'] ?? $user['nome'] ?? 'Credenciado(a)';
 
 <!-- Botões Principais -->
 <section class="botoes-principais">
-    <a class="card-principal" target="_blank" href="https://esesp.es.gov.br/Media/esesp/Editais/Edital%2010-01-25.pdf">Leia o edital</a>
-    <a class="card-principal" target="_blank" href="https://treinamento.e-flow.es.gov.br/flow-definition/778bde93-ae66-494d-a09a-049548b10986">Credencie-se</a>
+    <a class="card-principal" href="#">Leia o edital</a>
+    <a class="card-principal" href="#">Credencie-se</a>
     <a class="card-principal" href="#">Acompanhe seu <br> processo</a>
-    <a class="card-principal" target="_blank" href="https://acessocidadao.es.gov.br/Perfil/Editar">Atualize seu <br> cadastro</a>
+    <a class="card-principal" href="#">Atualize seu <br> cadastro</a>
 </section>
 
 <!-- Botões Secundários -->
@@ -161,6 +142,6 @@ $nomeUsuario = $user['apelido'] ?? $user['nome'] ?? 'Credenciado(a)';
     </div>
 </section>
 
-<script src="assets/scripts/script.js"></script>
+<script src="scripts/script.js"></script>
 </body>
 </html>
