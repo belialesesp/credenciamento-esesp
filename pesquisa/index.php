@@ -1,6 +1,6 @@
 <?php
 /**
- * Dashboard - Sistema de Pesquisas ESESP
+ * Sistema de Indicadores de Gestão ESESP
  * With category-based navigation
  */
 
@@ -142,7 +142,7 @@ if (!isset($_SESSION[$lowScoreKey])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - <?= PESQUISA_SITE_NAME ?></title>
+    <title>Indicadores de Gestão ESESP - <?= PESQUISA_SITE_NAME ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -357,23 +357,23 @@ if (!isset($_SESSION[$lowScoreKey])) {
         </a>
         
         <div class="sidebar-brand">
-            <i class="bi bi-clipboard-data"></i> Pesquisas ESESP
+            <i class="bi bi-clipboard-data"></i> Indicadores de Gestão ESESP
         </div>
         
         <div class="nav-section">
             <div class="nav-section-title">Menu Principal</div>
             <nav class="nav flex-column">
                 <a class="nav-link active" href="index.php">
-                    <i class="bi bi-speedometer2"></i> Dashboard
+                    <i class="bi bi-speedometer2"></i> Indicadores de Gestão ESESP
                 </a>
                 <a class="nav-link" href="courses.php">
                     <i class="bi bi-book"></i> Gerenciar Cursos
                 </a>
                 <a class="nav-link" href="create-course.php">
-                    <i class="bi bi-plus-circle"></i> Criar Pesquisa
+                    <i class="bi bi-plus-circle"></i> Criar Pesquisa de Satisfação
                 </a>
                 <a class="nav-link" href="analytics.php">
-                    <i class="bi bi-graph-up"></i> Análises
+                    <i class="bi bi-graph-up"></i> Gráficos
                 </a>
             </nav>
         </div>
@@ -411,8 +411,8 @@ if (!isset($_SESSION[$lowScoreKey])) {
     <!-- Main Content -->
     <div class="main-content">
         <div class="page-header">
-            <h1><i class="bi bi-speedometer2 me-2"></i>Dashboard - <?= $categories[$selectedCategory] ?></h1>
-            <p class="text-muted">Visão geral do sistema de pesquisas de satisfação</p>
+            <h1><i class="bi bi-speedometer2 me-2"></i>Indicadores de Gestão - <?= $categories[$selectedCategory] ?></h1>
+            <p class="text-muted">Visão Geral dos Indicadores de Gestão</p>
         </div>
         
         <?= displayFlashMessage() ?>
