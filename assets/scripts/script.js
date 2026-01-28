@@ -9,11 +9,16 @@ window.addEventListener("scroll", () => {
     }
 });
 
-// DROPDOWN USUÁRIO
-const usuarioArea = document.querySelector(".usuario-area");
-const dropdown = document.querySelector(".dropdown-usuario");
+const seta = document.querySelector('.seta-usuario');
+const dropdown = document.querySelector('.dropdown-usuario');
 
-usuarioArea.addEventListener("click", () => {
-    dropdown.style.display =
-        dropdown.style.display === "flex" ? "none" : "flex";
+// Abre/Fecha ao clicar na seta
+seta.addEventListener('click', (e) => {
+    e.stopPropagation(); // Impede o clique de propagar para o documento
+    dropdown.classList.toggle('ativo');
+});
+
+// Fecha o menu se o usuário clicar em qualquer outro lugar da tela
+document.addEventListener('click', () => {
+    dropdown.classList.remove('ativo');
 });
