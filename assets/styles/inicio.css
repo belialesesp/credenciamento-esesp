@@ -35,34 +35,91 @@ body {
 
 
 
-/* ============= Topo da página (header base) ============ */
+/* ================= HEADER TOPO ================= */
+
 .topo {
     position: fixed;
     top: 0;
     width: 100%;
-    z-index: 1000;}
+    background: var(--cor-branco);
+    z-index: 999;
+    transition: all 0.3s ease;}
+
 
 .header-caixa {
-    background: var(--cor-branco);
-    margin: 0 auto;
     max-width: 1400px;
-    padding: 25px 40px;
+    margin: auto;
+    height: 110px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 0 40px;
     transition: all 0.3s ease;}
 
-.topo-esquerda .logo-esesp {
-    height: 120px;
+.topo-esquerda img {
+    height: 65px;
     transition: all 0.3s ease;}
 
 .topo-centro {
-    font-family: var(--fonte-secundária);
-    font-size: 27px;
-    color: var(--cor-cinza-escuro);
+    font-size: 22px;
+    font-weight: 600;
+    color: #000;
     text-align: center;
-    flex: 1;}
-/*=========================================================*/
+    transition: all 0.3s ease;}
 
+.topo-direita {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 14px;}
 
+.separador {
+    width: 1px;
+    height: 20px;
+    background: #ccc;}
 
+.usuario-area {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    cursor: pointer;}
+
+.seta-usuario {
+    width: 10px;}
+
+.dropdown-usuario {
+    position: absolute;
+    top: 130%;
+    right: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    width: 220px;
+    display: none;
+    flex-direction: column;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);}
+
+.dropdown-usuario a {
+    padding: 12px;
+    text-decoration: none;
+    color: #000;
+    font-size: 14px;}
+
+.dropdown-usuario a:hover {
+    background: #f2f2f2;}
+
+.faixa-laranja {
+    height: 8px;
+    background: var(--cor-laranja);}
+
+.topo.encolhido {
+    top: 15px;}
+
+.topo.encolhido .header-caixa {
+    height: 70px;}
+
+.topo.encolhido .topo-esquerda img {
+    height: 45px;}
+
+.topo.encolhido .topo-centro {
+    font-size: 18px;}
