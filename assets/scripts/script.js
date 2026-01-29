@@ -1,24 +1,12 @@
-// HEADER ENCOLHER AO ROLAR
-window.addEventListener("scroll", () => {
-    const header = document.querySelector(".topo");
+const setaUsuario = document.querySelector('.seta-usuario');
+const dropdownUsuario = document.querySelector('.dropdown-usuario');
 
-    if (window.scrollY > 80) {
-        header.classList.add("encolhido");
-    } else {
-        header.classList.remove("encolhido");
-    }
+setaUsuario.addEventListener('click', (e) => {
+    e.stopPropagation(); // não deixa o clique subir
+    dropdownUsuario.classList.toggle('ativo');
 });
 
-const seta = document.querySelector('.seta-usuario');
-const dropdown = document.querySelector('.dropdown-usuario');
-
-// Abre/Fecha ao clicar na seta
-seta.addEventListener('click', (e) => {
-    e.stopPropagation(); // Impede o clique de propagar para o documento
-    dropdown.classList.toggle('ativo');
-});
-
-// Fecha o menu se o usuário clicar em qualquer outro lugar da tela
+// fecha ao clicar fora
 document.addEventListener('click', () => {
-    dropdown.classList.remove('ativo');
+    dropdownUsuario.classList.remove('ativo');
 });
