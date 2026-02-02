@@ -1,3 +1,4 @@
+/* ============== VARIÁVEIS ============== */
 :root {
     --cor-laranja: rgb(255, 145, 0);
     --cor-azul-escuro: #0c3666;
@@ -10,13 +11,10 @@
     --fonte-principal: 'Roboto', sans-serif;
     --fonte-secundaria: 'Rubik', sans-serif;}
 
+
+/* =========== TOPO DA PÁGINA ============ */
 .topo {
     height: 90px;}
-
-.separador {
-    height: 50px;
-    width: 1px;
-    background: #b4b4b4;}
 
 .laranja {
     background-color: var(--cor-laranja);
@@ -26,10 +24,40 @@
     height: 70px;
     margin: 10px 0 10px 20px;}
 
-.titulo {
+.titulo-esesp {
     font-size: 32px;
     font-weight: 450;
     color: var(--cor-cinza-escuro);}
+
+.separador {
+    height: 50px;
+    width: 1px;
+    background: #b4b4b4;}
+
+.link-contatos {
+    text-decoration: none;
+    font-family: var(--fonte-principal);
+    font-size: 18px;
+    color: var(--cor-cinza-escuro);
+    white-space: nowrap;
+    transition: 0.5s;}
+
+.link-contatos:hover {
+    text-decoration: none;
+    transform: scale(1.05);
+    color: #4e4e4e;}
+
+
+/* =========== ÁREA DO USUÁRIO ============ */
+.usuario-area {
+    position: relative;}
+
+.usuario-area span {
+    margin-right: 5px;
+    font-family: var(--fonte-principal);
+    font-size: 18px;
+    color: #616161;
+    white-space: nowrap;}
 
 .topo-notificacoes {
     cursor: pointer;
@@ -37,7 +65,7 @@
     background: var(--cor-laranja);
     padding: 13px;
     margin-right: 3px;
-    border-radius: 100px}
+    border-radius: 100px;}
 
 .ola-credenciado {
     filter: invert(100%);
@@ -50,15 +78,14 @@
     width: 18px;
     transition: 0.3s;}
 
-.usuario-area {
-    position: relative;}
 
+/* ============ DROPDOWN MENU ============ */
 .dropdown-usuario {
     position: absolute;
     top: 100%;
     right: 0;
     background: var(--cor-branco);
-    border-radius: 0 0 10px 10px;
+    border-radius: 10px;
     min-width: 220px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     display: flex;
@@ -88,70 +115,89 @@
     background: #f2f2f2;}
 
 .dropdown-usuario a:last-child {
-    border-top: 1px solid #e0e0e0;
     color: #c0392b;}
 
-.dropdown-usuario a:hover {
-    background: #f2f2f2;}
 
-.link-contatos {
-    text-decoration: none;
-    font-family: var(--fonte-principal);
-    font-size: 18px;
-    color: var(--cor-cinza-escuro);
-    white-space: nowrap;
-    transition: 0.5s;}
-
-.link-contatos:hover {
-    text-decoration: none;
-    transform: scale(1.05);
-    color: #4e4e4e;}
-
-.usuario-area span {
-    margin-right: 5px;
-    font-family: var(--fonte-principal);
-    font-size: 18px;
-    color: #616161;
-    white-space: nowrap;}
-
-.seta-play {
-    width: 0; 
-    height: 0; 
-    border-top: 10px solid transparent;
-    border-bottom: 10px solid transparent;
-    border-left: 15px solid #0c3666; 
-    display: inline-block;
-    vertical-align: middle;}
-
-.titulo-editais {
+/* ============ TÍTULOS E TEXTOS ============ */
+.titulo {
     color: var(--cor-azul-escuro);
     font-weight: 800;
-    font-size: 40px;
-    padding-right: 10px;}
+    font-size: 40px;}
 
 .descricao-editais {
     font-family: var(--fonte-secundaria);
     color: var(--cor-azul-escuro);
+    font-size: 22px;}
+
+.linha-com-texto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    margin: 20px 0;
+    font-family: var(--fonte-secundaria);
     font-size: 20px;
-}
+    color: var(--cor-cinza-escuro);
+    text-align: center;}
+
+.linha-com-texto::before,
+.linha-com-texto::after {
+    content: "";
+    flex: 1;
+    height: 0;
+    border-top: 2px solid var(--cor-azul-escuro);}
+
+
+/* ============ LINHAS SEPARADORAS ============ */
+.linha-editais,
+.linha-trilhas {
+    width: 100%;
+    height: 0;
+    margin: 20px 0;
+    border-top: 2px solid;}
 
 .linha-editais {
-    background-color: #0c3666;
-    height: 1.5px;
-    width: 65vw; 
-    margin: 20px auto; 
-    opacity: 0.8;
-    border: none;}
+    border-color: var(--cor-azul-escuro);}
 
+.linha-trilhas {
+    border-color: var(--cor-azul-escuro);}
+
+
+/* ============ LISTA DE EDITAIS ============ */
 .lista-editais {
     list-style-type: disc;
     padding-left: 15px;
     margin-top: 20px;}
 
 .lista-editais li {
-    margin-bottom: 12px; }
+    margin-bottom: 12px;
+    color: rgb(236, 154, 1);
+    transition: color .3s ease;}
+
+.lista-editais li:has(a.hover-3:hover) {
+    color: var(--c, var(--cor-azul-escuro));}
 
 .edital {
-    color: #d18216; 
-    font-size: 19px;
-    text-decoration: underline;}
+    font-size: 18px;
+    font-weight: 500;
+    display: inline-block;
+    text-decoration: none !important;}
+
+
+/* ============ EFEITOS / HOVERS ============ */
+.hover-3 {
+    --c: var(--cor-azul-escuro);
+    --h: 1.2em;
+    display: inline-block;
+    line-height: var(--h);
+    color: rgb(236, 154, 1);
+    background:
+        linear-gradient(var(--c) 0 0) bottom / 0% 1px no-repeat;
+    transition:
+        background-size .35s ease,
+        color .35s ease;}
+
+.hover-3:hover {
+    color: var(--c);
+    background-size: 100% 1px;}
