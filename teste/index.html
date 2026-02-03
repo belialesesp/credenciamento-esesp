@@ -98,14 +98,13 @@
                 </div>
             </div>
 
-            <!-- linha centralizada -->
-            <div class="linha-editais"></div>
+            <div class="linha"></div>
         </div>
 
         <div class="container">
             <div class="row">
                 <div class="p-0">
-                    <ul class="lista-editais ml-4 mt-1 mb-3">
+                    <ul class="lista-editais ml-4 mt-1">
                         <li class="mb-2">
                             <a class="edital hover-3" href="#">
                                 Edital de Credenciamento de Docentes, Docentes Conteudistas e Assistentes
@@ -133,23 +132,282 @@
         <!-- =================================================================== -->
 
 
-        <!-- ============================== TRILHAS ============================ -->
-        <div class="container">
+        <!-- ============================== TRILHAS ============================== -->
+        <section class="section-trilhas py-5">
 
-            <div class="linha-trilhas"></div>
-
-            <div class="row justify-content-center">
-                <div class="col-auto">
+            <div class="container text-center">
+                <div class="trilhas-header d-flex flex-column align-items-center">
                     <h2 class="titulo m-0">TRILHAS E ESTAÇÕES</h2>
+                    <div class="linha"></div>
+
+                    <div class="gatilho-wrapper mt-2" style="cursor: pointer;" id="btn-abrir-tudo">
+                        <p class="descricao-editais mb-0 d-flex align-items-center justify-content-center">
+                            Entenda as trilhas, eixos e estações para escolher onde se candidatar
+                            <img class="seta-trilhas ml-3" id="seta-mestre" src="../assets/imagens/seta-baixo.svg"
+                                alt="Abrir trilhas" style="width: 22px; transition: 0.1s ease;">
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <p class="linha-com-texto">
-                Explore as trilhas disponíveis para sua candidatura.
-            </p>
+            <div class="collapse" id="wrapper-grid-trilhas">
+                <div class="container trilhas-container mt-4">
+                    <div class="row">
 
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha1">Eixo Base Legal</button>
+                                <div class="collapse" id="trilha1">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Conteúdo técnico sobre a base legal vigente.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha2">Eixo Compras e Contratos</button>
+                                <div class="collapse" id="trilha2">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Gestão Contratual</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Procedimentos de licitação e contratos administrativos.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha3">Educação Corporativa</button>
+                                <div class="collapse" id="trilha3">
+                                    <div class="row no-gutters mt-1">
+                                        <div class="col-6 pr-1">
+                                            <div class="estacao h-100">
+                                                <h4 class="estacao-titulo">Metodologias</h4>
+                                                <div class="estacao-conteudo">
+                                                    <p>Design Instrucional.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 pl-1">
+                                            <div class="estacao h-100">
+                                                <h4 class="estacao-titulo">Avaliação</h4>
+                                                <div class="estacao-conteudo">
+                                                    <p>Métricas de ensino.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha4">Gestão de Pessoas</button>
+                                <div class="collapse" id="trilha4">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação RH</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Desenvolvimento humano.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha5">Finanças Públicas</button>
+                                <div class="collapse" id="trilha5">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Tesouro</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Orçamento e execução.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha6">Planejamento Estratégico</button>
+                                <div class="collapse" id="trilha6">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Metas</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Gestão por resultados.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha7">Tecnologia da Informação</button>
+                                <div class="collapse" id="trilha7">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Digital</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Inovação tecnológica.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha8">Comunicação Pública</button>
+                                <div class="collapse" id="trilha8">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Mídia</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Relacionamento institucional.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha9">Logística e Patrimônio</button>
+                                <div class="collapse" id="trilha9">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Almoxarifado</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Controle de bens.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha10">Ética e Integridade</button>
+                                <div class="collapse" id="trilha10">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Compliance</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Conduta profissional.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha11">Inovação no Governo</button>
+                                <div class="collapse" id="trilha11">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Lab-ES</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Laboratórios de inovação.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha12">Saúde Ocupacional</button>
+                                <div class="collapse" id="trilha12">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Preventiva</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Saúde do servidor.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha13">Liderança e Gestão</button>
+                                <div class="collapse" id="trilha13">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Chefia</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Liderança de equipes.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha14">Governança Pública</button>
+                                <div class="collapse" id="trilha14">
+                                    <div class="estacao">
+                                        <h4 class="estacao-titulo">Estação Transparência</h4>
+                                        <div class="estacao-conteudo">
+                                            <p>Controle social.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="trilha-item">
+                                <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                    data-target="#trilha15">Especialidades ESESP</button>
+                                <div class="collapse" id="trilha15">
+                                    <div class="row no-gutters mt-1">
+                                        <div class="col-6 pr-1">
+                                            <div class="estacao h-100">
+                                                <h4 class="estacao-titulo">Eixo A</h4>
+                                                <div class="estacao-conteudo">
+                                                    <p>Conteúdo X</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 pl-1">
+                                            <div class="estacao h-100">
+                                                <h4 class="estacao-titulo">Eixo B</h4>
+                                                <div class="estacao-conteudo">
+                                                    <p>Conteúdo Y</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- =================================================================== -->
     </section>
 
 

@@ -1,4 +1,6 @@
-/* ============== VARIÁVEIS ============== */
+/* =====================================================
+   VARIÁVEIS GLOBAIS
+===================================================== */
 :root {
     --cor-laranja: rgb(255, 145, 0);
     --cor-azul-escuro: #0c3666;
@@ -6,186 +8,226 @@
     --cor-cinza-medio: #e0e0e0;
     --cor-cinza-escuro: #616161;
     --cor-preto: #000000;
-    --cor-branco: #FFFFFF;
+    --cor-branco: #ffffff;
 
     --fonte-principal: 'Roboto', sans-serif;
-    --fonte-secundaria: 'Rubik', sans-serif;}
+    --fonte-secundaria: 'Rubik', sans-serif;
+}
 
 
-/* =========== TOPO DA PÁGINA ============ */
+/* =====================================================
+   BASE / RESET LEVE
+===================================================== */
+a {
+    text-decoration: none;
+}
+
+ul {
+    margin: 0;
+    padding: 0;
+}
+
+
+/* =====================================================
+   TOPO DA PÁGINA
+===================================================== */
 .topo {
-    height: 90px;}
+    height: 90px;
+}
 
 .laranja {
+    height: 15px;
     background-color: var(--cor-laranja);
-    height: 15px;}
+}
 
 .logo-esesp {
     height: 70px;
-    margin: 10px 0 10px 20px;}
+    margin: 10px 0 10px 20px;
+}
 
 .titulo-esesp {
     font-size: 32px;
-    font-weight: 450;
-    color: var(--cor-cinza-escuro);}
+    font-weight: 500;
+    color: var(--cor-cinza-escuro);
+}
 
 .separador {
-    height: 50px;
     width: 1px;
-    background: #b4b4b4;}
+    height: 50px;
+    background: #b4b4b4;
+}
 
 .link-contatos {
-    text-decoration: none;
     font-family: var(--fonte-principal);
     font-size: 18px;
     color: var(--cor-cinza-escuro);
     white-space: nowrap;
-    transition: 0.5s;}
+    transition: transform .3s ease, color .3s ease;
+}
 
 .link-contatos:hover {
-    text-decoration: none;
     transform: scale(1.05);
-    color: #4e4e4e;}
+    color: #4e4e4e;
+}
 
 
-/* =========== ÁREA DO USUÁRIO ============ */
+/* =====================================================
+   ÁREA DO USUÁRIO
+===================================================== */
 .usuario-area {
-    position: relative;}
+    position: relative;
+}
 
 .usuario-area span {
     margin-right: 5px;
     font-family: var(--fonte-principal);
     font-size: 18px;
-    color: #616161;
-    white-space: nowrap;}
+    color: var(--cor-cinza-escuro);
+    white-space: nowrap;
+}
 
 .topo-notificacoes {
-    cursor: pointer;
     width: 55px;
-    background: var(--cor-laranja);
     padding: 13px;
     margin-right: 3px;
-    border-radius: 100px;}
+    background: var(--cor-laranja);
+    border-radius: 100px;
+    cursor: pointer;
+}
 
 .ola-credenciado {
-    filter: invert(100%);
+    width: 100%;
     height: 100%;
-    width: 100%;}
+    filter: invert(100%);
+}
 
 .seta-usuario {
+    width: 18px;
     margin-top: 25px;
     cursor: pointer;
-    width: 18px;
-    transition: 0.3s;}
+    transition: transform .3s ease;
+}
 
 
-/* ============ DROPDOWN MENU ============ */
+/* =====================================================
+   DROPDOWN DO USUÁRIO
+===================================================== */
 .dropdown-usuario {
     position: absolute;
     top: 100%;
     right: 0;
+    min-width: 220px;
     background: var(--cor-branco);
     border-radius: 10px;
-    min-width: 220px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
+
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    z-index: 1000;}
+    transition: all .35s cubic-bezier(0.165, 0.84, 0.44, 1);
+    z-index: 1000;
+}
 
 .dropdown-usuario.ativo {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);}
-
-.topo.encolhido .dropdown-usuario {
-    top: 100%;}
+    transform: translateY(0);
+}
 
 .dropdown-usuario a {
     padding: 14px 18px;
-    text-decoration: none;
-    color: #333;
     font-size: 15px;
-    transition: background 0.2s;}
+    color: #333;
+    transition: background .2s ease;
+}
 
 .dropdown-usuario a:hover {
-    background: #f2f2f2;}
+    background: #f2f2f2;
+}
 
 .dropdown-usuario a:last-child {
-    color: #c0392b;}
+    color: #c0392b;
+}
 
 
-/* ============ TÍTULOS E TEXTOS ============ */
+/* =====================================================
+   TÍTULOS E TEXTOS
+===================================================== */
 .titulo {
-    color: var(--cor-azul-escuro);
+    font-size: 40px;
     font-weight: 800;
-    font-size: 40px;}
+    color: var(--cor-azul-escuro);
+}
 
 .descricao-editais {
     font-family: var(--fonte-secundaria);
-    color: var(--cor-azul-escuro);
-    font-size: 22px;}
+    font-size: 20px;
+    color: var(--cor-cinza-escuro);
+}
 
 .linha-com-texto {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 20px;
-    width: 100%;
     margin: 20px 0;
+
     font-family: var(--fonte-secundaria);
     font-size: 20px;
     color: var(--cor-cinza-escuro);
-    text-align: center;}
+    text-align: center;
+}
 
 .linha-com-texto::before,
 .linha-com-texto::after {
     content: "";
     flex: 1;
-    height: 0;
-    border-top: 2px solid var(--cor-azul-escuro);}
+    border-top: 2px solid var(--cor-azul-escuro);
+}
 
 
-/* ============ LINHAS SEPARADORAS ============ */
-.linha-editais,
-.linha-trilhas {
+/* =====================================================
+   LINHAS SEPARADORAS
+===================================================== */
+.linha {
     width: 100%;
-    height: 0;
-    margin: 20px 0;
-    border-top: 2px solid;}
-
-.linha-editais {
-    border-color: var(--cor-azul-escuro);}
-
-.linha-trilhas {
-    border-color: var(--cor-azul-escuro);}
+    margin: 10px 0;
+    border-top: 2px solid var(--cor-azul-escuro);
+}
 
 
-/* ============ LISTA DE EDITAIS ============ */
+/* =====================================================
+   LISTA DE EDITAIS
+===================================================== */
 .lista-editais {
-    list-style-type: disc;
+    margin-top: 20px;
     padding-left: 15px;
-    margin-top: 20px;}
+    list-style-type: disc;
+}
 
 .lista-editais li {
     margin-bottom: 12px;
     color: rgb(236, 154, 1);
-    transition: color .3s ease;}
+    transition: color .3s ease;
+}
 
-.lista-editais li:has(a.hover-3:hover) {
-    color: var(--c, var(--cor-azul-escuro));}
+.lista-editais li:hover {
+    color: var(--cor-azul-escuro);
+}
 
 .edital {
     font-size: 18px;
     font-weight: 500;
     display: inline-block;
-    text-decoration: none !important;}
+    text-decoration: none !important;
+}
 
 
-/* ============ EFEITOS / HOVERS ============ */
+/* =====================================================
+   HOVERS / EFEITOS
+===================================================== */
 .hover-3 {
     --c: var(--cor-azul-escuro);
     --h: 1.2em;
@@ -196,8 +238,88 @@
         linear-gradient(var(--c) 0 0) bottom / 0% 1px no-repeat;
     transition:
         background-size .35s ease,
-        color .35s ease;}
+        color .35s ease;
+}
 
 .hover-3:hover {
     color: var(--c);
-    background-size: 100% 1px;}
+    background-size: 100% 1px;
+}
+
+/* =====================================================
+    TRILHAS / ESTAÇÕES
+===================================================== */
+/* =====================================================
+   SEÇÃO TRILHAS - DESIGN CORPORATIVO
+===================================================== */
+
+button:focus, 
+.trilha-toggle:focus, 
+.trilha-toggle:active {
+    outline: none !important;
+    box-shadow: none !important; 
+}
+
+.trilha-toggle {
+    width: 100%;
+    background-color: #ffffff;
+    color: var(--cor-azul-escuro);
+    border: 1.5px solid var(--cor-azul-escuro);
+    padding: 14px 10px;
+    font-family: var(--fonte-principal);
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: block;
+    position: relative;
+}
+
+.trilha-toggle:hover {
+    background-color: var(--cor-laranja);
+    color: #ffffff;
+    border-color: var(--cor-laranja);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(255, 145, 0, 0.2);
+}
+
+.trilha-toggle[aria-expanded="true"] {
+    background-color: var(--cor-laranja);
+    color: #ffffff;
+    border-color: var(--cor-laranja);
+}
+
+.estacao {
+    margin-top: 6px;
+    border: 1px solid var(--cor-cinza-medio);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.estacao-titulo {
+    background-color: var(--cor-cinza-escuro);
+    color: var(--cor-branco);
+    margin: 0;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.estacao-conteudo {
+    background-color: var(--cor-branco);
+    padding: 15px;
+    font-family: var(--fonte-secundaria);
+    font-size: 14px;
+    color: var(--cor-cinza-escuro);
+    line-height: 1.5;
+}
+
+.trilhas-container {
+    padding-bottom: 50px;
+}
