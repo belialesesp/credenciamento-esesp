@@ -31,6 +31,15 @@ ul {
 /* =====================================================
    TOPO DA PÁGINA
 ===================================================== */
+.header-fixo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1050;
+    background-color: var(--cor-branco);
+}
+
 .topo {
     height: 90px;
 }
@@ -137,9 +146,10 @@ ul {
 }
 
 .dropdown-usuario a {
+    text-decoration: none;
     padding: 14px 18px;
     font-size: 15px;
-    color: #333;
+    color: var();
     transition: background .2s ease;
 }
 
@@ -201,6 +211,11 @@ ul {
 /* =====================================================
    LISTA DE EDITAIS
 ===================================================== */
+.section-credenciamento {
+    margin-top: 105px;
+}
+
+
 .lista-editais {
     margin-top: 20px;
     padding-left: 15px;
@@ -248,9 +263,6 @@ ul {
 
 /* =====================================================
     TRILHAS / ESTAÇÕES
-===================================================== */
-/* =====================================================
-   SEÇÃO TRILHAS - DESIGN CORPORATIVO
 ===================================================== */
 
 button:focus, 
@@ -313,7 +325,7 @@ button:focus,
 
 .estacao-conteudo {
     background-color: var(--cor-branco);
-    padding: 15px;
+    padding: px;
     font-family: var(--fonte-secundaria);
     font-size: 14px;
     color: var(--cor-cinza-escuro);
@@ -322,4 +334,15 @@ button:focus,
 
 .trilhas-container {
     padding-bottom: 50px;
+}
+
+.ul-estacao {
+    list-style-type: disc; 
+    padding-left: 22px;     
+}
+
+
+.trilha-col {
+    display: flex;
+    justify-content: center;
 }
