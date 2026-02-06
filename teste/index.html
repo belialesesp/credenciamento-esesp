@@ -23,36 +23,44 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
         rel="stylesheet">
-
 </head>
 
-<body>
+<body class="layout-pagina">
 
     <!-- =========================== TOPO DA PÁGINA =========================== -->
     <div class="header-fixo">
         <header class="vw-100 topo">
             <div class="container-fluid">
                 <div class="row align-items-center">
+
                     <!-- ESQUERDA -->
                     <div class="col-3 d-flex align-items-center">
                         <img class="logo-esesp" src="../assets/Imagens/Logo Esesp Colorida.png" alt="logo-esesp">
                     </div>
+
                     <!-- CENTRO -->
                     <div class="col-6 text-center">
                         <h1 class="titulo-esesp m-0">
                             Escola de Serviço Público do Espírito Santo
                         </h1>
                     </div>
+
                     <!-- DIREITA -->
                     <div class="col-3 d-flex align-items-center justify-content-end">
+
                         <a href="#" class="link-contatos">Contato</a>
+
                         <span class="separador mx-3"></span>
+
                         <div class="usuario-area d-flex align-items-center">
                             <div class="topo-notificacoes">
-                                <img class="ola-credenciado" src="../assets/Imagens/Olá Credenciado(a).png" alt="Usuário">
+                                <img class="ola-credenciado" src="../assets/Imagens/Olá Credenciado(a).png"
+                                    alt="Usuário">
                             </div>
+
                             <img class="seta-usuario mx-2" src="../assets/imagens/seta-baixo.svg" alt="Abrir menu">
                             <span>Olá, Credenciado(a)</span>
+
                             <div class="dropdown-usuario">
                                 <a href="#">Acompanhar processo</a>
                                 <a href="#">Sair</a>
@@ -68,482 +76,484 @@
     <!-- ====================================================================== -->
 
 
-    <section class="section-credenciamento py-4">
-
-        <!-- ============================= Editais ============================= -->
-        <div class="container">
-            <div class="row align-items-center">
-
-                <div class="col-md-auto col-12 d-flex align-items-center  ml-5">
-                    <h2 class="titulo m-0">EDITAIS</h2>
-                </div>
-
-                <span class="separador mx-0"></span>
-
-                <div class="col-md col-12 d-flex align-items-center">
-                    <p class="descricao-editais mb-0">
-                        Leia o edital que esteja de acordo com a sua atuação profissional.
-                    </p>
-                </div>
-            </div>
-
-            <div class="linha"></div>
-        </div>
-
-        <div class="container">
-            <div class="row">
-                <div class="p-0">
-                    <ul class="lista-editais ml-4 mt-1">
-                        <li class="mb-2">
-                            <a class="edital hover-3" href="#">
-                                Edital de Credenciamento de Docentes, Docentes Conteudistas e Assistentes
-                            </a>
-                        </li>
-                        <li class="mb-2">
-                            <a class="edital hover-3" href="#">
-                                Edital de Credenciamento de Docentes para Pós-Graduação
-                            </a>
-                        </li>
-                        <li class="mb-2">
-                            <a class="edital hover-3" href="#">
-                                Edital de Credenciamento de Apoio Técnico
-                            </a>
-                        </li>
-                        <li>
-                            <a class="edital hover-3" href="#">
-                                Edital de Credenciamento de Intérprete de Libras
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <!-- =================================================================== -->
-
-
-        <!-- ============================== TRILHAS ============================== -->
-        <section class="section-trilhas py-5">
-
-            <div class="container text-center">
-
-                <!-- TÍTULO E DESCRIÇÃO -->
-                <div class="trilhas-header d-flex flex-column align-items-center">
-                    <h2 class="titulo m-0">TRILHAS E ESTAÇÕES</h2>
-
-                    <div class="linha"></div>
-
-                    <div class="gatilho-wrapper mt-2" style="cursor: pointer;" id="btn-abrir-tudo">
-
-                        <p class="descricao-editais mb-0 d-flex align-items-center justify-content-center">
-                            Entenda as trilhas, eixos e estações para escolher onde se candidatar
-                            <img class="seta-trilhas ml-3" id="seta-mestre" src="../assets/imagens/seta-baixo.svg"alt="Abrir" style="width: 22px; transition: 0.4s ease;">
+    <main class="conteudo-principal">
+        <section class="section-credenciamento py-4">
+            <!-- ============================= Editais ============================= -->
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-auto col-12 d-flex align-items-center  ml-5">
+                        <h2 class="titulo m-0">EDITAIS</h2>
+                    </div>
+                    <span class="separador mx-0"></span>
+                    <div class="col-md col-12 d-flex align-items-center">
+                        <p class="descricao-editais mb-0">
+                            Leia o edital que esteja de acordo com a sua atuação profissional.
                         </p>
                     </div>
                 </div>
+                <div class="linha"></div>
             </div>
+            <div class="container">
+                <div class="row">
+                    <div class="p-0">
+                        <ul class="lista-editais ml-4 mt-1">
+                            <li class="mb-2">
+                                <a class="edital hover-3" href="#">
+                                    Edital de Credenciamento de Docentes, Docentes Conteudistas e Assistentes
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a class="edital hover-3" href="#">
+                                    Edital de Credenciamento de Docentes para Pós-Graduação
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a class="edital hover-3" href="#">
+                                    Edital de Credenciamento de Apoio Técnico
+                                </a>
+                            </li>
+                            <li>
+                                <a class="edital hover-3" href="#">
+                                    Edital de Credenciamento de Intérprete de Libras
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- =================================================================== -->
 
-            <!-- TRILHAS E ESTAÇÕES -->
-            <div class="collapse" id="wrapper-grid-trilhas">
-                <div class="container trilhas-container mt-4">
-                    <div class="row justify-content-center">
 
-                        <!-- Eixo Demandas Específicas -->
-                        <div class="col-12 mb-4">
-                            <div class="trilha-item">
-                                <button class="trilha-toggle" type="button" data-toggle="collapse"
-                                    data-target="#trilha-demandas">Demandas Específicas</button>
-                                <div class="collapse" id="trilha-demandas">
-                                    <div class="row no-gutters mt-1">
-                                        <div class="col-4 pr-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Competências da Gestão Municipa</h4>
-                                                <div class="estacao-conteudo">Texto...</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-4 px-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Mesa de Diálogos (Palestras)</h4>
-                                                <div class="estacao-conteudo">Texto...</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-4 pl-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Ambientação</h4>
-                                                <div class="estacao-conteudo">Texto...</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+            <!-- ============================== TRILHAS ============================== -->
+            <section class="section-trilhas pt-4 pb-0">
+                <div class="container text-center">
+                    <!-- TÍTULO E DESCRIÇÃO -->
+                    <div class="trilhas-header d-flex flex-column align-items-center">
+                        <h2 class="titulo m-0">TRILHAS E ESTAÇÕES</h2>
+                        <div class="linha"></div>
+                        <div class="gatilho-wrapper mt-2" style="cursor: pointer;" id="btn-abrir-tudo">
+                            <p class="descricao-editais mb-0 d-flex align-items-center justify-content-center">
+                                Entenda melhor as trilhas, eixos e estações para escolher em qual se candidatar
+                                <img class="seta-trilhas ml-3" id="seta-mestre" src="../assets/imagens/seta-baixo.svg"
+                                    alt="Abrir" style="width: 22px; transition: 0.4s ease;">
+                            </p>
                         </div>
-
-                        <!-- Eixo Base Legal -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha1">Base Legal</button>
-                                <div class="collapse" id="trilha1">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Introdução ao Direito Administrativo</li>
-                                                <li>Direito e Legislação Ambiental</li>
-                                                <li>Aspectos legais da improbidade administrativa</li>
-                                                <li>Proteção de Dados, privacidade e LGPD para servidores públicos</li>
-                                                <li>Lei 46 e Processos de RH</li>
-                                                <li>  Lei de Responsabilidade Fiscal</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Eixo Compras e Contratos -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha2">Compras e Contratos</button>
-                                <div class="collapse" id="trilha2">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Compras e Contratos</h4>
-                                        <div class="estacao-conteudo">
+                    </div>
+                </div>
+                <!-- TRILHAS E ESTAÇÕES -->
+                <div class="collapse" id="wrapper-grid-trilhas">
+                    <div class="container trilhas-container mt-4">
+                        <div class="row justify-content-center">
+                            <!-- Eixo Base Legal -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha1">Base Legal</button>
+                                    <div class="collapse" id="trilha1">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
+                                            <div class="estacao-conteudo">
                                                 <ul class="ul-estacao">
-                                                    <li>Nova Lei de Licitações Públicas: aspectos gerais e pontos de atenção</li>
+                                                    <li>Introdução ao Direito Administrativo</li>
+                                                    <li>Direito e Legislação Ambiental</li>
+                                                    <li>Aspectos legais da improbidade administrativa</li>
+                                                    <li>Proteção de Dados, privacidade e LGPD para servidores públicos
+                                                    </li>
+                                                    <li>Lei 46 e Processos de RH</li>
+                                                    <li> Lei de Responsabilidade Fiscal</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Eixo Compras e Contratos -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha2">Compras e Contratos</button>
+                                    <div class="collapse" id="trilha2">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Compras e Contratos</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Nova Lei de Licitações Públicas: aspectos gerais e pontos de
+                                                        atenção
+                                                    </li>
                                                     <li>Contratação direta à luz da lei 14.133/21</li>
-                                                    <li>Elaboração de Estudo Técnico Preliminar e Termo de Referência com ênfase na lei nº 14.133/21</li>
+                                                    <li>Elaboração de Estudo Técnico Preliminar e Termo de Referência
+                                                        com
+                                                        ênfase na lei nº 14.133/21</li>
                                                     <li>Licitação Pública Fase Externa ênfase na Lei nº 14.133/21</li>
                                                     <li>Oficina de Prestação de Contas de Convênios Estaduais</li>
                                                     <li>Uso da Plataforma Compras.Gov</li>
                                                     <li>Gestão e fiscalização contratual na Lei 14.133</li>
                                                     <li>Formação de Agentes de Contratação e Pregoeiros</li>
                                                     <li>Sistema de Registros de Preços na Lei 14.133</li>
-                                                    <li>Gestão e fiscalização contratual na Lei 14.133 - observância nas regras trabalhistas aplicáveis às empresas de terceirização</li>
+                                                    <li>Gestão e fiscalização contratual na Lei 14.133 - observância nas
+                                                        regras trabalhistas aplicáveis às empresas de terceirização</li>
                                                     <li>Gestão de convênios: concedente</li>
                                                     <li>Gestão de convênios: convenente</li>
                                                 </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Eixo Comunicação -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha3">Comunicação</button>
-                                <div class="collapse" id="trilha3">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Comunicação</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Inglês para Leitura Instrumental</li>
-                                                <li>Comunicação Pública e Transparência Governamental</li>
-                                                <li>Media Training</li>
-                                                <li>Gestão de Imagem nas Redes Sociais</li>
-                                                <li>Comunicação Profissional</li>
-                                                <li>Oratória Básica</li>
-                                                <li>Oratória Avançada</li>
-                                                <li>Cerimonial para o Serviço Público</li>
-                                                <li>Redação Oficial</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Eixo Conhecimento em Rede -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item">
-                                <button class="trilha-toggle" type="button" data-toggle="collapse"
-                                    data-target="#trilha4">Conhecimento em Rede</button>
-                                <div class="collapse" id="trilha4">
-                                    <div class="row no-gutters mt-1">
-                                        <div class="col-6 pr-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Ferramentas de Apoio à Administração Púbica</h4>
-                                                <div class="estacao-conteudo">
-                                                    <ul class="ul-estacao">
-                                                        <li>Introdução ao sistema E-Flow</li>
-                                                        <li>Introdução ao sistema E-Docs</li>
-                                                        <li>Introdução ao sistema Catálogo ES</li>
-                                                        <li>Introdução ao sistema Agenda ES</li>
-                                                        <li>Introdução ao sistema E-Docs nos municípios</li>
-                                                        <li>Informática Básica</li>
-                                                        <li>Excel Básico</li>
-                                                        <li>Excel Avançado</li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-6 pl-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Controle Interno</h4>
-                                                <div class="estacao-conteudo">
-                                                    <ul class="ul-estacao">
-                                                        <li>Tomada de Contas Especial</li>
-                                                        <li>Prestação de Contas Anual</li>
-                                                        <li>Elaboração de Relatório e Parecer Conclusivo da Unidade Executora de Controle Interno</li>
-                                                        <li>Análise de conformidade por meio de listas de verificação</li>
-                                                        <li>Conceitos básicos sobre Sistema de Controle Interno</li>
-                                                        <li>Gerenciamento de Riscos e Conformidade em contratações de obras públicas no contexto da Lei 14.133/2021</li>
-                                                    </ul>
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Eixo ESG -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha5">ESG</button>
-                                <div class="collapse" id="trilha5">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Ambiental, Social e Governança (ESG)</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Direitos Humanos: uma visão global e contemporânea</li>
-                                                <li>Ética e Serviço Público</li>
-                                                <li>Gestão Responsável para a Sustentabilidade</li>
-                                                <li>Introdução ao ESG</li>
-                                                <li>Cidadania e movimentos sociais</li>
-                                                <li>ESG e ODS: estratégias para o desenvolvimento sustentável</li>
-                                            </ul>
+                            <!-- Eixo Comunicação -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha3">Comunicação</button>
+                                    <div class="collapse" id="trilha3">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Comunicação</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Inglês para Leitura Instrumental</li>
+                                                    <li>Comunicação Pública e Transparência Governamental</li>
+                                                    <li>Media Training</li>
+                                                    <li>Gestão de Imagem nas Redes Sociais</li>
+                                                    <li>Comunicação Profissional</li>
+                                                    <li>Oratória Básica</li>
+                                                    <li>Oratória Avançada</li>
+                                                    <li>Cerimonial para o Serviço Público</li>
+                                                    <li>Redação Oficial</li>
+                                                </ul>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Eixo Gestão por Processos -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha6">Gestão por Processos</button>
-                                <div class="collapse" id="trilha6">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Gestão Estratégica por Processos</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Gestão por Processos</li>
-                                                <li>Mapeamento de Processos – do conceito à prática</li>
-                                                <li>Documentação e padronização de processos BPM</li>
-                                                <li>Oficina de Representação de Processos</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Eixo Inovação -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item">
-                                <button class="trilha-toggle" type="button" data-toggle="collapse"
-                                    data-target="#trilha7">Inovação</button>
-                                <div class="collapse" id="trilha7">
-                                    <div class="row no-gutters mt-1">
-                                        <div class="col-4 pr-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Metodologias Inovadoras</h4>
-                                                <div class="estacao-conteudo">
-                                                    <ul class="ul-estacao">
-                                                        <li>Design Thinking</li>
-                                                        <li>Gamificação</li>
-                                                    </ul>
+                            <!-- Eixo Conhecimento em Rede -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                        data-target="#trilha4">Conhecimento em Rede</button>
+                                    <div class="collapse" id="trilha4">
+                                        <div class="row no-gutters mt-1">
+                                            <div class="col-6 pr-1">
+                                                <div class="estacao h-100">
+                                                    <h4 class="estacao-titulo">Estação Ferramentas de Apoio à
+                                                        Administração
+                                                        Púbica</h4>
+                                                    <div class="estacao-conteudo">
+                                                        <ul class="ul-estacao">
+                                                            <li>Introdução ao sistema E-Flow</li>
+                                                            <li>Introdução ao sistema E-Docs</li>
+                                                            <li>Introdução ao sistema Catálogo ES</li>
+                                                            <li>Introdução ao sistema Agenda ES</li>
+                                                            <li>Introdução ao sistema E-Docs nos municípios</li>
+                                                            <li>Informática Básica</li>
+                                                            <li>Excel Básico</li>
+                                                            <li>Excel Avançado</li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="col-4 px-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Análise de Dados e Tecnologias</h4>
-                                                <div class="estacao-conteudo">
-                                                    <ul class="ul-estacao">
-                                                        <li>Power BI</li>
-                                                        <li>Inteligência Artificial</li>
-                                                        <li>Inteligência Artificial Avançada</li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-4 pl-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Inovação e Segurança Digital</h4>
-                                                <div class="estacao-conteudo">
-                                                    <ul class="ul-estacao">
-                                                        <li>Transformação Digital</li>
-                                                        <li>Segurança Digital</li>
-                                                    </ul>
+                                            <div class="col-6 pl-1">
+                                                <div class="estacao h-100">
+                                                    <h4 class="estacao-titulo">Estação Controle Interno</h4>
+                                                    <div class="estacao-conteudo">
+                                                        <ul class="ul-estacao">
+                                                            <li>Tomada de Contas Especial</li>
+                                                            <li>Prestação de Contas Anual</li>
+                                                            <li>Elaboração de Relatório e Parecer Conclusivo da Unidade
+                                                                Executora de Controle Interno</li>
+                                                            <li>Análise de conformidade por meio de listas de
+                                                                verificação
+                                                            </li>
+                                                            <li>Conceitos básicos sobre Sistema de Controle Interno</li>
+                                                            <li>Gerenciamento de Riscos e Conformidade em contratações
+                                                                de
+                                                                obras públicas no contexto da Lei 14.133/2021</li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Eixo Monitoramento e Avaliação -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha8">Monitoramento e Avaliação</button>
-                                <div class="collapse" id="trilha8">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Monitoramento e Avaliação de Políticas Pública</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Introdução ao monitoramento e avaliação de políticas públicas</li>
-                                                <li>Indicadores com foco em monitoramento e avaliação</li>
-                                                <li>Formulação de políticas públicas utilizando o marco lógico</li>
-                                                <li>Oficina de Monitoramento e Avaliação</li>
-                                                <li>Oficina - Análise Executiva</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Eixo Orçamento e Finanças -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha9">Orçamento e Finanças</button>
-                                <div class="collapse" id="trilha9">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Orçamento e Finança</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Contabilidade Pública aplicada ao SIGEFES</li>
-                                                <li>Gestão Orçamentária e Financeira</li>
-                                                <li>Instrumentos de Planejamento: PPA, LDO e LOA</li>
-                                                <li>Execução e monitoramento orçamentário</li>
-                                                <li>Gestão Orçamentária e Financeira para Municípios</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Eixo Pessoas e Organizações -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha10">Pessoas e Organizações</button>
-                                <div class="collapse" id="trilha10">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Desenvolvimento de Pessoas</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Gestão de conflitos</li>
-                                                <li>Inteligência Emocional</li>
-                                                <li>Autoliderança</li>
-                                                <li>Liderança e gestão de equipes</li>
-                                                <li>Excelência no atendimento ao cidadão</li>
-                                                <li>Soft Skills: desenvolvendo competências socioemocionais para o bom desempenho do servidor</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Eixo Planejamento e Projetos -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha11">Planejamento e Projetos</button>
-                                <div class="collapse" id="trilha11">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Gerenciamento de Projetos</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Gerenciamento de Projetos</li>
-                                                <li>Métodos ágeis: Capacitação Scrum e Kanban</li>
-                                                <li>Trello</li>
-                                                <li>Planejamento Estratégico</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Eixo Políticas Públicas e Gestão Governamental -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item">
-                                <button class="trilha-toggle" type="button" data-toggle="collapse"
-                                    data-target="#trilha12">Políticas Públicas e Gestão Governamental</button>
-                                <div class="collapse" id="trilha12">
-                                    <div class="row no-gutters mt-1">
-                                        <div class="col-6 pr-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Gestão das Organizações Públicas</h4>
-                                                <div class="estacao-conteudo">
-                                                    <ul class="ul-estacao">
-                                                        <li>Noções de Organização Pública</li>
-                                                        <li>Captação de Recursos</li>
-                                                        <li>Introdução ao Serviço Público Municipal</li>
-                                                    </ul>
-                                                </div>
+                            <!-- Eixo ESG -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha5">ESG</button>
+                                    <div class="collapse" id="trilha5">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Ambiental, Social e Governança (ESG)</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Direitos Humanos: uma visão global e contemporânea</li>
+                                                    <li>Ética e Serviço Público</li>
+                                                    <li>Gestão Responsável para a Sustentabilidade</li>
+                                                    <li>Introdução ao ESG</li>
+                                                    <li>Cidadania e movimentos sociais</li>
+                                                    <li>ESG e ODS: estratégias para o desenvolvimento sustentável</li>
+                                                </ul>
                                             </div>
                                         </div>
-                                        <div class="col-6 pl-1">
-                                            <div class="estacao h-100">
-                                                <h4 class="estacao-titulo">Estação Marco Regulatório das Organizações da Sociedade Civil (OSCs)</h4>
-                                                <div class="estacao-conteudo">
-                                                    <ul class="ul-estacao">
-                                                        <li>Marco Regulatório das Organizações da Sociedade Civil</li>
-                                                        <li>Gestão de Parcerias com OSCs</li>
-                                                        <li>Oficina de Elaboração de Projetos de Parcerias com OSCs</li>
-                                                        <li>Oficina de Chamamento Público para contratualização com OSCs</li>
-                                                        <li>Oficina do Marco Regulatório das OSCs na prática</li>
-                                                        <li>Oficina de Prestação de Contas de Parcerias com OSCs</li>
-                                                        <li>Oficina de Elaboração de Plano de Trabalho de Parcerias com OSCs</li>
-                                                    </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Eixo Gestão por Processos -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha6">Gestão por Processos</button>
+                                    <div class="collapse" id="trilha6">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Gestão Estratégica por Processos</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Gestão por Processos</li>
+                                                    <li>Mapeamento de Processos – do conceito à prática</li>
+                                                    <li>Documentação e padronização de processos BPM</li>
+                                                    <li>Oficina de Representação de Processos</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Eixo Inovação -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                        data-target="#trilha7">Inovação</button>
+                                    <div class="collapse" id="trilha7">
+                                        <div class="row no-gutters mt-1">
+                                            <div class="col-4 pr-1">
+                                                <div class="estacao h-100">
+                                                    <h4 class="estacao-titulo">Estação Metodologias Inovadoras</h4>
+                                                    <div class="estacao-conteudo">
+                                                        <ul class="ul-estacao">
+                                                            <li>Design Thinking</li>
+                                                            <li>Gamificação</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-4 px-1">
+                                                <div class="estacao h-100">
+                                                    <h4 class="estacao-titulo">Estação Análise de Dados e Tecnologias
+                                                    </h4>
+                                                    <div class="estacao-conteudo">
+                                                        <ul class="ul-estacao">
+                                                            <li>Power BI</li>
+                                                            <li>Inteligência Artificial</li>
+                                                            <li>Inteligência Artificial Avançada</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-4 pl-1">
+                                                <div class="estacao h-100">
+                                                    <h4 class="estacao-titulo">Estação Inovação e Segurança Digital</h4>
+                                                    <div class="estacao-conteudo">
+                                                        <ul class="ul-estacao">
+                                                            <li>Transformação Digital</li>
+                                                            <li>Segurança Digital</li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Eixo Qualidade de Vida no Trabalho (Qualivida) -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha13">Qualidade de Vida no Trabalho (Qualivida)</button>
-                                <div class="collapse" id="trilha13">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Qualidade de Vida no Trabalho</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Gestão da Qualidade de Vida no Trabalho</li>
-                                                <li>Auriculoterapia</li>
-                                                <li>Preparação para a Aposentadoria</li>
-                                                <li>Noções Básicas de Primeiros Socorros</li>
-                                                <li>Mindfulness</li>
-                                                <li>Educação Financeira</li>
-                                                <li>Comunicação Não Violenta</li>
-                                                <li>Inteligência Emocional</li>
-                                                <li>Letramento Racial</li>
-                                            </ul>
+                            <!-- Eixo Monitoramento e Avaliação -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha8">Monitoramento e Avaliação</button>
+                                    <div class="collapse" id="trilha8">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Monitoramento e Avaliação de Políticas
+                                                Pública</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Introdução ao monitoramento e avaliação de políticas públicas
+                                                    </li>
+                                                    <li>Indicadores com foco em monitoramento e avaliação</li>
+                                                    <li>Formulação de políticas públicas utilizando o marco lógico</li>
+                                                    <li>Oficina de Monitoramento e Avaliação</li>
+                                                    <li>Oficina - Análise Executiva</li>
+                                                </ul>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Eixo Linguagens -->
-                        <div class="col-md-6 mb-4">
-                            <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                    data-target="#trilha14">Linguagens</button>
-                                <div class="collapse" id="trilha14">
-                                    <div class="estacao">
-                                        <h4 class="estacao-titulo">Estação Linguagens</h4>
-                                        <div class="estacao-conteudo">
-                                            <ul class="ul-estacao">
-                                                <li>Libras</li>
-                                            </ul>
+                            <!-- Eixo Orçamento e Finanças -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha9">Orçamento e Finanças</button>
+                                    <div class="collapse" id="trilha9">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Orçamento e Finança</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Contabilidade Pública aplicada ao SIGEFES</li>
+                                                    <li>Gestão Orçamentária e Financeira</li>
+                                                    <li>Instrumentos de Planejamento: PPA, LDO e LOA</li>
+                                                    <li>Execução e monitoramento orçamentário</li>
+                                                    <li>Gestão Orçamentária e Financeira para Municípios</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Eixo Pessoas e Organizações -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha10">Pessoas e Organizações</button>
+                                    <div class="collapse" id="trilha10">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Desenvolvimento de Pessoas</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Gestão de conflitos</li>
+                                                    <li>Inteligência Emocional</li>
+                                                    <li>Autoliderança</li>
+                                                    <li>Liderança e gestão de equipes</li>
+                                                    <li>Excelência no atendimento ao cidadão</li>
+                                                    <li>Soft Skills: desenvolvendo competências socioemocionais para o
+                                                        bom
+                                                        desempenho do servidor</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Eixo Planejamento e Projetos -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha11">Planejamento e Projetos</button>
+                                    <div class="collapse" id="trilha11">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Gerenciamento de Projetos</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Gerenciamento de Projetos</li>
+                                                    <li>Métodos ágeis: Capacitação Scrum e Kanban</li>
+                                                    <li>Trello</li>
+                                                    <li>Planejamento Estratégico</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Eixo Políticas Públicas e Gestão Governamental -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                        data-target="#trilha12">Políticas Públicas e Gestão Governamental</button>
+                                    <div class="collapse" id="trilha12">
+                                        <div class="row no-gutters mt-1">
+                                            <div class="col-6 pr-1">
+                                                <div class="estacao h-100">
+                                                    <h4 class="estacao-titulo">Estação Gestão das Organizações Públicas
+                                                    </h4>
+                                                    <div class="estacao-conteudo">
+                                                        <ul class="ul-estacao">
+                                                            <li>Noções de Organização Pública</li>
+                                                            <li>Captação de Recursos</li>
+                                                            <li>Introdução ao Serviço Público Municipal</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 pl-1">
+                                                <div class="estacao h-100">
+                                                    <h4 class="estacao-titulo">Estação Marco Regulatório das
+                                                        Organizações da
+                                                        Sociedade Civil (OSCs)</h4>
+                                                    <div class="estacao-conteudo">
+                                                        <ul class="ul-estacao">
+                                                            <li>Marco Regulatório das Organizações da Sociedade Civil
+                                                            </li>
+                                                            <li>Gestão de Parcerias com OSCs</li>
+                                                            <li>Oficina de Elaboração de Projetos de Parcerias com OSCs
+                                                            </li>
+                                                            <li>Oficina de Chamamento Público para contratualização com
+                                                                OSCs
+                                                            </li>
+                                                            <li>Oficina do Marco Regulatório das OSCs na prática</li>
+                                                            <li>Oficina de Prestação de Contas de Parcerias com OSCs
+                                                            </li>
+                                                            <li>Oficina de Elaboração de Plano de Trabalho de Parcerias
+                                                                com
+                                                                OSCs</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Eixo Qualidade de Vida no Trabalho (Qualivida) -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha13">Qualidade de Vida no Trabalho (Qualivida)</button>
+                                    <div class="collapse" id="trilha13">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Qualidade de Vida no Trabalho</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Gestão da Qualidade de Vida no Trabalho</li>
+                                                    <li>Auriculoterapia</li>
+                                                    <li>Preparação para a Aposentadoria</li>
+                                                    <li>Noções Básicas de Primeiros Socorros</li>
+                                                    <li>Mindfulness</li>
+                                                    <li>Educação Financeira</li>
+                                                    <li>Comunicação Não Violenta</li>
+                                                    <li>Inteligência Emocional</li>
+                                                    <li>Letramento Racial</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Eixo Linguagens -->
+                            <div class="col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#trilha14">Linguagens</button>
+                                    <div class="collapse" id="trilha14">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Linguagens</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Libras</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Eixo Demandas Específicas -->
+                            <div class="col-12 mb-0">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" type="button" data-toggle="collapse"
+                                        data-target="#trilha15">Demandas Específicas</button>
+                                    <div class="collapse" id="trilha15">
+                                        <div class="row no-gutters mt-1">
+                                            <div class="col-4 pr-1">
+                                                <div class="estacao">
+                                                    <h4 class="estacao-titulo">Estação Competências da Gestão Municipa
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <div class="col-4 px-1">
+                                                <div class="estacao">
+                                                    <h4 class="estacao-titulo">Estação Mesa de Diálogos (Palestras)</h4>
+                                                </div>
+                                            </div>
+                                            <div class="col-4 pl-1">
+                                                <div class="estacao">
+                                                    <h4 class="estacao-titulo">Estação Ambientação</h4>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -551,13 +561,59 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <div class="area-cta mt-2">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-12 mx-auto">
+                        <a href="#" class="cta-credenciamento">
+                            <div class="cta-conteudo">
+                                <h3>Credenciamento</h3>
+                                <span class="separador"></span>
+                                <p>Acesse o processo de credenciamento</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
             </div>
+        </div>
         </section>
-        <!-- =================================================================== -->
+    </main>
 
+    <!-- ========================= RODAPÉ DA PÁGINA ======================== -->
+    <footer class="rodape">
+        <div class="container h-100">
+            <div class="row align-items-center h-100">
 
-    </section>
+                <!-- ESQUERDA - REDES SOCIAIS -->
+                <div class="col-md-6 col-12 rodape-redes">
+                    <span class="rodape-frase">Siga a ESESP nas redes sociais:</span>
 
+                    <div class="icones-redes">
+                        <a href="#" target="_blank">
+                            <img src="../assets/imagens/instagram.png" alt="Instagram">
+                        </a>
+                        <a href="#" target="_blank">
+                            <img src="../assets/imagens/youtube.png" alt="YouTube">
+                        </a>
+                        <a href="#" target="_blank">
+                            <img src="../assets/imagens/linkedin.png" alt="LinkedIn">
+                        </a>
+                    </div>
+                </div>
+
+                <!-- DIREITA - INFORMAÇÕES -->
+                <div class="col-md-6 col-12 rodape-info">
+                    <strong class="duvida">Em que podemos ajudar?</strong><br>
+                    Secretaria Escolar:
+                    <a href="mailto:gese@esesp.es.gov.br">gese@esesp.es.gov.br</a>
+                </div>
+
+            </div>
+        </div>
+    </footer>
+    <!-- ================================================================== -->
 
 </body>
 
@@ -574,6 +630,7 @@
     integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
     crossorigin="anonymous"></script>
 
+<!-- JS PERSONALIZADO -->
 <script src="../assets/scripts/script.js"></script>
 
 </html>

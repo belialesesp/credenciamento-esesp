@@ -11,22 +11,30 @@
     --cor-branco: #ffffff;
 
     --fonte-principal: 'Roboto', sans-serif;
-    --fonte-secundaria: 'Rubik', sans-serif;
+    --fonte-secundaria: 'Rubik', sans-serif;}
+
+html, body {
+    height: 100%;
 }
 
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.conteudo-principal {
+    flex: 1;
+}
 
 /* =====================================================
    BASE / RESET LEVE
 ===================================================== */
 a {
-    text-decoration: none;
-}
+    text-decoration: none;}
 
 ul {
     margin: 0;
-    padding: 0;
-}
-
+    padding: 0;}
 
 /* =====================================================
    TOPO DA PÁGINA
@@ -38,62 +46,52 @@ ul {
     width: 100%;
     z-index: 1050;
     background-color: var(--cor-branco);
-}
+    box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;}
 
 .topo {
-    height: 90px;
-}
+    height: 90px;}
 
 .laranja {
     height: 15px;
-    background-color: var(--cor-laranja);
-}
+    background-color: var(--cor-laranja);}
 
 .logo-esesp {
     height: 70px;
-    margin: 10px 0 10px 20px;
-}
+    margin: 10px 0 10px 20px;}
 
 .titulo-esesp {
     font-size: 32px;
     font-weight: 500;
-    color: var(--cor-cinza-escuro);
-}
+    color: var(--cor-cinza-escuro);}
 
 .separador {
     width: 1px;
     height: 50px;
-    background: #b4b4b4;
-}
+    background: #b4b4b4;}
 
 .link-contatos {
     font-family: var(--fonte-principal);
     font-size: 18px;
     color: var(--cor-cinza-escuro);
     white-space: nowrap;
-    transition: transform .3s ease, color .3s ease;
-}
+    transition: transform .3s ease, color .3s ease;}
 
 .link-contatos:hover {
     transform: scale(1.05);
-    color: #4e4e4e;
-}
-
+    color: #4e4e4e;}
 
 /* =====================================================
    ÁREA DO USUÁRIO
 ===================================================== */
 .usuario-area {
-    position: relative;
-}
+    position: relative;}
 
 .usuario-area span {
     margin-right: 5px;
     font-family: var(--fonte-principal);
     font-size: 18px;
     color: var(--cor-cinza-escuro);
-    white-space: nowrap;
-}
+    white-space: nowrap;}
 
 .topo-notificacoes {
     width: 55px;
@@ -101,22 +99,18 @@ ul {
     margin-right: 3px;
     background: var(--cor-laranja);
     border-radius: 100px;
-    cursor: pointer;
-}
+    cursor: pointer;}
 
 .ola-credenciado {
     width: 100%;
     height: 100%;
-    filter: invert(100%);
-}
+    filter: invert(100%);}
 
 .seta-usuario {
     width: 18px;
     margin-top: 25px;
     cursor: pointer;
-    transition: transform .3s ease;
-}
-
+    transition: transform .3s ease;}
 
 /* =====================================================
    DROPDOWN DO USUÁRIO
@@ -136,31 +130,25 @@ ul {
     visibility: hidden;
     transform: translateY(-10px);
     transition: all .35s cubic-bezier(0.165, 0.84, 0.44, 1);
-    z-index: 1000;
-}
+    z-index: 1000;}
 
 .dropdown-usuario.ativo {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
-}
+    transform: translateY(0);}
 
 .dropdown-usuario a {
     text-decoration: none;
     padding: 14px 18px;
     font-size: 15px;
-    color: var();
-    transition: background .2s ease;
-}
+    color: var(--cor-cinza-escuro);
+    transition: background .2s ease;}
 
 .dropdown-usuario a:hover {
-    background: #f2f2f2;
-}
+    background: #f2f2f2;}
 
 .dropdown-usuario a:last-child {
-    color: #c0392b;
-}
-
+    color: #c0392b;}
 
 /* =====================================================
    TÍTULOS E TEXTOS
@@ -168,14 +156,12 @@ ul {
 .titulo {
     font-size: 40px;
     font-weight: 800;
-    color: var(--cor-azul-escuro);
-}
+    color: var(--cor-azul-escuro);}
 
 .descricao-editais {
     font-family: var(--fonte-secundaria);
     font-size: 20px;
-    color: var(--cor-cinza-escuro);
-}
+    color: var(--cor-cinza-escuro);}
 
 .linha-com-texto {
     display: flex;
@@ -187,16 +173,13 @@ ul {
     font-family: var(--fonte-secundaria);
     font-size: 20px;
     color: var(--cor-cinza-escuro);
-    text-align: center;
-}
+    text-align: center;}
 
 .linha-com-texto::before,
 .linha-com-texto::after {
     content: "";
     flex: 1;
-    border-top: 2px solid var(--cor-azul-escuro);
-}
-
+    border-top: 2px solid var(--cor-azul-escuro);}
 
 /* =====================================================
    LINHAS SEPARADORAS
@@ -204,41 +187,32 @@ ul {
 .linha {
     width: 100%;
     margin: 10px 0;
-    border-top: 2px solid var(--cor-azul-escuro);
-}
-
+    border-top: 2px solid var(--cor-azul-escuro);}
 
 /* =====================================================
    LISTA DE EDITAIS
 ===================================================== */
 .section-credenciamento {
-    margin-top: 105px;
-}
-
+    margin-top: 120px;}
 
 .lista-editais {
     margin-top: 20px;
     padding-left: 15px;
-    list-style-type: disc;
-}
+    list-style-type: disc;}
 
 .lista-editais li {
     margin-bottom: 12px;
     color: rgb(236, 154, 1);
-    transition: color .3s ease;
-}
+    transition: color .3s ease;}
 
 .lista-editais li:hover {
-    color: var(--cor-azul-escuro);
-}
+    color: var(--cor-azul-escuro);}
 
 .edital {
     font-size: 18px;
     font-weight: 500;
     display: inline-block;
-    text-decoration: none !important;
-}
-
+    text-decoration: none !important;}
 
 /* =====================================================
    HOVERS / EFEITOS
@@ -253,13 +227,11 @@ ul {
         linear-gradient(var(--c) 0 0) bottom / 0% 1px no-repeat;
     transition:
         background-size .35s ease,
-        color .35s ease;
-}
+        color .35s ease;}
 
 .hover-3:hover {
     color: var(--c);
-    background-size: 100% 1px;
-}
+    background-size: 100% 1px;}
 
 /* =====================================================
     TRILHAS / ESTAÇÕES
@@ -269,8 +241,10 @@ button:focus,
 .trilha-toggle:focus, 
 .trilha-toggle:active {
     outline: none !important;
-    box-shadow: none !important; 
-}
+    box-shadow: none !important; }
+
+.section-trilhas {
+   margin-top: 35px;}
 
 .trilha-toggle {
     width: 100%;
@@ -287,30 +261,25 @@ button:focus,
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: block;
-    position: relative;
-}
+    position: relative;}
 
 .trilha-toggle:hover {
     background-color: var(--cor-laranja);
     color: #ffffff;
     border-color: var(--cor-laranja);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(255, 145, 0, 0.2);
-}
+    transform: translateY(-2px);}
 
 .trilha-toggle[aria-expanded="true"] {
     background-color: var(--cor-laranja);
     color: #ffffff;
-    border-color: var(--cor-laranja);
-}
+    border-color: var(--cor-laranja);}
 
 .estacao {
     margin-top: 6px;
     border: 1px solid var(--cor-cinza-medio);
     border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;}
 
 .estacao-titulo {
     background-color: var(--cor-cinza-escuro);
@@ -320,29 +289,145 @@ button:focus,
     font-size: 13px;
     font-weight: 600;
     text-align: center;
-    text-transform: uppercase;
-}
+    text-transform: uppercase;}
 
 .estacao-conteudo {
     background-color: var(--cor-branco);
-    padding: px;
+    padding: 5px;
     font-family: var(--fonte-secundaria);
     font-size: 14px;
     color: var(--cor-cinza-escuro);
-    line-height: 1.5;
-}
+    line-height: 1.5;}
 
 .trilhas-container {
-    padding-bottom: 50px;
-}
+    padding-bottom: 50px;}
 
 .ul-estacao {
     list-style-type: disc; 
-    padding-left: 22px;     
-}
-
+    padding-left: 22px;     }
 
 .trilha-col {
     display: flex;
+    justify-content: center;}
+
+/* =====================================================
+    BOTÃO DE CREDENCIAMENTO
+===================================================== */
+.cta-credenciamento {
+    margin-top: 40px;
+    border-left: 4px solid var(--cor-laranja);
+    height: 90px;
+    display: block;
+    background: var(--cor-cinza-claro);
+    border-radius: 10px;
+    box-shadow: rgba(6, 24, 44, 0.4) 0px 0px 0px 2px, rgba(6, 24, 44, 0.65) 0px 4px 6px -1px, rgba(255, 255, 255, 0.08) 0px 1px 0px inset;
+    text-decoration: none!important;
+    overflow: hidden;
+    position: relative;}
+
+.cta-conteudo {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 18px 24px;}
+
+.cta-credenciamento h3 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cor-azul-escuro);
+    white-space: nowrap;}
+
+.cta-credenciamento p {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--cor-cinza-escuro);}
+
+.cta-credenciamento::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--cor-laranja);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+    z-index: 0;}
+
+.cta-credenciamento:hover::before {
+    transform: scaleX(1);}
+
+.cta-conteudo {
+    position: relative;
+    z-index: 1;}
+
+.cta-credenciamento:hover h3,
+.cta-credenciamento:hover p {
+    color: #fff;}
+
+.botao-credenciamento {
+    margin-top: 20px; /* Isso garante que o espaço seja sempre o mesmo */
+}
+/* =====================================================
+   RODAPÉ
+===================================================== */
+.rodape {
+    background-color: #e6e6e6;
+    min-height: 135px;
+    display: flex;
+    align-items: center;
+}
+
+/* ESQUERDA */
+.rodape-redes {
+    display: flex;
+    flex-direction: column;
     justify-content: center;
 }
+
+.rodape-frase {
+    font-family: var(--fonte-secundaria);
+    font-size: 18px;
+    color: var(--cor-cinza-escuro);
+    margin-bottom: 6px;
+}
+
+.icones-redes {
+    display: flex;
+    gap: 16px;
+}
+
+.icones-redes img {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.icones-redes img:hover {
+    transform: scale(1.15);
+    opacity: 0.8;
+}
+
+/* DIREITA */
+.rodape-info {
+    text-align: right;
+    font-family: var(--fonte-secundaria);
+    font-size: 18px;
+    color: var(--cor-cinza-escuro);
+}
+
+.duvida {
+    font-size: 20px;
+}
+
+.rodape-info a {
+    color: var(--cor-azul-escuro);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.rodape-info a:hover {
+    text-decoration: underline;
+}
+
