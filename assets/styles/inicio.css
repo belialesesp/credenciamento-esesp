@@ -106,12 +106,6 @@ ul {
     height: 100%;
     filter: invert(100%);}
 
-.seta-usuario {
-    width: 18px;
-    margin-top: 25px;
-    cursor: pointer;
-    transition: transform .3s ease;}
-
 /* =====================================================
    DROPDOWN DO USUÁRIO
 ===================================================== */
@@ -181,6 +175,11 @@ ul {
     flex: 1;
     border-top: 2px solid var(--cor-azul-escuro);}
 
+.modalidade {
+    font-family: var(--fonte-secundaria);
+    color: var(--cor-cinza-escuro);
+    font-size: 18px;}
+
 /* =====================================================
    LINHAS SEPARADORAS
 ===================================================== */
@@ -188,6 +187,19 @@ ul {
     width: 100%;
     margin: 10px 0;
     border-top: 2px solid var(--cor-azul-escuro);}
+
+/* =====================================================
+   LINHAS SEPARADORAS
+===================================================== */
+.seta-usuario {
+    width: 18px;
+    margin-top: 25px;
+    cursor: pointer;
+    transition: transform .3s ease;}
+
+.seta-trilhas {
+    width: 22px;
+    transition: 0.4s ease;}
 
 /* =====================================================
    LISTA DE EDITAIS
@@ -366,8 +378,8 @@ button:focus,
     color: #fff;}
 
 .botao-credenciamento {
-    margin-top: 20px; /* Isso garante que o espaço seja sempre o mesmo */
-}
+    margin-top: 20px; }
+
 /* =====================================================
    RODAPÉ
 ===================================================== */
@@ -375,59 +387,56 @@ button:focus,
     background-color: #e6e6e6;
     min-height: 135px;
     display: flex;
-    align-items: center;
-}
+    align-items: center;}
 
 /* ESQUERDA */
 .rodape-redes {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-}
+    justify-content: center;}
 
 .rodape-frase {
     font-family: var(--fonte-secundaria);
     font-size: 18px;
     color: var(--cor-cinza-escuro);
-    margin-bottom: 6px;
-}
+    margin-bottom: 6px;}
+
+.logo-branca {
+    filter: invert(100%);}
 
 .icones-redes {
     display: flex;
-    gap: 16px;
-}
+    gap: 16px;}
 
 .icones-redes img {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     cursor: pointer;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
+    transition: transform 0.3s ease, opacity 0.3s ease;}
 
 .icones-redes img:hover {
     transform: scale(1.15);
-    opacity: 0.8;
-}
+    opacity: 0.8;}
 
 /* DIREITA */
 .rodape-info {
     text-align: right;
     font-family: var(--fonte-secundaria);
     font-size: 18px;
-    color: var(--cor-cinza-escuro);
-}
+    color: var(--cor-cinza-escuro);}
 
 .duvida {
-    font-size: 20px;
-}
+    font-size: 20px;}
 
 .rodape-info a {
     color: var(--cor-azul-escuro);
     font-weight: 500;
-    text-decoration: none;
-}
+    text-decoration: none;}
 
 .rodape-info a:hover {
-    text-decoration: underline;
-}
+    text-decoration: underline;}
+
+@media (min-width: 1600px) {
+    .container {
+        max-width: 1530px;}}
 

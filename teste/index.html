@@ -25,6 +25,7 @@
         rel="stylesheet">
 </head>
 
+
 <body class="layout-pagina">
 
     <!-- =========================== TOPO DA PÁGINA =========================== -->
@@ -72,16 +73,18 @@
         </header>
 
         <div class="laranja"></div>
+
     </div>
     <!-- ====================================================================== -->
 
 
     <main class="conteudo-principal">
         <section class="section-credenciamento py-4">
+
             <!-- ============================= Editais ============================= -->
             <div class="container">
                 <div class="row align-items-center">
-                    <div class="col-md-auto col-12 d-flex align-items-center  ml-5">
+                    <div class="col-md-auto col-12 d-flex align-items-center ml-5">
                         <h2 class="titulo m-0">EDITAIS</h2>
                     </div>
                     <span class="separador mx-0"></span>
@@ -127,28 +130,40 @@
             <!-- ============================== TRILHAS ============================== -->
             <section class="section-trilhas pt-4 pb-0">
                 <div class="container text-center">
+
                     <!-- TÍTULO E DESCRIÇÃO -->
                     <div class="trilhas-header d-flex flex-column align-items-center">
-                        <h2 class="titulo m-0">TRILHAS E ESTAÇÕES</h2>
+                        <h2 class="titulo m-0">
+                            TRILHAS E ESTAÇÕES
+                        </h2>
                         <div class="linha"></div>
                         <div class="gatilho-wrapper mt-2" style="cursor: pointer;" id="btn-abrir-tudo">
                             <p class="descricao-editais mb-0 d-flex align-items-center justify-content-center">
                                 Entenda melhor as trilhas, eixos e estações para escolher em qual se candidatar
                                 <img class="seta-trilhas ml-3" id="seta-mestre" src="../assets/imagens/seta-baixo.svg"
-                                    alt="Abrir" style="width: 22px; transition: 0.4s ease;">
+                                    alt="Abrir">
                             </p>
                         </div>
                     </div>
                 </div>
+
                 <!-- TRILHAS E ESTAÇÕES -->
                 <div class="collapse" id="wrapper-grid-trilhas">
                     <div class="container trilhas-container mt-4">
-                        <div class="row justify-content-center">
+
+                        <div class="ml-4">
+                            <H2 class="modalidade">PRESENCIAIS:</H2>
+                        </div>
+
+
+                        <!-- ================= PRESENCIAIS ================= -->
+                        <div class="row mt-4">
+
                             <!-- Eixo Base Legal -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha1">Base Legal</button>
-                                    <div class="collapse" id="trilha1">
+                                        data-target="#presencial-base-legal">Base Legal</button>
+                                    <div class="collapse" id="presencial-base-legal">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
                                             <div class="estacao-conteudo">
@@ -156,8 +171,7 @@
                                                     <li>Introdução ao Direito Administrativo</li>
                                                     <li>Direito e Legislação Ambiental</li>
                                                     <li>Aspectos legais da improbidade administrativa</li>
-                                                    <li>Proteção de Dados, privacidade e LGPD para servidores públicos
-                                                    </li>
+                                                    <li>Proteção de Dados, privacidade e LGPD para servidores públicos</li>
                                                     <li>Lei 46 e Processos de RH</li>
                                                     <li> Lei de Responsabilidade Fiscal</li>
                                                 </ul>
@@ -166,30 +180,28 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Compras e Contratos -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha2">Compras e Contratos</button>
-                                    <div class="collapse" id="trilha2">
+                                        data-target="#presencial-compras-contratos">Compras e Contratos</button>
+                                    <div class="collapse" id="presencial-compras-contratos">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Compras e Contratos</h4>
                                             <div class="estacao-conteudo">
                                                 <ul class="ul-estacao">
                                                     <li>Nova Lei de Licitações Públicas: aspectos gerais e pontos de
-                                                        atenção
-                                                    </li>
+                                                        atenção</li>
                                                     <li>Contratação direta à luz da lei 14.133/21</li>
                                                     <li>Elaboração de Estudo Técnico Preliminar e Termo de Referência
-                                                        com
-                                                        ênfase na lei nº 14.133/21</li>
+                                                        com ênfase na lei nº 14.133/21</li>
                                                     <li>Licitação Pública Fase Externa ênfase na Lei nº 14.133/21</li>
                                                     <li>Oficina de Prestação de Contas de Convênios Estaduais</li>
                                                     <li>Uso da Plataforma Compras.Gov</li>
                                                     <li>Gestão e fiscalização contratual na Lei 14.133</li>
                                                     <li>Formação de Agentes de Contratação e Pregoeiros</li>
                                                     <li>Sistema de Registros de Preços na Lei 14.133</li>
-                                                    <li>Gestão e fiscalização contratual na Lei 14.133 - observância nas
-                                                        regras trabalhistas aplicáveis às empresas de terceirização</li>
+                                                    <li>Gestão e fiscalização contratual na Lei 14.133 - observância nas regras trabalhistas aplicáveis às empresas de terceirização</li>
                                                     <li>Gestão de convênios: concedente</li>
                                                     <li>Gestão de convênios: convenente</li>
                                                 </ul>
@@ -198,11 +210,12 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Comunicação -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha3">Comunicação</button>
-                                    <div class="collapse" id="trilha3">
+                                        data-target="#presencial-comunicacao">Comunicação</button>
+                                    <div class="collapse" id="presencial-comunicacao">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Comunicação</h4>
                                             <div class="estacao-conteudo">
@@ -222,61 +235,37 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Conhecimento em Rede -->
-                            <div class="col-md-6 mb-4">
-                                <div class="trilha-item">
-                                    <button class="trilha-toggle" type="button" data-toggle="collapse"
-                                        data-target="#trilha4">Conhecimento em Rede</button>
-                                    <div class="collapse" id="trilha4">
-                                        <div class="row no-gutters mt-1">
-                                            <div class="col-6 pr-1">
-                                                <div class="estacao h-100">
-                                                    <h4 class="estacao-titulo">Estação Ferramentas de Apoio à
-                                                        Administração
-                                                        Púbica</h4>
-                                                    <div class="estacao-conteudo">
-                                                        <ul class="ul-estacao">
-                                                            <li>Introdução ao sistema E-Flow</li>
-                                                            <li>Introdução ao sistema E-Docs</li>
-                                                            <li>Introdução ao sistema Catálogo ES</li>
-                                                            <li>Introdução ao sistema Agenda ES</li>
-                                                            <li>Introdução ao sistema E-Docs nos municípios</li>
-                                                            <li>Informática Básica</li>
-                                                            <li>Excel Básico</li>
-                                                            <li>Excel Avançado</li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-6 pl-1">
-                                                <div class="estacao h-100">
-                                                    <h4 class="estacao-titulo">Estação Controle Interno</h4>
-                                                    <div class="estacao-conteudo">
-                                                        <ul class="ul-estacao">
-                                                            <li>Tomada de Contas Especial</li>
-                                                            <li>Prestação de Contas Anual</li>
-                                                            <li>Elaboração de Relatório e Parecer Conclusivo da Unidade
-                                                                Executora de Controle Interno</li>
-                                                            <li>Análise de conformidade por meio de listas de
-                                                                verificação
-                                                            </li>
-                                                            <li>Conceitos básicos sobre Sistema de Controle Interno</li>
-                                                            <li>Gerenciamento de Riscos e Conformidade em contratações
-                                                                de
-                                                                obras públicas no contexto da Lei 14.133/2021</li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-conhecimento-rede">Conhecimento em Rede</button>
+                                    <div class="collapse" id="presencial-conhecimento-rede">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Ferramentas de Apoio à Administração
+                                                Púbica</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Introdução ao sistema E-Flow</li>
+                                                    <li>Introdução ao sistema E-Docs</li>
+                                                    <li>Introdução ao sistema Catálogo ES</li>
+                                                    <li>Introdução ao sistema Agenda ES</li>
+                                                    <li>Introdução ao sistema E-Docs nos municípios</li>
+                                                    <li>Informática Básica</li>
+                                                    <li>Excel Básico</li>
+                                                    <li>Excel Avançado</li>
+                                                </ul>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo ESG -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha5">ESG</button>
-                                    <div class="collapse" id="trilha5">
+                                        data-target="#presencial-esg">ESG</button>
+                                    <div class="collapse" id="presencial-esg">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Ambiental, Social e Governança (ESG)</h4>
                                             <div class="estacao-conteudo">
@@ -293,11 +282,12 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Gestão por Processos -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha6">Gestão por Processos</button>
-                                    <div class="collapse" id="trilha6">
+                                        data-target="#presencial-gestao-processos">Gestão por Processos</button>
+                                    <div class="collapse" id="presencial-gestao-processos">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Gestão Estratégica por Processos</h4>
                                             <div class="estacao-conteudo">
@@ -312,12 +302,13 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Inovação -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item">
                                     <button class="trilha-toggle" type="button" data-toggle="collapse"
-                                        data-target="#trilha7">Inovação</button>
-                                    <div class="collapse" id="trilha7">
+                                        data-target="#presencial-inovacao">Inovação</button>
+                                    <div class="collapse" id="presencial-inovacao">
                                         <div class="row no-gutters mt-1">
                                             <div class="col-4 pr-1">
                                                 <div class="estacao h-100">
@@ -358,18 +349,19 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Monitoramento e Avaliação -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha8">Monitoramento e Avaliação</button>
-                                    <div class="collapse" id="trilha8">
+                                        data-target="#presencial-monitoramento-avaliacao">Monitoramento e
+                                        Avaliação</button>
+                                    <div class="collapse" id="presencial-monitoramento-avaliacao">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Monitoramento e Avaliação de Políticas
                                                 Pública</h4>
                                             <div class="estacao-conteudo">
                                                 <ul class="ul-estacao">
-                                                    <li>Introdução ao monitoramento e avaliação de políticas públicas
-                                                    </li>
+                                                    <li>Introdução ao monitoramento e avaliação de políticas públicas</li>
                                                     <li>Indicadores com foco em monitoramento e avaliação</li>
                                                     <li>Formulação de políticas públicas utilizando o marco lógico</li>
                                                     <li>Oficina de Monitoramento e Avaliação</li>
@@ -380,11 +372,12 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Orçamento e Finanças -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha9">Orçamento e Finanças</button>
-                                    <div class="collapse" id="trilha9">
+                                        data-target="#presencial-orcamento-financas">Orçamento e Finanças</button>
+                                    <div class="collapse" id="presencial-orcamento-financas">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Orçamento e Finança</h4>
                                             <div class="estacao-conteudo">
@@ -400,11 +393,12 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Pessoas e Organizações -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha10">Pessoas e Organizações</button>
-                                    <div class="collapse" id="trilha10">
+                                        data-target="#presencial-pessoas-organizacoes">Pessoas e Organizações</button>
+                                    <div class="collapse" id="presencial-pessoas-organizacoes">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Desenvolvimento de Pessoas</h4>
                                             <div class="estacao-conteudo">
@@ -414,20 +408,20 @@
                                                     <li>Autoliderança</li>
                                                     <li>Liderança e gestão de equipes</li>
                                                     <li>Excelência no atendimento ao cidadão</li>
-                                                    <li>Soft Skills: desenvolvendo competências socioemocionais para o
-                                                        bom
-                                                        desempenho do servidor</li>
+                                                    <li>Soft Skills: desenvolvendo competências socioemocionais para o bom desempenho do servidor</li>
                                                 </ul>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Planejamento e Projetos -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha11">Planejamento e Projetos</button>
-                                    <div class="collapse" id="trilha11">
+                                        data-target="#presencial-planejamento-processos">Planejamento e
+                                        Projetos</button>
+                                    <div class="collapse" id="presencial-planejamento-processos">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Gerenciamento de Projetos</h4>
                                             <div class="estacao-conteudo">
@@ -442,12 +436,14 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Políticas Públicas e Gestão Governamental -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item">
                                     <button class="trilha-toggle" type="button" data-toggle="collapse"
-                                        data-target="#trilha12">Políticas Públicas e Gestão Governamental</button>
-                                    <div class="collapse" id="trilha12">
+                                        data-target="#presencial-politicas-governamental">Políticas Públicas e Gestão
+                                        Governamental</button>
+                                    <div class="collapse" id="presencial-politicas-governamental">
                                         <div class="row no-gutters mt-1">
                                             <div class="col-6 pr-1">
                                                 <div class="estacao h-100">
@@ -465,24 +461,16 @@
                                             <div class="col-6 pl-1">
                                                 <div class="estacao h-100">
                                                     <h4 class="estacao-titulo">Estação Marco Regulatório das
-                                                        Organizações da
-                                                        Sociedade Civil (OSCs)</h4>
+                                                        Organizações da Sociedade Civil (OSCs)</h4>
                                                     <div class="estacao-conteudo">
                                                         <ul class="ul-estacao">
-                                                            <li>Marco Regulatório das Organizações da Sociedade Civil
-                                                            </li>
+                                                            <li>Marco Regulatório das Organizações da Sociedade Civil</li>
                                                             <li>Gestão de Parcerias com OSCs</li>
-                                                            <li>Oficina de Elaboração de Projetos de Parcerias com OSCs
-                                                            </li>
-                                                            <li>Oficina de Chamamento Público para contratualização com
-                                                                OSCs
-                                                            </li>
+                                                            <li>Oficina de Elaboração de Projetos de Parcerias com OSCs</li>
+                                                            <li>Oficina de Chamamento Público para contratualização com OSCs</li>
                                                             <li>Oficina do Marco Regulatório das OSCs na prática</li>
-                                                            <li>Oficina de Prestação de Contas de Parcerias com OSCs
-                                                            </li>
-                                                            <li>Oficina de Elaboração de Plano de Trabalho de Parcerias
-                                                                com
-                                                                OSCs</li>
+                                                            <li>Oficina de Prestação de Contas de Parcerias com OSCs</li>
+                                                            <li>Oficina de Elaboração de Plano de Trabalho de Parcerias com OSCs</li>
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -491,11 +479,13 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Qualidade de Vida no Trabalho (Qualivida) -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha13">Qualidade de Vida no Trabalho (Qualivida)</button>
-                                    <div class="collapse" id="trilha13">
+                                        data-target="#presencial-qualivida">Qualidade de Vida no Trabalho
+                                        (Qualivida)</button>
+                                    <div class="collapse" id="presencial-qualivida">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Qualidade de Vida no Trabalho</h4>
                                             <div class="estacao-conteudo">
@@ -515,11 +505,12 @@
                                     </div>
                                 </div>
                             </div>
+
                             <!-- Eixo Linguagens -->
-                            <div class="col-md-6 mb-4">
+                            <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#trilha14">Linguagens</button>
-                                    <div class="collapse" id="trilha14">
+                                        data-target="#presencial-linguagens">Linguagens</button>
+                                    <div class="collapse" id="presencial-linguagens">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Linguagens</h4>
                                             <div class="estacao-conteudo">
@@ -531,12 +522,38 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Eixo Controle e Transparência -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-controle-transparencia">Controle e
+                                        Transparência</button>
+                                    <div class="collapse" id="presencial-controle-transparencia">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Tomada de contas Especial</li>
+                                                    <li>Prestação de Contas Anual</li>
+                                                    <li>Elaboração de Relatório e Parecer Conclusivo da Unidade
+                                                        Executora de Controle Interno</li>
+                                                    <li>Análise de Conformidade por Meio de Listas de Verificação</li>
+                                                    <li>Conceitos Básicos sobre Controle de Sistema Interno</li>
+                                                    <li>Gerenciamento de Riscos e Conformidade em Contratação de Obras
+                                                        Públicas no Contexto da Lei 14.133/2021</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Eixo Demandas Específicas -->
                             <div class="col-12 mb-0">
-                                <div class="trilha-item">
-                                    <button class="trilha-toggle" type="button" data-toggle="collapse"
-                                        data-target="#trilha15">Demandas Específicas</button>
-                                    <div class="collapse" id="trilha15">
+                                <div class="trilha-item"> <button class="trilha-toggle" type="button"
+                                        data-toggle="collapse" data-target="#presencial-demandas-especificas">Demandas
+                                        Específicas</button>
+                                    <div class="collapse" id="presencial-demandas-especificas">
                                         <div class="row no-gutters mt-1">
                                             <div class="col-4 pr-1">
                                                 <div class="estacao">
@@ -559,26 +576,216 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- ===================== EAD ===================== -->
+                        <div class="ml-4 mt-5">
+                            <h2 class="modalidade">EDUCAÇÃO A DISTÂNCIA:</h2>
+                        </div>
+
+                        <div class="row mt-4">
+
+                            <!--BASE LEGAL-->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#ead-base-legal">
+                                        Base Legal
+                                    </button>
+                                    <div class="collapse" id="ead-base-legal">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Direito Administrativo</li>
+                                                    <li>Direito Ambiental</li>
+                                                    <li>Legislação Ambiental</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--COMPRAS E CONTRATOS-->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#ead-compras-contratos">
+                                        Compras e Contratos
+                                    </button>
+                                    <div class="collapse" id="ead-compras-contratos">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Gestão de Convênios</li>
+                                                    <li>Gerenciamento de Contratos</li>
+                                                    <li>Elaboração do Termo de Referência</li>
+                                                    <li>Licitações Pública</li>
+                                                    <li>Fiscalização de Contratos</li>
+                                                    <li>Formação de Pregoeiros</li>
+                                                    <li>Nova Lei de Licitações e Contratos Administrativos</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--COMUNICAÇÃo-->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#ead-comunicacao">
+                                        Comunicação
+                                    </button>
+                                    <div class="collapse" id="ead-comunicacao">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Redação Oficial</li>
+                                                    <li>Inglês Básico</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--COMUNICAÇÃO EM REDE-->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#ead-comunicacao-rede">
+                                        Comunicação em Rede
+                                    </button>
+                                    <div class="collapse" id="ead-comunicacao-rede">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Ferramentas de Apoio à Administração Pública</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Excel Básico</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--GESTÃO DE PESSOAS-->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#ead-gestao-pessoas">
+                                        Gestão de Pessoas
+                                    </button>
+                                    <div class="collapse" id="ead-gestao-pessoas">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Gestão de Pessoas</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Liderança e Gestão Estratégica</li>
+                                                    <li>Inteligência Emocional</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--AMBIENTAL, SOCIAL E GOVERNAÇA-->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#ead-esg">
+                                        Ambiental, Social e Governaça
+                                    </button>
+                                    <div class="collapse" id="ead-esg">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação ESG</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Gestão Pública e os Objetivos de Desenvolvimento Sustentável (ODS) da ONU</li>
+                                                    <li>Secretaria Escolar</li>
+                                                    <li>Ética no Serviço Público</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--GESTÃO PÚBLICA-->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#ead-gestao-publica">
+                                        Gestão Pública
+                                    </button>
+                                    <div class="collapse" id="ead-gestao-publica">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Gestão Pública</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Gestão Orientada para Resultados</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--QUALIVIDA-->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#ead-qualivida">
+                                        Gestão Pública
+                                    </button>
+                                    <div class="collapse" id="ead-qualivida">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Qualidade de Vida no Trabalho</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li>Você Mais Consciente</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#ead-especial">
+                                        Especial
+                                    </button>
+                                    <div class="collapse" id="ead-especial">
+                                        <div class="estacao">
+                                            <h4 class="estacao-titulo">Estação Demandas Específicas</h4>
+                                            <div class="estacao-conteudo">
+                                                <ul class="ul-estacao">
+                                                    <li> Introdução ao Estatuto da Criança e do Adolescente e a Atuação do Conselho Tutelar</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTÃO CREDENCIAMENTO -->
+                <div class="area-cta mt-2">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-lg-12 mx-auto">
+                                <a href="#" class="cta-credenciamento">
+                                    <div class="cta-conteudo">
+                                        <h3>Credenciamento</h3>
+                                        <span class="separador"></span>
+                                        <p>Acesse o processo de credenciamento</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
-
-            <div class="area-cta mt-2">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-lg-12 mx-auto">
-                        <a href="#" class="cta-credenciamento">
-                            <div class="cta-conteudo">
-                                <h3>Credenciamento</h3>
-                                <span class="separador"></span>
-                                <p>Acesse o processo de credenciamento</p>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        </section>
     </main>
 
     <!-- ========================= RODAPÉ DA PÁGINA ======================== -->
@@ -588,16 +795,19 @@
 
                 <!-- ESQUERDA - REDES SOCIAIS -->
                 <div class="col-md-6 col-12 rodape-redes">
-                    <span class="rodape-frase">Siga a ESESP nas redes sociais:</span>
+                    <span class="rodape-frase">Acompanhe a ESESP em outras plataformas:</span>
 
-                    <div class="icones-redes">
-                        <a href="#" target="_blank">
+                    <div class="icones-redes  ml-4">
+                        <a href="https://eadesesp.es.gov.br/moodle/?lang=en" target="_blank">
+                            <img class="logo-branca" src="../assets/Logo-01 ead.png" alt="EADESESP">
+                        </a>
+                        <a href="https://www.instagram.com/esespgoves/" target="_blank">
                             <img src="../assets/imagens/instagram.png" alt="Instagram">
                         </a>
-                        <a href="#" target="_blank">
+                        <a href="https://www.youtube.com/@esespgoves" target="_blank">
                             <img src="../assets/imagens/youtube.png" alt="YouTube">
                         </a>
-                        <a href="#" target="_blank">
+                        <a href="https://www.linkedin.com/company/esesp-es/?originalSubdomain=br" target="_blank">
                             <img src="../assets/imagens/linkedin.png" alt="LinkedIn">
                         </a>
                     </div>
