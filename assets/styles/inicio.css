@@ -14,17 +14,14 @@
     --fonte-secundaria: 'Rubik', sans-serif;}
 
 html, body {
-    height: 100%;
-}
+    height: 100%;}
 
 body {
     display: flex;
-    flex-direction: column;
-}
+    flex-direction: column;}
 
 .conteudo-principal {
-    flex: 1;
-}
+    flex: 1;}
 
 /* =====================================================
    BASE / RESET LEVE
@@ -180,6 +177,22 @@ ul {
     color: var(--cor-cinza-escuro);
     font-size: 18px;}
 
+.estacao-conteudo {
+    background-color: var(--cor-branco);
+    padding: 5px;
+    font-family: var(--fonte-secundaria);
+    font-size: 14px;
+    color: var(--cor-cinza-escuro);
+    line-height: 1.5;}
+
+.trilha-item {
+    background-color: var(--cor-branco);
+    padding: 10px;
+    font-family: var(--fonte-secundaria);
+    font-size: 16px;
+    color: var(--cor-cinza-escuro);
+    line-height: 1.5;}
+
 /* =====================================================
    LINHAS SEPARADORAS
 ===================================================== */
@@ -225,25 +238,6 @@ ul {
     font-weight: 500;
     display: inline-block;
     text-decoration: none !important;}
-
-/* =====================================================
-   HOVERS / EFEITOS
-===================================================== */
-.hover-3 {
-    --c: var(--cor-azul-escuro);
-    --h: 1.2em;
-    display: inline-block;
-    line-height: var(--h);
-    color: rgb(236, 154, 1);
-    background:
-        linear-gradient(var(--c) 0 0) bottom / 0% 1px no-repeat;
-    transition:
-        background-size .35s ease,
-        color .35s ease;}
-
-.hover-3:hover {
-    color: var(--c);
-    background-size: 100% 1px;}
 
 /* =====================================================
     TRILHAS / ESTAÇÕES
@@ -293,7 +287,7 @@ button:focus,
     overflow: hidden;
     box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;}
 
-.estacao-titulo {
+.estacao-titulo  {
     background-color: var(--cor-cinza-escuro);
     color: var(--cor-branco);
     margin: 0;
@@ -303,82 +297,65 @@ button:focus,
     text-align: center;
     text-transform: uppercase;}
 
-.estacao-conteudo {
-    background-color: var(--cor-branco);
-    padding: 5px;
-    font-family: var(--fonte-secundaria);
-    font-size: 14px;
-    color: var(--cor-cinza-escuro);
-    line-height: 1.5;}
-
 .trilhas-container {
     padding-bottom: 50px;}
 
 .ul-estacao {
     list-style-type: disc; 
-    padding-left: 22px;     }
+    padding-left: 22px;}
 
 .trilha-col {
     display: flex;
     justify-content: center;}
 
+.gatilho-wrapper {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    will-change: transform;}
+
+.gatilho-wrapper {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    will-change: transform;}
+
+.gatilho-wrapper:hover {
+    transform: scale(1.03) translateY(1px);}
+
+.gatilho-wrapper:hover .descricao-editais {
+    color: var(--cor-azul-escuro);}
+
+.gatilho-wrapper:hover .seta-trilhas {
+    filter: brightness(0) saturate(100%)
+            invert(15%) sepia(96%) saturate(2700%)
+            hue-rotate(200deg) brightness(60%) contrast(95%);}
+
+.seta-trilhas {
+    transition: transform 0.3s ease;}
+
+.gatilho-wrapper:hover .seta-trilhas:not(.ativo) {
+    transform: translateY(2px);}
+
+.seta-trilhas.ativo {
+    transform: rotate(180deg);}
+
 /* =====================================================
-    BOTÃO DE CREDENCIAMENTO
+  CARGOS
 ===================================================== */
-.cta-credenciamento {
-    margin-top: 40px;
-    border-left: 4px solid var(--cor-laranja);
-    height: 90px;
-    display: block;
-    background: var(--cor-cinza-claro);
-    border-radius: 10px;
-    box-shadow: rgba(6, 24, 44, 0.4) 0px 0px 0px 2px, rgba(6, 24, 44, 0.65) 0px 4px 6px -1px, rgba(255, 255, 255, 0.08) 0px 1px 0px inset;
-    text-decoration: none!important;
-    overflow: hidden;
-    position: relative;}
+.section-cargos {
+    margin-top: 40px;}
 
-.cta-conteudo {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    padding: 18px 24px;}
-
-.cta-credenciamento h3 {
+.caixa-topo {
+    background-color: var(--cor-azul-escuro);
     margin: 0;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--cor-azul-escuro);
-    white-space: nowrap;}
+    padding: 10px;}
 
-.cta-credenciamento p {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--cor-cinza-escuro);}
+.cargo-conteudo {
+    color: var(--cor-cinza-escuro);
+    padding: 12px;}
 
-.cta-credenciamento::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: var(--cor-laranja);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.4s ease;
-    z-index: 0;}
-
-.cta-credenciamento:hover::before {
-    transform: scaleX(1);}
-
-.cta-conteudo {
-    position: relative;
-    z-index: 1;}
-
-.cta-credenciamento:hover h3,
-.cta-credenciamento:hover p {
-    color: #fff;}
-
-.botao-credenciamento {
-    margin-top: 20px; }
+.lei {
+    color: var(--cor-laranja);
+    text-decoration: none;}
 
 /* =====================================================
    RODAPÉ
@@ -440,3 +417,179 @@ button:focus,
     .container {
         max-width: 1530px;}}
 
+/* =====================================================
+   RESPONSIVIDADE
+===================================================== */
+
+/* ---------- MOBILE (até 576px) ---------- */
+@media (max-width: 576px) {
+
+    /* ================= HEADER ================= */
+    .topo {
+        height: auto;
+        padding: 12px 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;}
+
+    .logo-esesp {
+        height: 50px;
+        margin: 0 auto;
+        display: block;}
+
+    .titulo-esesp {
+        display: none;}
+
+    .separador {
+        display: none;}
+
+    .acoes-topo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        margin-top: 4px;}
+
+    .link-contatos {
+        font-size: 14px;
+        position: relative;
+        padding-right: 12px;
+        margin-right: 6px;}
+
+    .link-contatos::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 18px;
+        background-color: #b4b4b4;}
+
+    .usuario-area span {
+        display: none;}
+
+    .topo-notificacoes {
+        width: 44px;
+        height: 44px;
+        padding: 10px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;}
+
+    .ola-credenciado {
+        width: 22px;
+        height: 22px;}
+
+    /* ================= EDITAIS ================= */
+    .titulo {
+        font-size: 24px;
+        text-align: center;}
+
+    .descricao-editais {
+        font-size: 15px;
+        text-align: center;}
+
+    .linha-com-texto {
+        font-size: 15px;
+        gap: 8px;
+        text-align: center;}
+
+    /* ================= TRILHAS ================= */
+    .trilha-toggle {
+        font-size: 12px;
+        padding: 12px 10px;}
+
+    .estacao-titulo {
+        font-size: 12px;}
+
+    .estacao-conteudo {
+        font-size: 13px;}
+
+    .trilha-col {
+        justify-content: stretch;}
+
+    /* ================= CTA ================= */
+    .cta-credenciamento {
+        height: auto;}
+
+    .cta-conteudo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 16px;}
+
+    .cta-credenciamento h3 {
+        font-size: 17px;
+        white-space: normal;
+        line-height: 1.3;}
+
+    .cta-credenciamento p {
+        font-size: 14px;}
+
+    /* ================= RODAPÉ ================= */
+    .rodape-frase {
+        font-size: 14px;
+        margin-bottom: 6px;}
+
+    .icones-redes {
+        gap: 12px;
+        margin-bottom: 14px;}
+
+    .icones-redes img {
+        width: 26px;
+        height: 26px;}
+
+    .duvida {
+        font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 4px;}
+
+    .rodape-info {
+        font-size: 14px;
+        line-height: 1.35;}
+
+    .rodape-info a {
+        font-weight: 600;
+        word-break: break-word;}}
+
+/* ---------- TABLET (até 768px) ---------- */
+@media (max-width: 768px) {
+
+    .titulo {
+        font-size: 30px;}
+
+    .descricao-editais {
+        font-size: 17px;}
+
+    .titulo-esesp {
+        font-size: 20px;
+        text-align: center;}
+
+    .cta-conteudo {
+        gap: 14px;}
+
+    .cta-credenciamento h3 {
+        font-size: 19px;}
+
+    .cta-credenciamento p {
+        font-size: 15px;}
+
+    .rodape-info {
+        font-size: 15px;}}
+
+/* ---------- NOTEBOOK / DESKTOP MÉDIO (até 992px) ---------- */
+@media (max-width: 992px) {
+
+    .titulo-esesp {
+        font-size: 22px;}
+
+    .linha-com-texto {
+        font-size: 17px;}
+
+    .rodape-info {
+        font-size: 16px;}}

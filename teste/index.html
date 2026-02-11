@@ -55,16 +55,16 @@
 
                         <div class="usuario-area d-flex align-items-center">
                             <div class="topo-notificacoes">
-                                <img class="ola-credenciado" src="../assets/Imagens/Olá Credenciado(a).png"
-                                    alt="Usuário">
+                                <img class="ola-credenciado" src="../assets/Imagens/Olá Credenciado(a).png" alt="Usuário">
                             </div>
 
-                            <img class="seta-usuario mx-2" src="../assets/imagens/seta-baixo.svg" alt="Abrir menu">
-                            <span>Olá, Credenciado(a)</span>
-
-                            <div class="dropdown-usuario">
-                                <a href="#">Acompanhar processo</a>
-                                <a href="#">Sair</a>
+                            <div class="usuario-wrapper" id="btn-usuario">
+                                <img class="seta-usuario mx-2" src="../assets/imagens/seta-baixo.svg" alt="Abrir menu">
+                                <span>Olá, Credenciado(a)</span>
+                                <div class="dropdown-usuario">
+                                    <a href="#">Acompanhar processo</a>
+                                    <a href="#">Sair</a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -124,24 +124,24 @@
                     </div>
                 </div>
             </div>
-            <!-- =================================================================== -->
+            <!-- ==================================================================== -->
 
 
-            <!-- ============================== TRILHAS ============================== -->
+
+            <!-- ============================== TRILHAS ============================= -->
             <section class="section-trilhas pt-4 pb-0">
                 <div class="container text-center">
 
                     <!-- TÍTULO E DESCRIÇÃO -->
                     <div class="trilhas-header d-flex flex-column align-items-center">
                         <h2 class="titulo m-0">
-                            TRILHAS E ESTAÇÕES
+                            TRILHAS DE APRENDIZAGEM
                         </h2>
                         <div class="linha"></div>
-                        <div class="gatilho-wrapper mt-2" style="cursor: pointer;" id="btn-abrir-tudo">
+                        <div class="gatilho-wrapper mt-2"  id="btn-abrir-tudo">
                             <p class="descricao-editais mb-0 d-flex align-items-center justify-content-center">
-                                Entenda melhor as trilhas, eixos e estações para escolher em qual se candidatar
-                                <img class="seta-trilhas ml-3" id="seta-mestre" src="../assets/imagens/seta-baixo.svg"
-                                    alt="Abrir">
+                                Navegue pela nossa trilha de aprendizagem e escolha o eixo que se encaixa com o a sua atuação profissional.
+                                <img class="seta-trilhas ml-3" id="seta-mestre" src="../assets/imagens/seta-baixo.svg" alt="Abrir">
                             </p>
                         </div>
                     </div>
@@ -149,7 +149,7 @@
 
                 <!-- TRILHAS E ESTAÇÕES -->
                 <div class="collapse" id="wrapper-grid-trilhas">
-                    <div class="container trilhas-container mt-4">
+                    <div class="container arcodeon-container">
 
                         <div class="ml-4">
                             <H2 class="modalidade">PRESENCIAIS:</H2>
@@ -161,8 +161,10 @@
 
                             <!-- Eixo Base Legal -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-base-legal">Base Legal</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-base-legal">Base Legal
+                                    </button>
                                     <div class="collapse" id="presencial-base-legal">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
@@ -183,8 +185,10 @@
 
                             <!-- Eixo Compras e Contratos -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-compras-contratos">Compras e Contratos</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-compras-contratos">Compras e Contratos
+                                    </button>
                                     <div class="collapse" id="presencial-compras-contratos">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Compras e Contratos</h4>
@@ -193,8 +197,7 @@
                                                     <li>Nova Lei de Licitações Públicas: aspectos gerais e pontos de
                                                         atenção</li>
                                                     <li>Contratação direta à luz da lei 14.133/21</li>
-                                                    <li>Elaboração de Estudo Técnico Preliminar e Termo de Referência
-                                                        com ênfase na lei nº 14.133/21</li>
+                                                    <li>Elaboração de Estudo Técnico Preliminar e Termo de Referência com ênfase na lei nº 14.133/21</li>
                                                     <li>Licitação Pública Fase Externa ênfase na Lei nº 14.133/21</li>
                                                     <li>Oficina de Prestação de Contas de Convênios Estaduais</li>
                                                     <li>Uso da Plataforma Compras.Gov</li>
@@ -213,8 +216,10 @@
 
                             <!-- Eixo Comunicação -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-comunicacao">Comunicação</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-comunicacao">Comunicação
+                                    </button>
                                     <div class="collapse" id="presencial-comunicacao">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Comunicação</h4>
@@ -238,12 +243,13 @@
 
                             <!-- Eixo Conhecimento em Rede -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-conhecimento-rede">Conhecimento em Rede</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-conhecimento-rede">Conhecimento em Rede
+                                    </button>
                                     <div class="collapse" id="presencial-conhecimento-rede">
                                         <div class="estacao">
-                                            <h4 class="estacao-titulo">Estação Ferramentas de Apoio à Administração
-                                                Púbica</h4>
+                                            <h4 class="estacao-titulo">Estação Ferramentas de Apoio à Administração Púbica</h4>
                                             <div class="estacao-conteudo">
                                                 <ul class="ul-estacao">
                                                     <li>Introdução ao sistema E-Flow</li>
@@ -263,8 +269,10 @@
 
                             <!-- Eixo ESG -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-esg">ESG</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-esg">ESG
+                                    </button>
                                     <div class="collapse" id="presencial-esg">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Ambiental, Social e Governança (ESG)</h4>
@@ -285,8 +293,10 @@
 
                             <!-- Eixo Gestão por Processos -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-gestao-processos">Gestão por Processos</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-gestao-processos">Gestão por Processos
+                                    </button>
                                     <div class="collapse" id="presencial-gestao-processos">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Gestão Estratégica por Processos</h4>
@@ -307,7 +317,8 @@
                             <div class="col-lg-4 col-md-6 mb-4">
                                 <div class="trilha-item">
                                     <button class="trilha-toggle" type="button" data-toggle="collapse"
-                                        data-target="#presencial-inovacao">Inovação</button>
+                                        data-target="#presencial-inovacao">Inovação
+                                    </button>
                                     <div class="collapse" id="presencial-inovacao">
                                         <div class="row no-gutters mt-1">
                                             <div class="col-4 pr-1">
@@ -323,8 +334,7 @@
                                             </div>
                                             <div class="col-4 px-1">
                                                 <div class="estacao h-100">
-                                                    <h4 class="estacao-titulo">Estação Análise de Dados e Tecnologias
-                                                    </h4>
+                                                    <h4 class="estacao-titulo">Estação Análise de Dados e Tecnologias</h4>
                                                     <div class="estacao-conteudo">
                                                         <ul class="ul-estacao">
                                                             <li>Power BI</li>
@@ -352,13 +362,14 @@
 
                             <!-- Eixo Monitoramento e Avaliação -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
                                         data-target="#presencial-monitoramento-avaliacao">Monitoramento e
-                                        Avaliação</button>
+                                        Avaliação
+                                    </button>
                                     <div class="collapse" id="presencial-monitoramento-avaliacao">
                                         <div class="estacao">
-                                            <h4 class="estacao-titulo">Estação Monitoramento e Avaliação de Políticas
-                                                Pública</h4>
+                                            <h4 class="estacao-titulo">Estação Monitoramento e Avaliação de Políticas Pública</h4>
                                             <div class="estacao-conteudo">
                                                 <ul class="ul-estacao">
                                                     <li>Introdução ao monitoramento e avaliação de políticas públicas</li>
@@ -375,8 +386,10 @@
 
                             <!-- Eixo Orçamento e Finanças -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-orcamento-financas">Orçamento e Finanças</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-orcamento-financas">Orçamento e Finanças
+                                    </button>
                                     <div class="collapse" id="presencial-orcamento-financas">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Orçamento e Finança</h4>
@@ -396,8 +409,10 @@
 
                             <!-- Eixo Pessoas e Organizações -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-pessoas-organizacoes">Pessoas e Organizações</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-pessoas-organizacoes">Pessoas e Organizações
+                                    </button>
                                     <div class="collapse" id="presencial-pessoas-organizacoes">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Desenvolvimento de Pessoas</h4>
@@ -418,9 +433,11 @@
 
                             <!-- Eixo Planejamento e Projetos -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
                                         data-target="#presencial-planejamento-processos">Planejamento e
-                                        Projetos</button>
+                                        Projetos
+                                    </button>
                                     <div class="collapse" id="presencial-planejamento-processos">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Gerenciamento de Projetos</h4>
@@ -442,13 +459,13 @@
                                 <div class="trilha-item">
                                     <button class="trilha-toggle" type="button" data-toggle="collapse"
                                         data-target="#presencial-politicas-governamental">Políticas Públicas e Gestão
-                                        Governamental</button>
+                                        Governamental
+                                    </button>
                                     <div class="collapse" id="presencial-politicas-governamental">
                                         <div class="row no-gutters mt-1">
                                             <div class="col-6 pr-1">
                                                 <div class="estacao h-100">
-                                                    <h4 class="estacao-titulo">Estação Gestão das Organizações Públicas
-                                                    </h4>
+                                                    <h4 class="estacao-titulo">Estação Gestão das Organizações Públicas</h4>
                                                     <div class="estacao-conteudo">
                                                         <ul class="ul-estacao">
                                                             <li>Noções de Organização Pública</li>
@@ -460,8 +477,7 @@
                                             </div>
                                             <div class="col-6 pl-1">
                                                 <div class="estacao h-100">
-                                                    <h4 class="estacao-titulo">Estação Marco Regulatório das
-                                                        Organizações da Sociedade Civil (OSCs)</h4>
+                                                    <h4 class="estacao-titulo">Estação Marco Regulatório das Organizações da Sociedade Civil (OSCs)</h4>
                                                     <div class="estacao-conteudo">
                                                         <ul class="ul-estacao">
                                                             <li>Marco Regulatório das Organizações da Sociedade Civil</li>
@@ -482,9 +498,10 @@
 
                             <!-- Eixo Qualidade de Vida no Trabalho (Qualivida) -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-qualivida">Qualidade de Vida no Trabalho
-                                        (Qualivida)</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-qualivida">Qualidade de Vida no Trabalho (Qualivida)
+                                    </button>
                                     <div class="collapse" id="presencial-qualivida">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Qualidade de Vida no Trabalho</h4>
@@ -508,8 +525,10 @@
 
                             <!-- Eixo Linguagens -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
-                                        data-target="#presencial-linguagens">Linguagens</button>
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
+                                        data-target="#presencial-linguagens">Linguagens
+                                    </button>
                                     <div class="collapse" id="presencial-linguagens">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Linguagens</h4>
@@ -525,9 +544,11 @@
 
                             <!-- Eixo Controle e Transparência -->
                             <div class="col-lg-4 col-md-6 mb-4">
-                                <div class="trilha-item"><button class="trilha-toggle" data-toggle="collapse"
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse"
                                         data-target="#presencial-controle-transparencia">Controle e
-                                        Transparência</button>
+                                        Transparência
+                                    </button>
                                     <div class="collapse" id="presencial-controle-transparencia">
                                         <div class="estacao">
                                             <h4 class="estacao-titulo">Estação Direito e Legislação</h4>
@@ -535,12 +556,10 @@
                                                 <ul class="ul-estacao">
                                                     <li>Tomada de contas Especial</li>
                                                     <li>Prestação de Contas Anual</li>
-                                                    <li>Elaboração de Relatório e Parecer Conclusivo da Unidade
-                                                        Executora de Controle Interno</li>
+                                                    <li>Elaboração de Relatório e Parecer Conclusivo da Unidade Executora de Controle Interno</li>
                                                     <li>Análise de Conformidade por Meio de Listas de Verificação</li>
                                                     <li>Conceitos Básicos sobre Controle de Sistema Interno</li>
-                                                    <li>Gerenciamento de Riscos e Conformidade em Contratação de Obras
-                                                        Públicas no Contexto da Lei 14.133/2021</li>
+                                                    <li>Gerenciamento de Riscos e Conformidade em Contratação de Obras Públicas no Contexto da Lei 14.133/2021</li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -550,15 +569,15 @@
 
                             <!-- Eixo Demandas Específicas -->
                             <div class="col-12 mb-0">
-                                <div class="trilha-item"> <button class="trilha-toggle" type="button"
-                                        data-toggle="collapse" data-target="#presencial-demandas-especificas">Demandas
-                                        Específicas</button>
+                                <div class="trilha-item"> 
+                                    <button class="trilha-toggle" type="button"
+                                        data-toggle="collapse" data-target="#presencial-demandas-especificas">Demandas Específicas
+                                    </button>
                                     <div class="collapse" id="presencial-demandas-especificas">
                                         <div class="row no-gutters mt-1">
                                             <div class="col-4 pr-1">
                                                 <div class="estacao">
-                                                    <h4 class="estacao-titulo">Estação Competências da Gestão Municipa
-                                                    </h4>
+                                                    <h4 class="estacao-titulo">Estação Competências da Gestão Municipa</h4>
                                                 </div>
                                             </div>
                                             <div class="col-4 px-1">
@@ -768,25 +787,285 @@
                         </div>
                     </div>
                 </div>
+            </section>
+            <!-- ==================================================================== -->
 
-                <!-- BOTÃO CREDENCIAMENTO -->
-                <div class="area-cta mt-2">
-                    <div class="container">
-                        <div class="row justify-content-center">
-                            <div class="col-lg-12 mx-auto">
-                                <a href="#" class="cta-credenciamento">
-                                    <div class="cta-conteudo">
-                                        <h3>Credenciamento</h3>
-                                        <span class="separador"></span>
-                                        <p>Acesse o processo de credenciamento</p>
+
+
+            <!-- ============================== CARGOS ============================== -->
+            <section class="section-cargos pt-4 pb-0">
+                <div class="container text-center">
+
+                    <!-- TÍTULO -->
+                    <div class="cargos-header d-flex flex-column align-items-center">
+                        <h2 class="titulo m-0">
+                            ATUAÇÃO PROFISSIONAL
+                        </h2>
+                        <div class="linha"></div>
+
+                        <div class="gatilho-wrapper mt-2" id="btn-abrir-cargos">
+                            <p class="descricao-editais mb-0 d-flex align-items-center justify-content-center">
+                                Entenda melhor cada função
+                                <img class="seta-trilhas ml-3" id="seta-cargos" src="../assets/imagens/seta-baixo.svg" alt="Abrir">
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- GRID CARGOS -->
+                <div class="collapse" id="wrapper-grid-cargos">
+                    <div class="container mt-4">
+                        <div class="row">
+
+                            <!-- Docente -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-docente">
+                                        Docente
+                                    </button>
+                                    <div class="collapse" id="cargo-docente">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional de nível superior que atuará nas atividades docentes e/ou tutoria, ministrando aulas relativas às áreas temáticas oferecidas ou demandadas à ESESP.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                </a>
+                                </div>
                             </div>
+
+                            <!-- Docente Conteudista -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-conteudista">
+                                        Docente Conteudista
+                                    </button>
+                                    <div class="collapse" id="cargo-conteudista">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional de nível superior que atuará na elaboração e/ou atualização de conteúdos e materiais didáticos, relativos às áreas temáticas oferecidas ou demandadas à ESESP.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Docente Assistente -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-assistente">
+                                        Docente Assistente
+                                    </button>
+                                    <div class="collapse" id="cargo-assistente">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional de nível superior que acompanhará o desenvolvimento dos cursos e dos eventos de discussão promovidos pela ESESP.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Docente Pós-Graduação -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-pos">
+                                        Docente Pós-Graduação
+                                    </button>
+                                    <div class="collapse" id="cargo-pos">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional de nível escolar mestrado stricto sensu que atuará nas atividades docentes e/ou tutoria, ministrando aulas relativas às áreas temáticas oferecidas ou demandadas à ESESP.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Coordenador Técnico -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-coordenador">
+                                        Coordenador Técnico
+                                    </button>
+                                    <div class="collapse" id="cargo-coordenador">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional de nível superior que supervisiona e coordena o planejamento e a execução do curso nas modalidades presencial e não presencial, em nível tático. Acompanha, junto à Assessoria Pedagógica e gerentes, o processo de contratação dos docentes. Soluciona situações no decorrer do curso de forma a garantir sua qualidade e continuidade. Promove a integração entre o docente e o cursista nas modalidades presenciais e não presenciais. Promove a eficácia da execução primando pelo aprendizado. Elabora relatórios e planilha dos cursos. Quando no ambiente virtual, realiza gravação e edição de vídeos, desenvolve cursos em plataformas digitais, desenvolve e realiza manutenção de ferramentas digitais e outras atividades correlatas.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Conferencista/Palestrante -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-palestrante">
+                                        Conferencista / Palestrante
+                                    </button>
+                                    <div class="collapse" id="cargo-palestrante">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional de curso superior especializado em apresentar palestras, workshops ou conferências sobre temas específicos, geralmente em eventos, seminários ou congressos. É vedada a contratação de palestrante/conferencista em cursos de capacitação e formação.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Painelista/Debatedor -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-painelista">
+                                        Painelista / Debatedor
+                                    </button>
+                                    <div class="collapse" id="cargo-painelista">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional que participa e coordena um painel de debate, ou seja, um grupo de pessoas que discutem publicamente um tema específico.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Moderador -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-moderador">
+                                        Moderador
+                                    </button>
+                                    <div class="collapse" id="cargo-moderador">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional responsável pela facilitação, revisão e orientação de uma discussão ou debate e suas interações relacionadas.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Assessor Técnico -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-assessor">
+                                        Assessor Técnico
+                                    </button>
+                                    <div class="collapse" id="cargo-assessor">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional de nível superior que assessora a gestão e execução do Plano de Trabalho e Projeto Pedagógico, no que se refere ao trabalho da equipe docente, em nível estratégico.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Revisão de Texto -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-revisao">
+                                        Revisão de Texto
+                                    </button>
+                                    <div class="collapse" id="cargo-revisao">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    O profissional responsável pela revisão de texto é o encarregado de revisar e corrigir textos, garantindo que a redação esteja livre de erros gramaticais, ortográficos, de pontuação e de estilo, além de verificar a clareza, coerência e coesão do conteúdo.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Profissional de Entrevista -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#profissional-entrevista">
+                                        Docente
+                                    </button>
+                                    <div class="collapse" id="profissional-entrevista">
+                                        <div class="estacao">
+                                              <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    Profissional de nível superior especializado em metodologias para recolha de dados, na constelação das atividades de ensino-aprendizagem, para o processo de formação de imagens no sentido de manter, alterar, ampliar e contextualizar as informações e reflexões dos docentes e cursistas.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Intérprete de Libras -->
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="trilha-item">
+                                    <button class="trilha-toggle" data-toggle="collapse" data-target="#cargo-libras">
+                                        Intérprete de Libras
+                                    </button>
+                                    <div class="collapse" id="cargo-libras">
+                                        <div class="estacao">
+                                            <div class="caixa-topo"></div>
+                                            <div class="cargo-conteudo">
+                                                <p>
+                                                    É o profissional responsável por ajudar na comunicação entre pessoas ouvintes e com deficiência auditiva, entre surdos, por meio da Língua Brasileira de Sinais.
+                                
+                                                    Atua nos processos seletivos para cursos na instituição de ensino e nos concursos públicos <a href="https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2010/lei/l12319.htm" target="_blank" class="lei">(Lei 12.319, art. 6º)</a>;
+                                
+                                                    Atua no apoio à acessibilidade aos serviços e às atividades-fim das instituições de ensino e repartições públicas <a href="https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2010/lei/l12319.htm" target="_blank" class="lei">(Lei 12.319, art. 6º)</a>;
+                                
+                                                    Presta seus serviços em depoimentos em juízo, em órgãos administrativos ou policiais;
+                                
+                                                    Intermedia a comunicação entre surdos e ouvintes por meio da Libras para a língua oral e vice-versa <a href="https://www.planalto.gov.br/ccivil_03/_Ato2023-2026/2023/Lei/L14704.htm" target="_blank" class="lei">(Incluído pela Lei nº 14.704, de 2023)</a>;
+                                
+                                                    Intermedia a comunicação entre surdos e surdos por meio da Libras para outra língua de sinais e vice-versa <a href="https://www.planalto.gov.br/ccivil_03/_Ato2023-2026/2023/Lei/L14704.htm" target="_blank" class="lei">(Incluído pela Lei nº 14.704, de 2023)</a>;
+                                
+                                                    Traduz textos escritos, orais ou sinalizados da Língua Portuguesa para a Libras e outras línguas de sinais e vice-versa. <a href="https://www.planalto.gov.br/ccivil_03/_Ato2023-2026/2023/Lei/L14704.htm" target="_blank" class="lei">(Incluído pela Lei nº 14.704, de 2023)</a>.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
             </section>
+            <!-- ==================================================================== -->
+
     </main>
+
 
     <!-- ========================= RODAPÉ DA PÁGINA ======================== -->
     <footer class="rodape">
@@ -797,7 +1076,7 @@
                 <div class="col-md-6 col-12 rodape-redes">
                     <span class="rodape-frase">Acompanhe a ESESP em outras plataformas:</span>
 
-                    <div class="icones-redes  ml-4">
+                    <div class="icones-redes ">
                         <a href="https://eadesesp.es.gov.br/moodle/?lang=en" target="_blank">
                             <img class="logo-branca" src="../assets/Logo-01 ead.png" alt="EADESESP">
                         </a>
