@@ -145,6 +145,7 @@ ul {
    TÍTULOS E TEXTOS
 ===================================================== */
 .titulo {
+    font-family: var(--fonte-secundaria);
     font-size: 40px;
     font-weight: 800;
     color: var(--cor-azul-escuro);}
@@ -220,24 +221,91 @@ ul {
 .section-credenciamento {
     margin-top: 120px;}
 
-.lista-editais {
-    margin-top: 20px;
-    padding-left: 15px;
-    list-style-type: disc;}
+.card-edital {
+    border-left: 4px solid var(--cor-azul-escuro);
+    background-color: var(--cor-cinza-o);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 10px;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;}
 
-.lista-editais li {
-    margin-bottom: 12px;
-    color: rgb(236, 154, 1);
-    transition: color .3s ease;}
+.edital-header {
+    margin-bottom: 15px;}
 
-.lista-editais li:hover {
-    color: var(--cor-azul-escuro);}
+.edital-header h3 {
+    font-family: var(--fonte-principal);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cor-azul-escuro);
+    margin: 0;
+    line-height: 1.3;}
 
-.edital {
-    font-size: 18px;
+.edital-descricao {
+    font-family: var(--fonte-secundaria);
+    font-size: 16px;
+    color: var(--cor-cinza-escuro);
+    margin-bottom: 20px;
+    line-height: 1.6;}
+
+.edital-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;}
+
+.btn-edital {
+    box-shadow: rgba(163, 187, 214, 0.4) 0px 0px 0px 2px, rgba(60, 104, 155, 0.65) 0px 4px 6px -1px, rgba(255, 255, 255, 0.527) 0px 1px 0px inset;
+    display: inline-flex;
+    background-color: var(--cor-laranja);
+    align-items: center;
+    gap: 10px;
+    color: var(--cor-branco)!important;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;}
+
+.btn-edital img {
+    filter: invert(100%);
+    width: 25px;
+    height: 25px;
+    object-fit: contain;}
+
+.btn-edital:hover {
+    transform: scale(1.03) translateY(1px);
+    text-decoration: none;}
+
+.email-edital {
+    text-decoration: none!important;
+    font-family: var(--fonte-secundaria);
+    font-size: 16px;
     font-weight: 500;
-    display: inline-block;
-    text-decoration: none !important;}
+    color: var(--cor-azul-escuro)!important;
+    transition: 0.3s ease;}
+
+.span-edital {
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--cor-cinza-escuro);
+}
+
+.hover-3 { 
+    --c: var(--cor-azul-escuro); 
+    --h: 1.2em; 
+    display: inline-block; 
+    line-height: var(--h); 
+    color: rgb(236, 154, 1); 
+    background: linear-gradient(var(--c) 0 0) bottom / 0% 1px no-repeat; 
+        transition: background-size .35s ease, color .35s ease;} 
+        
+.hover-3:hover { 
+    color: var(--c); 
+    background-size: 100% 1px;}
 
 /* =====================================================
     TRILHAS / ESTAÇÕES
@@ -342,7 +410,8 @@ button:focus,
   CARGOS
 ===================================================== */
 .section-cargos {
-    margin-top: 40px;}
+    margin-top: 60px;
+    margin-bottom: 60px;}
 
 .caixa-topo {
     background-color: var(--cor-azul-escuro);
