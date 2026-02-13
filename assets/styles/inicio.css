@@ -23,6 +23,11 @@ body {
 .conteudo-principal {
     flex: 1;}
 
+
+.bloco-interno {
+    padding-left: 2rem;
+    padding-right: 2rem;}
+
 /* =====================================================
    BASE / RESET LEVE
 ===================================================== */
@@ -317,8 +322,7 @@ button:focus,
     outline: none !important;
     box-shadow: none !important; }
 
-.section-trilhas {
-   margin-top: 35px;}
+
 
 .trilha-toggle {
     width: 100%;
@@ -386,9 +390,6 @@ button:focus,
     transition: transform 0.3s ease;
     will-change: transform;}
 
-.gatilho-wrapper:hover {
-    transform: scale(1.03) translateY(1px);}
-
 .gatilho-wrapper:hover .descricao-editais {
     color: var(--cor-azul-escuro);}
 
@@ -400,9 +401,6 @@ button:focus,
 .seta-trilhas {
     transition: transform 0.3s ease;}
 
-.gatilho-wrapper:hover .seta-trilhas:not(.ativo) {
-    transform: translateY(2px);}
-
 .seta-trilhas.ativo {
     transform: rotate(180deg);}
 
@@ -410,8 +408,8 @@ button:focus,
   CARGOS
 ===================================================== */
 .section-cargos {
-    margin-top: 60px;
-    margin-bottom: 60px;}
+    margin-top: 25px;
+    margin-bottom: 25px;}
 
 .caixa-topo {
     background-color: var(--cor-azul-escuro);
