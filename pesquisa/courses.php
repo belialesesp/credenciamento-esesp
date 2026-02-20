@@ -34,8 +34,17 @@ if ($filterStatus === 'active') {
 }
 
 if (!empty($filterDocenteCPF)) {
-    $where[] = 'c.docente_cpf = ?';
-    $params[] = preg_replace('/[^0-9]/', '', $filterDocenteCPF);
+    $cleanValue = preg_replace('/[^0-9]/', '', $filterDocenteCPF);
+    
+    // If it's numeric (CPF), search by CPF
+    if (!empty($cleanValue) && strlen($cleanValue) == 11) {
+        $where[] = 'c.docente_cpf = ?';
+        $params[] = $cleanValue;
+    } else {
+        // Otherwise, search by name (manual entry or partial name)
+        $where[] = 'c.docente_name LIKE ?';
+        $params[] = '%' . $filterDocenteCPF . '%';
+    }
 }
 
 if ($filterMonth) {
@@ -229,8 +238,8 @@ $yearOptions = range(2020, $currentYear + 1);
                     <a href="create-course.php" class="btn btn-light btn-lg">
                         <i class="bi bi-plus-circle me-2"></i>Novo Curso
                     </a>
-                    <a href="bulk-import.php" class="btn btn-outline-light">
-                        <i class="bi bi-file-earmark-arrow-up me-2"></i>Importar PDF
+                    <a href="bulk-import-excel.php" class="btn btn-outline-light">
+                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>Importar Excel (Agenda Esesp)
                     </a>
                     <a href="index.php" class="btn btn-outline-light">
                         <i class="bi bi-arrow-left me-2"></i>Voltar
@@ -484,6 +493,23 @@ $yearOptions = range(2020, $currentYear + 1);
                 placeholder: 'Digite o nome ou CPF do docente...',
                 allowClear: true,
                 minimumInputLength: 2,
+                tags: true, // Allow manual entry for filtering
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    
+                    if (term.length < 3) {
+                        return null;
+                    }
+                    
+                    return {
+                        id: term, // Use the text as ID for filtering
+                        text: term + ' (buscar por nome)',
+                        name: term,
+                        cpf: term,
+                        cpf_formatted: term,
+                        source: 'manual'
+                    };
+                },
                 ajax: {
                     url: 'api/search-docentes.php',
                     dataType: 'json',

@@ -1,6 +1,7 @@
 <?php
 /**
- * Create New Course with Docente Autocomplete from e-flow
+ * Create New Course - Simple Version
+ * Manual text input for docente name (no e-flow integration)
  */
 
 require_once __DIR__ . '/includes/init.php';
@@ -13,7 +14,6 @@ $userCPF = getCurrentUserCPF();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $name = trim($_POST['name'] ?? '');
-        $docenteCPF = !empty($_POST['docente_cpf']) ? preg_replace('/[^0-9]/', '', $_POST['docente_cpf']) : null;
         $docenteName = trim($_POST['docente_name'] ?? '');
         $category = $_POST['category'] ?? 'Agenda Esesp';
         $month = (int)($_POST['month'] ?? date('n'));
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         if (empty($docenteName)) {
-            throw new Exception("Docente é obrigatório");
+            throw new Exception("Nome do docente é obrigatório");
         }
         
         if ($month < 1 || $month > 12) {
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'token' => $token,
                 'name' => $name,
                 'docente_name' => $docenteName,
-                'docente_cpf' => $docenteCPF,
+                'docente_cpf' => null,
                 'category' => $category,
                 'month' => $month,
                 'year' => $year,
@@ -117,8 +117,6 @@ $months = [
     <title>Criar Curso - <?= PESQUISA_SITE_NAME ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <style>
         :root {
             --primary: #1e3a5f;
@@ -145,10 +143,6 @@ $months = [
         .form-label {
             font-weight: 500;
             color: var(--primary);
-        }
-        
-        .select2-container--bootstrap-5 .select2-selection {
-            min-height: 38px;
         }
     </style>
 </head>
@@ -180,20 +174,14 @@ $months = [
                                 <small class="text-muted">Nome completo do curso ou evento</small>
                             </div>
                             
-                            <!-- Docente Selection with Autocomplete -->
+                            <!-- Docente Name - Simple Text Input -->
                             <div class="mb-3">
-                                <label for="docente_select" class="form-label">
-                                    <i class="bi bi-person-circle me-1"></i>Docente *
+                                <label for="docente_name" class="form-label">
+                                    <i class="bi bi-person-circle me-1"></i>Nome do Docente *
                                 </label>
-                                <select class="form-select" id="docente_select" name="docente_cpf" required>
-                                    <option value="">Digite o nome ou CPF do docente...</option>
-                                </select>
-                                <small class="text-muted">
-                                    Busca docentes cadastrados no e-flow. Digite pelo menos 2 caracteres.
-                                </small>
-                                
-                                <!-- Hidden field for docente name (auto-filled) -->
-                                <input type="hidden" id="docente_name" name="docente_name">
+                                <input type="text" class="form-control" id="docente_name" name="docente_name" 
+                                       placeholder="Ex: João Silva Santos" required>
+                                <small class="text-muted">Digite o nome completo do docente responsável</small>
                             </div>
                             
                             <!-- Category -->
@@ -284,58 +272,5 @@ $months = [
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Initialize Select2 with AJAX for docente search
-            $('#docente_select').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Digite o nome ou CPF do docente...',
-                minimumInputLength: 2,
-                ajax: {
-                    url: 'api/search-docentes.php',
-                    dataType: 'json',
-                    delay: 300,
-                    data: function (params) {
-                        return {
-                            q: params.term,
-                            page: params.page || 1
-                        };
-                    },
-                    processResults: function (data) {
-                        return {
-                            results: data.results,
-                            pagination: {
-                                more: data.pagination.more
-                            }
-                        };
-                    },
-                    cache: true
-                },
-                templateResult: formatDocente,
-                templateSelection: formatDocenteSelection
-            }).on('select2:select', function (e) {
-                const data = e.params.data;
-                // Store the docente name in hidden field
-                $('#docente_name').val(data.name);
-            });
-        });
-
-        function formatDocente(docente) {
-            if (docente.loading) {
-                return docente.text;
-            }
-            
-            return $('<div class="select2-result-docente">' +
-                '<div class="select2-result-docente__title"><strong>' + docente.name + '</strong></div>' +
-                '<div class="select2-result-docente__cpf text-muted small">CPF: ' + docente.cpf_formatted + ' | ' + docente.source + '</div>' +
-                '</div>');
-        }
-
-        function formatDocenteSelection(docente) {
-            return docente.name || docente.text;
-        }
-    </script>
 </body>
 </html>
