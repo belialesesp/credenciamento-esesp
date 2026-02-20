@@ -13,7 +13,6 @@ $isAdmin = isPesquisaAdmin();
 // Get filter parameters
 $filterCategory = $_GET['category'] ?? '';
 $filterStatus = $_GET['status'] ?? 'all';
-$filterDocenteCPF = $_GET['docente_cpf'] ?? '';
 $filterMonth = isset($_GET['month']) ? (int)$_GET['month'] : null;
 $filterYear = isset($_GET['year']) ? (int)$_GET['year'] : null;
 $search = $_GET['search'] ?? '';
@@ -33,20 +32,6 @@ if ($filterStatus === 'active') {
     $where[] = 'c.is_active = 0';
 }
 
-if (!empty($filterDocenteCPF)) {
-    $cleanValue = preg_replace('/[^0-9]/', '', $filterDocenteCPF);
-    
-    // If it's numeric (CPF), search by CPF
-    if (!empty($cleanValue) && strlen($cleanValue) == 11) {
-        $where[] = 'c.docente_cpf = ?';
-        $params[] = $cleanValue;
-    } else {
-        // Otherwise, search by name (manual entry or partial name)
-        $where[] = 'c.docente_name LIKE ?';
-        $params[] = '%' . $filterDocenteCPF . '%';
-    }
-}
-
 if ($filterMonth) {
     $where[] = 'c.month = ?';
     $params[] = $filterMonth;
@@ -58,11 +43,13 @@ if ($filterYear) {
 }
 
 if (!empty($search)) {
-    $where[] = '(c.name LIKE ? OR c.docente_name LIKE ? OR c.token LIKE ?)';
+    $where[] = '(c.name LIKE ? OR c.docente_name LIKE ? OR c.token LIKE ? OR c.docente_cpf LIKE ?)';
     $searchParam = '%' . $search . '%';
     $params[] = $searchParam;
     $params[] = $searchParam;
     $params[] = $searchParam;
+    // For CPF, also try cleaning the input (remove dots and dashes)
+    $params[] = '%' . preg_replace('/[^0-9]/', '', $search) . '%';
 }
 
 $whereClause = implode(' AND ', $where);
@@ -99,8 +86,6 @@ $yearOptions = range(2020, $currentYear + 1);
     <title>Gerenciar Cursos - <?= PESQUISA_SITE_NAME ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">  
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <style>
         :root {
             --primary: #1e3a5f;
@@ -209,20 +194,6 @@ $yearOptions = range(2020, $currentYear + 1);
             margin-bottom: 1rem;
             opacity: 0.5;
         }
-        
-        .filter-section-title {
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .select2-container--bootstrap-5 .select2-selection {
-            min-height: 38px;
-        }
     </style>
 </head>
 <body>
@@ -256,21 +227,14 @@ $yearOptions = range(2020, $currentYear + 1);
         <!-- Filters -->
         <div class="filter-card">
             <form method="GET" action="" class="row g-3">
-                <!-- First Row: Basic Filters -->
-                <div class="col-12">
-                    <div class="filter-section-title">
-                        <i class="bi bi-funnel"></i> Filtros Básicos
-                    </div>
-                </div>
-                
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Buscar</label>
                     <input type="text" name="search" class="form-control" 
-                           placeholder="Nome, docente ou token" 
+                           placeholder="Nome, docente, CPF ou token" 
                            value="<?= sanitize($search) ?>">
                 </div>
                 
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Categoria</label>
                     <select name="category" class="form-select">
                         <option value="">Todas</option>
@@ -291,33 +255,8 @@ $yearOptions = range(2020, $currentYear + 1);
                     </select>
                 </div>
 
-                <!-- Second Row: Advanced Filters -->
-                <div class="col-12 mt-3">
-                    <div class="filter-section-title">
-                        <i class="bi bi-sliders"></i> Filtros Avançados
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label">
-                        <i class="bi bi-person-badge me-1"></i>Docente (CPF)
-                    </label>
-                    <select id="docente_cpf_filter" name="docente_cpf" class="form-select">
-                        <?php if (!empty($filterDocenteCPF)): ?>
-                            <option value="<?= sanitize($filterDocenteCPF) ?>" selected>
-                                <?= formatCPF($filterDocenteCPF) ?>
-                            </option>
-                        <?php else: ?>
-                            <option value="">Digite o nome ou CPF...</option>
-                        <?php endif; ?>
-                    </select>
-                    <small class="text-muted">Busca docentes do e-flow</small>
-                </div>
-                
                 <div class="col-md-2">
-                    <label class="form-label">
-                        <i class="bi bi-calendar-month me-1"></i>Mês
-                    </label>
+                    <label class="form-label">Mês</label>
                     <select name="month" class="form-select">
                         <option value="">Todos</option>
                         <?php foreach ($months as $num => $name): ?>
@@ -329,9 +268,7 @@ $yearOptions = range(2020, $currentYear + 1);
                 </div>
 
                 <div class="col-md-2">
-                    <label class="form-label">
-                        <i class="bi bi-calendar-event me-1"></i>Ano
-                    </label>
+                    <label class="form-label">Ano</label>
                     <select name="year" class="form-select">
                         <option value="">Todos</option>
                         <?php foreach ($yearOptions as $yearOpt): ?>
@@ -342,14 +279,14 @@ $yearOptions = range(2020, $currentYear + 1);
                     </select>
                 </div>
                 
-                <div class="col-md-5">
+                <div class="col-md-1">
                     <label class="form-label">&nbsp;</label>
-                    <div class="d-flex gap-2">
+                    <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-funnel me-2"></i>Filtrar
+                            <i class="bi bi-funnel"></i>
                         </button>
                         <a href="courses.php" class="btn btn-secondary">
-                            <i class="bi bi-x-circle me-2"></i>Limpar
+                            <i class="bi bi-x-circle"></i>
                         </a>
                     </div>
                 </div>
@@ -361,7 +298,6 @@ $yearOptions = range(2020, $currentYear + 1);
         $activeFilters = [];
         if (!empty($filterCategory)) $activeFilters[] = "Categoria: $filterCategory";
         if ($filterStatus !== 'all') $activeFilters[] = "Status: " . ($filterStatus === 'active' ? 'Ativos' : 'Inativos');
-        if (!empty($filterDocenteCPF)) $activeFilters[] = "CPF: " . formatCPF($filterDocenteCPF);
         if ($filterMonth) $activeFilters[] = "Mês: " . $months[$filterMonth];
         if ($filterYear) $activeFilters[] = "Ano: $filterYear";
         if (!empty($search)) $activeFilters[] = "Busca: $search";
@@ -475,8 +411,6 @@ $yearOptions = range(2020, $currentYear + 1);
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         function copyLink(url) {
             navigator.clipboard.writeText(url).then(() => {
@@ -484,70 +418,6 @@ $yearOptions = range(2020, $currentYear + 1);
             }).catch(err => {
                 prompt('Copie o link:', url);
             });
-        }
-
-        // Initialize Select2 for docente CPF filter with AJAX
-        $(document).ready(function() {
-            $('#docente_cpf_filter').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Digite o nome ou CPF do docente...',
-                allowClear: true,
-                minimumInputLength: 2,
-                tags: true, // Allow manual entry for filtering
-                createTag: function (params) {
-                    var term = $.trim(params.term);
-                    
-                    if (term.length < 3) {
-                        return null;
-                    }
-                    
-                    return {
-                        id: term, // Use the text as ID for filtering
-                        text: term + ' (buscar por nome)',
-                        name: term,
-                        cpf: term,
-                        cpf_formatted: term,
-                        source: 'manual'
-                    };
-                },
-                ajax: {
-                    url: 'api/search-docentes.php',
-                    dataType: 'json',
-                    delay: 300,
-                    data: function (params) {
-                        return {
-                            q: params.term,
-                            page: params.page || 1
-                        };
-                    },
-                    processResults: function (data) {
-                        return {
-                            results: data.results,
-                            pagination: {
-                                more: data.pagination.more
-                            }
-                        };
-                    },
-                    cache: true
-                },
-                templateResult: formatDocente,
-                templateSelection: formatDocenteSelection
-            });
-        });
-
-        function formatDocente(docente) {
-            if (docente.loading) {
-                return docente.text;
-            }
-            
-            return $('<div class="select2-result-docente">' +
-                '<div class="select2-result-docente__title">' + docente.name + '</div>' +
-                '<div class="select2-result-docente__cpf text-muted small">CPF: ' + docente.cpf_formatted + '</div>' +
-                '</div>');
-        }
-
-        function formatDocenteSelection(docente) {
-            return docente.name || docente.text;
         }
     </script>
 </body>
