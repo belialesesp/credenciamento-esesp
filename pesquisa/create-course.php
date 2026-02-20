@@ -1,7 +1,6 @@
 <?php
 /**
- * Create New Course
- * Admin creates course → System generates token → QR Code created automatically
+ * Create New Course with Docente Autocomplete from e-flow
  */
 
 require_once __DIR__ . '/includes/init.php';
@@ -14,7 +13,8 @@ $userCPF = getCurrentUserCPF();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $name = trim($_POST['name'] ?? '');
-        $docente = trim($_POST['docente_name'] ?? '');
+        $docenteCPF = !empty($_POST['docente_cpf']) ? preg_replace('/[^0-9]/', '', $_POST['docente_cpf']) : null;
+        $docenteName = trim($_POST['docente_name'] ?? '');
         $category = $_POST['category'] ?? 'Agenda Esesp';
         $month = (int)($_POST['month'] ?? date('n'));
         $year = (int)($_POST['year'] ?? date('Y'));
@@ -22,8 +22,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $maxResponses = !empty($_POST['max_responses']) ? (int)$_POST['max_responses'] : null;
         
         // Validation
-        if (empty($name) || empty($docente)) {
-            throw new Exception("Nome do curso e docente são obrigatórios");
+        if (empty($name)) {
+            throw new Exception("Nome do curso é obrigatório");
+        }
+        
+        if (empty($docenteName)) {
+            throw new Exception("Docente é obrigatório");
         }
         
         if ($month < 1 || $month > 12) {
@@ -40,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Check if token already exists
         $existing = $db->fetchOne("SELECT id FROM courses WHERE token = ?", [$token]);
         if ($existing) {
-            // Add random suffix
             $token .= '-' . substr(md5(microtime()), 0, 4);
         }
         
@@ -52,7 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $courseId = $db->insert('courses', [
                 'token' => $token,
                 'name' => $name,
-                'docente_name' => $docente,
+                'docente_name' => $docenteName,
+                'docente_cpf' => $docenteCPF,
                 'category' => $category,
                 'month' => $month,
                 'year' => $year,
@@ -76,17 +80,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $qrCode = generateQRCode($courseId, $token);
                 if (!$qrCode) {
-                    error_log("QR Code generation failed for course $courseId, but course was saved");
-                    setFlashMessage("Curso criado com sucesso! Token: $token (QR Code não pôde ser gerado, mas o link funciona)", 'warning');
+                    error_log("QR Code generation failed for course $courseId");
+                    setFlashMessage("Curso criado com sucesso! Token: $token (QR Code não pôde ser gerado)", 'warning');
                 } else {
-                    setFlashMessage("Curso criado com sucesso! Token: $token", 'success');
+                    setFlashMessage("Curso criado com sucesso!", 'success');
                 }
-            } catch (Exception $qrError) {
-                error_log("QR Code generation error: " . $qrError->getMessage());
-                setFlashMessage("Curso criado com sucesso! Token: $token (QR Code não pôde ser gerado, mas o link funciona)", 'warning');
+            } catch (Exception $e) {
+                error_log("QR Code generation error: " . $e->getMessage());
+                setFlashMessage("Curso criado com sucesso! (QR Code será gerado posteriormente)", 'success');
             }
             
-            header("Location: course-details.php?id=$courseId");
+            header('Location: course-details.php?id=' . $courseId);
             exit;
             
         } catch (Exception $e) {
@@ -95,23 +99,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
     } catch (Exception $e) {
-        $error = $e->getMessage();
-        error_log("Course creation error: " . $error);
+        setFlashMessage("Erro ao criar curso: " . $e->getMessage(), 'danger');
     }
 }
 
-// Get current month/year for defaults
-$currentMonth = date('n');
-$currentYear = date('Y');
+$months = [
+    1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
+    5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
+    9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
+];
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo Curso - <?= PESQUISA_SITE_NAME ?></title>
+    <title>Criar Curso - <?= PESQUISA_SITE_NAME ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <style>
         :root {
             --primary: #1e3a5f;
@@ -120,7 +127,6 @@ $currentYear = date('Y');
         
         body {
             background: #f3f4f6;
-            font-family: 'Segoe UI', system-ui, sans-serif;
         }
         
         .page-header {
@@ -130,40 +136,19 @@ $currentYear = date('Y');
             margin-bottom: 2rem;
         }
         
-        .form-card {
-            background: white;
+        .card {
+            border: none;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 2rem;
         }
         
-        .form-section {
-            margin-bottom: 2rem;
-            padding-bottom: 2rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .form-section:last-child {
-            border-bottom: none;
-        }
-        
-        .form-section h3 {
-            font-size: 1.25rem;
+        .form-label {
+            font-weight: 500;
             color: var(--primary);
-            margin-bottom: 1rem;
         }
         
-        .info-box {
-            background: #f0f9ff;
-            border-left: 4px solid #3b82f6;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            border-radius: 4px;
-        }
-        
-        .info-box i {
-            color: #3b82f6;
-            margin-right: 0.5rem;
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 38px;
         }
     </style>
 </head>
@@ -171,63 +156,51 @@ $currentYear = date('Y');
     <!-- Header -->
     <div class="page-header">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1><i class="bi bi-plus-circle me-2"></i>Criar Novo Curso</h1>
-                    <p class="mb-0">Sistema gerará automaticamente token e QR Code</p>
-                </div>
-                <a href="index.php" class="btn btn-light">
-                    <i class="bi bi-arrow-left me-2"></i>Voltar
-                </a>
-            </div>
+            <h1><i class="bi bi-plus-circle me-2"></i>Criar Novo Curso</h1>
+            <p class="mb-0">Preencha os dados do curso para gerar a pesquisa de satisfação</p>
         </div>
     </div>
     
     <!-- Main Content -->
     <div class="container mb-5">
-        <?php if (isset($error)): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i><?= sanitize($error) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
+        <?= displayFlashMessage() ?>
         
         <div class="row">
             <div class="col-lg-8 mx-auto">
-                <div class="form-card">
-                    <form method="POST" action="">
-                        
-                        <!-- Information Box -->
-                        <div class="info-box">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>Como funciona:</strong>
-                            <ol class="mb-0 mt-2">
-                                <li>Preencha os dados do curso abaixo</li>
-                                <li>Sistema gera automaticamente um token (ex: gestao-publica-out-2024)</li>
-                                <li>QR Code é criado automaticamente</li>
-                                <li>Compartilhe o QR Code com os alunos</li>
-                            </ol>
-                        </div>
-                        
-                        <!-- Basic Information -->
-                        <div class="form-section">
-                            <h3><i class="bi bi-book me-2"></i>Informações Básicas</h3>
-                            
+                <div class="card">
+                    <div class="card-body p-4">
+                        <form method="POST" action="">
+                            <!-- Course Name -->
                             <div class="mb-3">
-                                <label for="name" class="form-label">Nome do Curso *</label>
-                                <input type="text" class="form-control" id="name" name="name" required
-                                       placeholder="Ex: Gestão Pública" maxlength="255">
-                                <small class="text-muted">O sistema gerará automaticamente o token a partir deste nome</small>
+                                <label for="name" class="form-label">
+                                    <i class="bi bi-book me-1"></i>Nome do Curso *
+                                </label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       placeholder="Ex: Gestão de Projetos Públicos" required>
+                                <small class="text-muted">Nome completo do curso ou evento</small>
                             </div>
                             
+                            <!-- Docente Selection with Autocomplete -->
                             <div class="mb-3">
-                                <label for="docente_name" class="form-label">Nome do Docente *</label>
-                                <input type="text" class="form-control" id="docente_name" name="docente_name" required
-                                       placeholder="Ex: Prof. João Silva" maxlength="255">
+                                <label for="docente_select" class="form-label">
+                                    <i class="bi bi-person-circle me-1"></i>Docente *
+                                </label>
+                                <select class="form-select" id="docente_select" name="docente_cpf" required>
+                                    <option value="">Digite o nome ou CPF do docente...</option>
+                                </select>
+                                <small class="text-muted">
+                                    Busca docentes cadastrados no e-flow. Digite pelo menos 2 caracteres.
+                                </small>
+                                
+                                <!-- Hidden field for docente name (auto-filled) -->
+                                <input type="hidden" id="docente_name" name="docente_name">
                             </div>
                             
+                            <!-- Category -->
                             <div class="mb-3">
-                                <label for="category" class="form-label">Categoria *</label>
+                                <label for="category" class="form-label">
+                                    <i class="bi bi-tag me-1"></i>Categoria *
+                                </label>
                                 <select class="form-select" id="category" name="category" required>
                                     <option value="Agenda Esesp">Agenda Esesp</option>
                                     <option value="Esesp na Estrada">Esesp na Estrada</option>
@@ -237,85 +210,132 @@ $currentYear = date('Y');
                                 </select>
                             </div>
                             
+                            <!-- Month and Year -->
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="month" class="form-label">Mês *</label>
+                                    <label for="month" class="form-label">
+                                        <i class="bi bi-calendar-month me-1"></i>Mês *
+                                    </label>
                                     <select class="form-select" id="month" name="month" required>
-                                        <?php
-                                        $months = [
-                                            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
-                                            5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
-                                            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
-                                        ];
-                                        foreach ($months as $num => $name) {
-                                            $selected = $num == $currentMonth ? 'selected' : '';
-                                            echo "<option value='$num' $selected>$name</option>";
-                                        }
-                                        ?>
+                                        <?php foreach ($months as $num => $name): ?>
+                                            <option value="<?= $num ?>" <?= $num == date('n') ? 'selected' : '' ?>>
+                                                <?= $name ?>
+                                            </option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                                 
                                 <div class="col-md-6 mb-3">
-                                    <label for="year" class="form-label">Ano *</label>
-                                    <input type="number" class="form-control" id="year" name="year" required
-                                           value="<?= $currentYear ?>" min="2020" max="2100">
+                                    <label for="year" class="form-label">
+                                        <i class="bi bi-calendar-event me-1"></i>Ano *
+                                    </label>
+                                    <select class="form-select" id="year" name="year" required>
+                                        <?php for ($y = date('Y'); $y <= date('Y') + 2; $y++): ?>
+                                            <option value="<?= $y ?>" <?= $y == date('Y') ? 'selected' : '' ?>>
+                                                <?= $y ?>
+                                            </option>
+                                        <?php endfor; ?>
+                                    </select>
                                 </div>
                             </div>
                             
+                            <!-- Description -->
                             <div class="mb-3">
-                                <label for="description" class="form-label">Descrição</label>
-                                <textarea class="form-control" id="description" name="description" rows="3"
-                                          placeholder="Descrição opcional do curso"></textarea>
+                                <label for="description" class="form-label">
+                                    <i class="bi bi-card-text me-1"></i>Descrição (Opcional)
+                                </label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="3" placeholder="Breve descrição do curso"></textarea>
                             </div>
-                        </div>
-                        
-                        <!-- Advanced Options -->
-                        <div class="form-section">
-                            <h3><i class="bi bi-gear me-2"></i>Opções Avançadas</h3>
                             
-                            <div class="mb-3">
-                                <label for="max_responses" class="form-label">Limite de Respostas</label>
-                                <input type="number" class="form-control" id="max_responses" name="max_responses"
-                                       min="1" placeholder="Deixe em branco para ilimitado">
-                                <small class="text-muted">Número máximo de respostas aceitas (opcional)</small>
+                            <!-- Max Responses -->
+                            <div class="mb-4">
+                                <label for="max_responses" class="form-label">
+                                    <i class="bi bi-people me-1"></i>Limite de Respostas (Opcional)
+                                </label>
+                                <input type="number" class="form-control" id="max_responses" 
+                                       name="max_responses" min="1" 
+                                       placeholder="Deixe em branco para ilimitado">
+                                <small class="text-muted">
+                                    Se definido, a pesquisa será encerrada ao atingir este número
+                                </small>
                             </div>
-                        </div>
-                        
-                        <!-- Submit Buttons -->
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-check-circle me-2"></i>Criar Curso e Gerar QR Code
-                            </button>
-                            <a href="index.php" class="btn btn-secondary btn-lg">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
-                            </a>
-                        </div>
-                    </form>
+                            
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Importante:</strong> Após criar o curso, um token único e QR Code 
+                                serão gerados automaticamente para compartilhar a pesquisa.
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-circle me-2"></i>Criar Curso
+                                </button>
+                                <a href="courses.php" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle me-2"></i>Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
-        // Preview token generation
-        document.getElementById('name').addEventListener('input', function() {
-            const name = this.value.toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9\s]/g, '')
-                .replace(/\s+/g, '-');
-            
-            const month = document.getElementById('month').value;
-            const year = document.getElementById('year').value;
-            
-            const months = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-            const monthAbbr = months[parseInt(month) - 1] || 'xxx';
-            
-            const token = name.substring(0, 50) + '-' + monthAbbr + '-' + year;
-            
-            // Show preview (you can add a preview element to the HTML)
-            console.log('Token preview:', token);
+        $(document).ready(function() {
+            // Initialize Select2 with AJAX for docente search
+            $('#docente_select').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Digite o nome ou CPF do docente...',
+                minimumInputLength: 2,
+                ajax: {
+                    url: 'api/search-docentes.php',
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page || 1
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results,
+                            pagination: {
+                                more: data.pagination.more
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                templateResult: formatDocente,
+                templateSelection: formatDocenteSelection
+            }).on('select2:select', function (e) {
+                const data = e.params.data;
+                // Store the docente name in hidden field
+                $('#docente_name').val(data.name);
+            });
         });
+
+        function formatDocente(docente) {
+            if (docente.loading) {
+                return docente.text;
+            }
+            
+            return $('<div class="select2-result-docente">' +
+                '<div class="select2-result-docente__title"><strong>' + docente.name + '</strong></div>' +
+                '<div class="select2-result-docente__cpf text-muted small">CPF: ' + docente.cpf_formatted + ' | ' + docente.source + '</div>' +
+                '</div>');
+        }
+
+        function formatDocenteSelection(docente) {
+            return docente.name || docente.text;
+        }
     </script>
 </body>
 </html>

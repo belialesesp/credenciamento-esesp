@@ -13,6 +13,9 @@ $isAdmin = isPesquisaAdmin();
 // Get filter parameters
 $filterCategory = $_GET['category'] ?? '';
 $filterStatus = $_GET['status'] ?? 'all';
+$filterDocenteCPF = $_GET['docente_cpf'] ?? '';
+$filterMonth = isset($_GET['month']) ? (int)$_GET['month'] : null;
+$filterYear = isset($_GET['year']) ? (int)$_GET['year'] : null;
 $search = $_GET['search'] ?? '';
 
 // Build WHERE clause
@@ -20,18 +23,33 @@ $where = ['1=1'];
 $params = [];
 
 if (!empty($filterCategory)) {
-    $where[] = 'category = ?';
+    $where[] = 'c.category = ?';
     $params[] = $filterCategory;
 }
 
 if ($filterStatus === 'active') {
-    $where[] = 'is_active = 1';
+    $where[] = 'c.is_active = 1';
 } elseif ($filterStatus === 'inactive') {
-    $where[] = 'is_active = 0';
+    $where[] = 'c.is_active = 0';
+}
+
+if (!empty($filterDocenteCPF)) {
+    $where[] = 'c.docente_cpf = ?';
+    $params[] = preg_replace('/[^0-9]/', '', $filterDocenteCPF);
+}
+
+if ($filterMonth) {
+    $where[] = 'c.month = ?';
+    $params[] = $filterMonth;
+}
+
+if ($filterYear) {
+    $where[] = 'c.year = ?';
+    $params[] = $filterYear;
 }
 
 if (!empty($search)) {
-    $where[] = '(name LIKE ? OR docente_name LIKE ? OR token LIKE ?)';
+    $where[] = '(c.name LIKE ? OR c.docente_name LIKE ? OR c.token LIKE ?)';
     $searchParam = '%' . $search . '%';
     $params[] = $searchParam;
     $params[] = $searchParam;
@@ -59,6 +77,10 @@ $months = [
     5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
     9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
 ];
+
+// Generate year options
+$currentYear = (int)date('Y');
+$yearOptions = range(2020, $currentYear + 1);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -178,6 +200,20 @@ $months = [
             margin-bottom: 1rem;
             opacity: 0.5;
         }
+        
+        .filter-section-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 38px;
+        }
     </style>
 </head>
 <body>
@@ -192,6 +228,9 @@ $months = [
                 <div>
                     <a href="create-course.php" class="btn btn-light btn-lg">
                         <i class="bi bi-plus-circle me-2"></i>Novo Curso
+                    </a>
+                    <a href="bulk-import.php" class="btn btn-outline-light">
+                        <i class="bi bi-file-earmark-arrow-up me-2"></i>Importar PDF
                     </a>
                     <a href="index.php" class="btn btn-outline-light">
                         <i class="bi bi-arrow-left me-2"></i>Voltar
@@ -208,7 +247,14 @@ $months = [
         <!-- Filters -->
         <div class="filter-card">
             <form method="GET" action="" class="row g-3">
-                <div class="col-md-3">
+                <!-- First Row: Basic Filters -->
+                <div class="col-12">
+                    <div class="filter-section-title">
+                        <i class="bi bi-funnel"></i> Filtros Básicos
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
                     <label class="form-label">Buscar</label>
                     <input type="text" name="search" class="form-control" 
                            placeholder="Nome, docente ou token" 
@@ -235,10 +281,61 @@ $months = [
                         <option value="inactive" <?= $filterStatus === 'inactive' ? 'selected' : '' ?>>Inativos</option>
                     </select>
                 </div>
+
+                <!-- Second Row: Advanced Filters -->
+                <div class="col-12 mt-3">
+                    <div class="filter-section-title">
+                        <i class="bi bi-sliders"></i> Filtros Avançados
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">
+                        <i class="bi bi-person-badge me-1"></i>Docente (CPF)
+                    </label>
+                    <select id="docente_cpf_filter" name="docente_cpf" class="form-select">
+                        <?php if (!empty($filterDocenteCPF)): ?>
+                            <option value="<?= sanitize($filterDocenteCPF) ?>" selected>
+                                <?= formatCPF($filterDocenteCPF) ?>
+                            </option>
+                        <?php else: ?>
+                            <option value="">Digite o nome ou CPF...</option>
+                        <?php endif; ?>
+                    </select>
+                    <small class="text-muted">Busca docentes do e-flow</small>
+                </div>
                 
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <label class="form-label">
+                        <i class="bi bi-calendar-month me-1"></i>Mês
+                    </label>
+                    <select name="month" class="form-select">
+                        <option value="">Todos</option>
+                        <?php foreach ($months as $num => $name): ?>
+                            <option value="<?= $num ?>" <?= $filterMonth === $num ? 'selected' : '' ?>>
+                                <?= $name ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">
+                        <i class="bi bi-calendar-event me-1"></i>Ano
+                    </label>
+                    <select name="year" class="form-select">
+                        <option value="">Todos</option>
+                        <?php foreach ($yearOptions as $yearOpt): ?>
+                            <option value="<?= $yearOpt ?>" <?= $filterYear === $yearOpt ? 'selected' : '' ?>>
+                                <?= $yearOpt ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="col-md-5">
                     <label class="form-label">&nbsp;</label>
-                    <div>
+                    <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-funnel me-2"></i>Filtrar
                         </button>
@@ -250,9 +347,28 @@ $months = [
             </form>
         </div>
         
+        <!-- Active Filters Display -->
+        <?php 
+        $activeFilters = [];
+        if (!empty($filterCategory)) $activeFilters[] = "Categoria: $filterCategory";
+        if ($filterStatus !== 'all') $activeFilters[] = "Status: " . ($filterStatus === 'active' ? 'Ativos' : 'Inativos');
+        if (!empty($filterDocenteCPF)) $activeFilters[] = "CPF: " . formatCPF($filterDocenteCPF);
+        if ($filterMonth) $activeFilters[] = "Mês: " . $months[$filterMonth];
+        if ($filterYear) $activeFilters[] = "Ano: $filterYear";
+        if (!empty($search)) $activeFilters[] = "Busca: $search";
+        
+        if (!empty($activeFilters)): ?>
+            <div class="alert alert-info d-flex align-items-center">
+                <i class="bi bi-info-circle me-2 fs-5"></i>
+                <div>
+                    <strong>Filtros ativos:</strong> <?= implode(' | ', $activeFilters) ?>
+                </div>
+            </div>
+        <?php endif; ?>
+        
         <!-- Courses List -->
-        <div class="mb-3">
-            <h5><?= count($courses) ?> curso(s) encontrado(s)</h5>
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><?= count($courses) ?> curso(s) encontrado(s)</h5>
         </div>
         
         <?php if (empty($courses)): ?>
@@ -272,6 +388,10 @@ $months = [
                             <div class="course-title"><?= sanitize($course['name']) ?></div>
                             <div class="course-meta">
                                 <i class="bi bi-person me-1"></i><?= sanitize($course['docente_name']) ?>
+                                <?php if (!empty($course['docente_cpf'])): ?>
+                                    <span class="mx-2">•</span>
+                                    <i class="bi bi-person-badge me-1"></i>CPF: <?= formatCPF($course['docente_cpf']) ?>
+                                <?php endif; ?>
                                 <span class="mx-2">•</span>
                                 <i class="bi bi-calendar me-1"></i><?= $months[$course['month']] ?>/<?= $course['year'] ?>
                                 <span class="mx-2">•</span>
@@ -346,6 +466,8 @@ $months = [
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         function copyLink(url) {
             navigator.clipboard.writeText(url).then(() => {
@@ -354,6 +476,63 @@ $months = [
                 prompt('Copie o link:', url);
             });
         }
+
+        // Initialize Select2 for docente CPF filter with AJAX
+        $(document).ready(function() {
+            $('#docente_cpf_filter').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Digite o nome ou CPF do docente...',
+                allowClear: true,
+                minimumInputLength: 2,
+                ajax: {
+                    url: 'api/search-docentes.php',
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page || 1
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results,
+                            pagination: {
+                                more: data.pagination.more
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                templateResult: formatDocente,
+                templateSelection: formatDocenteSelection
+            });
+        });
+
+        function formatDocente(docente) {
+            if (docente.loading) {
+                return docente.text;
+            }
+            
+            return $('<div class="select2-result-docente">' +
+                '<div class="select2-result-docente__title">' + docente.name + '</div>' +
+                '<div class="select2-result-docente__cpf text-muted small">CPF: ' + docente.cpf_formatted + '</div>' +
+                '</div>');
+        }
+
+        function formatDocenteSelection(docente) {
+            return docente.name || docente.text;
+        }
     </script>
 </body>
 </html>
+<?php
+// Helper function to format CPF
+function formatCPF($cpf) {
+    $cpf = preg_replace('/[^0-9]/', '', $cpf);
+    if (strlen($cpf) == 11) {
+        return substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
+    }
+    return $cpf;
+}
+?>
