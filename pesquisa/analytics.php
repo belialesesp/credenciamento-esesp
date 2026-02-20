@@ -42,9 +42,9 @@ if ($courseId) {
     $params[] = $courseId;
 }
 
-// Low scores filter - show only courses with score < 70%
+// Low scores filter - show only courses with score < 80%
 if ($filterLowScores) {
-    $where[] = '(ac.overall_score < 70 OR ac.pedagogical_score < 70 OR ac.didactic_score < 70 OR ac.infrastructure_score < 70)';
+    $where[] = '(ac.overall_score < 80 OR ac.pedagogical_score < 80 OR ac.didactic_score < 80 OR ac.infrastructure_score < 80)';
 }
 
 $whereClause = implode(' AND ', $where);
@@ -145,7 +145,7 @@ if (isset($_POST['generate_diagram']) && isset($_POST['course_id'])) {
         
         .stat-card .number {
             font-size: 2rem;
-            font-weight: 700;
+            font-weight: 800;
             color: var(--primary);
         }
         
@@ -188,7 +188,7 @@ if (isset($_POST['generate_diagram']) && isset($_POST['course_id'])) {
         
         .score-badge.excellence { background: #d1fae5; color: #059669; }
         .score-badge.very-good { background: #dbeafe; color: #2563eb; }
-        .score-badge.adequate { background: #fef3c7; color: #d97706; }
+        .score-badge.adequate { background: #fef3c7; color: #d97806; }
         .score-badge.intervention { background: #fee2e2; color: #dc2626; }
         
         .category-score {
@@ -225,7 +225,7 @@ if (isset($_POST['generate_diagram']) && isset($_POST['course_id'])) {
         <?php if ($filterLowScores): ?>
         <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <strong>Filtro Ativo:</strong> Exibindo apenas cursos com pontuação abaixo de 70% (Necessita Intervenção)
+            <strong>Filtro Ativo:</strong> Exibindo apenas cursos com pontuação abaixo de 80% (Necessita Intervenção)
             <a href="analytics.php?year=<?= $filterYear ?>" class="btn btn-sm btn-light ms-3">
                 <i class="bi bi-x-circle me-1"></i>Remover Filtro
             </a>
@@ -241,7 +241,7 @@ if (isset($_POST['generate_diagram']) && isset($_POST['course_id'])) {
                 <div class="d-flex gap-2 flex-wrap">
                     <a href="?low_scores=true&year=<?= $filterYear ?>" 
                        class="btn btn-sm <?= $filterLowScores ? 'btn-danger' : 'btn-outline-danger' ?>">
-                        <i class="bi bi-exclamation-triangle me-1"></i>Necessita Intervenção (<70%)
+                        <i class="bi bi-exclamation-triangle me-1"></i>Necessita Intervenção (<80%)
                     </a>
                     <a href="?year=<?= $filterYear ?>" 
                        class="btn btn-sm <?= !$filterLowScores && empty($filterCategory) && !$filterMonth ? 'btn-primary' : 'btn-outline-primary' ?>">
@@ -327,12 +327,12 @@ if (isset($_POST['generate_diagram']) && isset($_POST['course_id'])) {
             
             <div class="stat-card">
                 <div class="number"><?= number_format($stats['avg_pedagogical'] ?? 0, 1) ?>%</div>
-                <div class="label">Média Pedagógica (40%)</div>
+                <div class="label">Média Pedagógica (35%)</div>
             </div>
             
             <div class="stat-card">
                 <div class="number"><?= number_format($stats['avg_didactic'] ?? 0, 1) ?>%</div>
-                <div class="label">Média Didática (35%)</div>
+                <div class="label">Média Didática (40%)</div>
             </div>
             
             <div class="stat-card">

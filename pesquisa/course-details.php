@@ -308,12 +308,12 @@ $months = [
                             </div>
                             
                             <div class="stat-box">
-                                <div class="label">Pedagógico (40%)</div>
+                                <div class="label">Pedagógico (35%)</div>
                                 <div class="value"><?= number_format($course['pedagogical_score'], 1) ?>%</div>
                             </div>
                             
                             <div class="stat-box">
-                                <div class="label">Didático (35%)</div>
+                                <div class="label">Didático (40%)</div>
                                 <div class="value"><?= number_format($course['didactic_score'], 1) ?>%</div>
                             </div>
                             
@@ -591,7 +591,7 @@ $months = [
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Pedagógico (40%)', 'Didático (35%)', 'Infraestrutura (25%)'],
+                labels: ['Pedagógico (35%)', 'Didático (40%)', 'Infraestrutura (25%)'],
                 datasets: [{
                     label: 'Pontuação (%)',
                     data: [

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ESESP Diagram Generator - Bar Chart Style with Goal Line
-Generates performance charts with 70% goal line and notifications
+Generates performance charts with 80% goal line and notifications
 """
 
 import sys
@@ -15,11 +15,11 @@ def generate_diagram(data_file, output_file):
     """
     Generate bar chart diagram with:
     - 3 bars (Pedagógico, Didático, Infraestrutura)
-    - Goal line at 70%
+    - Goal line at 80%
     - Percentages on bars
     - Weights shown (40%, 35%, 25%)
     - Overall score
-    - Alert if below 70%
+    - Alert if below 80%
     - Highlight lowest score
     """
     
@@ -48,7 +48,7 @@ def generate_diagram(data_file, output_file):
     warning_color = '#f59e0b'
     
     # Data for bars
-    categories = ['Pedagógico\n(40%)', 'Didático\n(35%)', 'Infraestrutura\n(25%)']
+    categories = ['Pedagógico\n(35%)', 'Didático\n(40%)', 'Infraestrutura\n(25%)']
     scores = [pedagogical, didactic, infrastructure]
     weights = [40, 35, 25]
     
@@ -61,12 +61,12 @@ def generate_diagram(data_file, output_file):
     bar_colors = []
     for i, score in enumerate(scores):
         if i == lowest_idx:
-            if score < 70:
+            if score < 80:
                 bar_colors.append(goal_line_color)  # Red if below goal
             else:
                 bar_colors.append(warning_color)  # Orange if lowest but above goal
         else:
-            if score < 70:
+            if score < 80:
                 bar_colors.append(warning_color)  # Orange if below goal
             else:
                 bar_colors.append(esesp_cyan)  # Cyan if good
@@ -95,12 +95,12 @@ def generate_diagram(data_file, output_file):
                 ha='center', va=va, fontsize=16, fontweight='bold',
                 color='white' if height >= 15 else esesp_blue)
     
-    # Goal line at 70%
-    ax.axhline(y=70, color=goal_line_color, linestyle='--', linewidth=2.5, 
-               label='Meta: 70%', zorder=10)
+    # Goal line at 80%
+    ax.axhline(y=80, color=goal_line_color, linestyle='--', linewidth=2.5, 
+               label='Meta: 80%', zorder=10)
     
-    # Add "META 70%" text near the line
-    ax.text(len(categories) - 0.3, 71, 'META 70%', 
+    # Add "META 80%" text near the line
+    ax.text(len(categories) - 0.3, 71, 'META 80%', 
             fontsize=11, fontweight='bold', color=goal_line_color,
             bbox=dict(boxstyle='round,pad=0.5', facecolor='white', 
                      edgecolor=goal_line_color, linewidth=2))
@@ -156,15 +156,15 @@ def generate_diagram(data_file, output_file):
             bbox=dict(boxstyle='round,pad=0.5', facecolor='#f0f9ff', 
                      edgecolor=esesp_blue, linewidth=1))
     
-    # Alert box if below 70%
+    # Alert box if below 80%
     alert_messages = []
     
     # Check each aspect
-    if pedagogical < 70:
+    if pedagogical < 80:
         alert_messages.append(f'⚠ Pedagógico abaixo da meta: {pedagogical:.1f}%')
-    if didactic < 70:
+    if didactic < 80:
         alert_messages.append(f'⚠ Didático abaixo da meta: {didactic:.1f}%')
-    if infrastructure < 70:
+    if infrastructure < 80:
         alert_messages.append(f'⚠ Infraestrutura abaixo da meta: {infrastructure:.1f}%')
     
     # Add lowest score indicator

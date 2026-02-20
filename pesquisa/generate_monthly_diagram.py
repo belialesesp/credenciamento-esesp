@@ -91,12 +91,12 @@ def generate_monthly_diagram(data_file, output_file):
                         ha='center', va='center', fontsize=9,
                         color='white', fontweight='bold')
     
-    # Goal line at 70%
-    ax.axhline(y=70, color=goal_line_color, linestyle='--', linewidth=2.5, 
-               label='Meta: 70%', zorder=10, alpha=0.7)
+    # Goal line at 80%
+    ax.axhline(y=80, color=goal_line_color, linestyle='--', linewidth=2.5, 
+               label='Meta: 80%', zorder=10, alpha=0.7)
     
-    # Add "META 70%" label
-    ax.text(len(names) - 0.3, 71, 'META 70%', 
+    # Add "META 80%" label
+    ax.text(len(names) - 0.3, 71, 'META 80%', 
             fontsize=10, fontweight='bold', color=goal_line_color,
             bbox=dict(boxstyle='round,pad=0.5', facecolor='white', 
                      edgecolor=goal_line_color, linewidth=2))
@@ -133,13 +133,13 @@ def generate_monthly_diagram(data_file, output_file):
     # Statistics box
     total_responses = sum(counts)
     avg_score = np.mean(scores) if scores else 0
-    below_goal = sum(1 for s in scores if s < 70)
+    below_goal = sum(1 for s in scores if s < 80)
     
     stats_text = f'Total: {len(items)} itens\n'
     stats_text += f'Respostas: {total_responses}\n'
     stats_text += f'Média: {avg_score:.1f}%'
     if below_goal > 0:
-        stats_text += f'\n⚠ {below_goal} abaixo de 70%'
+        stats_text += f'\n⚠ {below_goal} abaixo de 80%'
     
     ax.text(0.98, 0.97, stats_text, transform=ax.transAxes,
             fontsize=10, ha='right', va='top',

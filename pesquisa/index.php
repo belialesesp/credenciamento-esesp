@@ -166,8 +166,21 @@ if (!isset($_SESSION[$lowScoreKey])) {
             padding: 1.5rem 0;
             position: fixed;
             width: 250px;
+            height: 100vh;
+            overflow-y: auto;
         }
-        
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
         .sidebar-brand {
             font-size: 1.1rem;
             font-weight: 600;
@@ -443,13 +456,13 @@ if (!isset($_SESSION[$lowScoreKey])) {
             <div class="stat-card">
                 <div class="icon cyan"><i class="bi bi-book-half"></i></div>
                 <div class="number"><?= number_format($stats['avg_pedagogical'], 1) ?>%</div>
-                <div class="label">Média Pedagógico (40%)</div>
+                <div class="label">Média Pedagógico (35%)</div>
             </div>
             
             <div class="stat-card">
                 <div class="icon blue"><i class="bi bi-person-video3"></i></div>
                 <div class="number"><?= number_format($stats['avg_didactic'], 1) ?>%</div>
-                <div class="label">Média Didático (35%)</div>
+                <div class="label">Média Didático (40%)</div>
             </div>
             
             <div class="stat-card">
