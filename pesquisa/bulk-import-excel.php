@@ -427,15 +427,28 @@ $months = [
                                     <div class="col-md-12">
                                         <label class="form-label small">Docente Responsável</label>
                                         <select class="form-select docente-select" 
-                                                name="docente_cpf[]" 
+                                                name="docente_name[]" 
                                                 data-index="<?= $index ?>"
                                                 required>
-                                            <option value="">Digite o nome ou CPF...</option>
+                                            <option value="">Digite ou selecione...</option>
+                                            <?php 
+                                            // Get existing docentes for autocomplete
+                                            $existingDocentes = $db->fetchAll("
+                                                SELECT DISTINCT docente_name 
+                                                FROM courses 
+                                                WHERE docente_name IS NOT NULL 
+                                                ORDER BY docente_name
+                                            ");
+                                            foreach ($existingDocentes as $doc): 
+                                            ?>
+                                                <option value="<?= htmlspecialchars($doc['docente_name']) ?>">
+                                                    <?= htmlspecialchars($doc['docente_name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
                                         </select>
-                                        <input type="hidden" name="docente_name[]" id="docente_name_<?= $index ?>">
                                         <small class="text-muted">
                                             <i class="bi bi-info-circle me-1"></i>
-                                            Não encontrou? Digite o nome completo e pressione Enter
+                                            Digite e pressione Enter para adicionar novo
                                         </small>
                                     </div>
                                 </div>
@@ -508,86 +521,42 @@ $months = [
         }
 
         $(document).ready(function() {
-            // Initialize all docente selects
+            // Initialize all docente selects with simple autocomplete
             $('.docente-select').each(function() {
-                const index = $(this).data('index');
                 $(this).select2({
                     theme: 'bootstrap-5',
-                    placeholder: 'Digite o nome ou CPF do docente...',
-                    minimumInputLength: 2,
-                    tags: true, // Allow manual entry
+                    tags: true,
+                    placeholder: 'Selecione ou digite um nome...',
+                    allowClear: true,
                     createTag: function (params) {
                         var term = $.trim(params.term);
                         
-                        // Only allow if it looks like a name (at least 5 chars)
-                        if (term.length < 5) {
+                        // Allow any text with at least 3 characters
+                        if (term.length < 3) {
                             return null;
                         }
                         
                         return {
-                            id: '', // Empty CPF for manual entries
+                            id: term,
                             text: term,
-                            name: term,
-                            cpf: '',
-                            cpf_formatted: 'Manual',
-                            source: 'manual',
-                            isNew: true
+                            newTag: true
                         };
                     },
-                    ajax: {
-                        url: 'api/search-docentes.php',
-                        dataType: 'json',
-                        delay: 300,
-                        data: function (params) {
-                            return {
-                                q: params.term,
-                                page: params.page || 1
-                            };
-                        },
-                        processResults: function (data) {
-                            return {
-                                results: data.results,
-                                pagination: {
-                                    more: data.pagination.more
-                                }
-                            };
-                        },
-                        cache: true
-                    },
-                    templateResult: formatDocente,
-                    templateSelection: formatDocenteSelection
-                }).on('select2:select', function(e) {
-                    const data = e.params.data;
-                    $('#docente_name_' + index).val(data.name || data.text);
+                    templateResult: function(data) {
+                        if (data.loading) {
+                            return data.text;
+                        }
+                        
+                        // Show indicator for new entries
+                        if (data.newTag) {
+                            return $('<div><strong>' + data.text + '</strong> <span class="badge bg-success ms-2">Novo</span></div>');
+                        }
+                        
+                        return data.text;
+                    }
                 });
             });
         });
-
-        function formatDocente(docente) {
-            if (docente.loading) {
-                return docente.text;
-            }
-            
-            // Format for manual entry
-            if (docente.isNew) {
-                return $('<div>' +
-                    '<div><strong>' + docente.text + '</strong></div>' +
-                    '<div class="text-warning small">' +
-                    '<i class="bi bi-pencil-square me-1"></i>Entrada Manual</div>' +
-                    '</div>');
-            }
-            
-            // Format for e-flow results
-            return $('<div>' +
-                '<div><strong>' + docente.name + '</strong></div>' +
-                '<div class="text-muted small">' +
-                '<i class="bi bi-check-circle me-1"></i>CPF: ' + docente.cpf_formatted + ' | ' + docente.source + '</div>' +
-                '</div>');
-        }
-
-        function formatDocenteSelection(docente) {
-            return docente.name || docente.text;
-        }
     </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 <?php
 /**
- * Create New Course - Simple Version
- * Manual text input for docente name (no e-flow integration)
+ * Create New Course
+ * Simple autocomplete from existing docentes + manual entry
  */
 
 require_once __DIR__ . '/includes/init.php';
@@ -9,6 +9,14 @@ require_once __DIR__ . '/includes/init.php';
 $db = PesquisaDatabase::getInstance();
 $userName = getCurrentUserName();
 $userCPF = getCurrentUserCPF();
+
+// Get list of existing docentes for autocomplete
+$existingDocentes = $db->fetchAll("
+    SELECT DISTINCT docente_name 
+    FROM courses 
+    WHERE docente_name IS NOT NULL 
+    ORDER BY docente_name
+");
 
 // Process form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -117,6 +125,8 @@ $months = [
     <title>Criar Curso - <?= PESQUISA_SITE_NAME ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <style>
         :root {
             --primary: #1e3a5f;
@@ -144,6 +154,10 @@ $months = [
             font-weight: 500;
             color: var(--primary);
         }
+
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 38px;
+        }
     </style>
 </head>
 <body>
@@ -163,7 +177,7 @@ $months = [
             <div class="col-lg-8 mx-auto">
                 <div class="card">
                     <div class="card-body p-4">
-                        <form method="POST" action="">
+                        <form method="POST" action="" id="courseForm">
                             <!-- Course Name -->
                             <div class="mb-3">
                                 <label for="name" class="form-label">
@@ -174,14 +188,23 @@ $months = [
                                 <small class="text-muted">Nome completo do curso ou evento</small>
                             </div>
                             
-                            <!-- Docente Name - Simple Text Input -->
+                            <!-- Docente Name - Autocomplete with Manual Entry -->
                             <div class="mb-3">
-                                <label for="docente_name" class="form-label">
+                                <label for="docente_select" class="form-label">
                                     <i class="bi bi-person-circle me-1"></i>Nome do Docente *
                                 </label>
-                                <input type="text" class="form-control" id="docente_name" name="docente_name" 
-                                       placeholder="Ex: João Silva Santos" required>
-                                <small class="text-muted">Digite o nome completo do docente responsável</small>
+                                <select class="form-select" id="docente_select" name="docente_name" required>
+                                    <option value="">Selecione ou digite um nome...</option>
+                                    <?php foreach ($existingDocentes as $docente): ?>
+                                        <option value="<?= htmlspecialchars($docente['docente_name']) ?>">
+                                            <?= htmlspecialchars($docente['docente_name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-lightbulb text-success me-1"></i>
+                                    <strong>Dica:</strong> Digite o nome e pressione <kbd>Enter</kbd> para adicionar um novo docente.
+                                </small>
                             </div>
                             
                             <!-- Category -->
@@ -272,5 +295,54 @@ $months = [
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2 with tags for manual entry
+            $('#docente_select').select2({
+                theme: 'bootstrap-5',
+                tags: true,
+                placeholder: 'Selecione ou digite um nome...',
+                allowClear: true,
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    
+                    // Allow any text with at least 3 characters
+                    if (term.length < 3) {
+                        return null;
+                    }
+                    
+                    return {
+                        id: term,
+                        text: term,
+                        newTag: true
+                    };
+                },
+                templateResult: function(data) {
+                    if (data.loading) {
+                        return data.text;
+                    }
+                    
+                    // Show indicator for new entries
+                    if (data.newTag) {
+                        return $('<div><strong>' + data.text + '</strong> <span class="badge bg-success ms-2">Novo</span></div>');
+                    }
+                    
+                    return data.text;
+                }
+            });
+
+            // Form validation
+            $('#courseForm').on('submit', function(e) {
+                const docenteName = $('#docente_select').val();
+                if (!docenteName || docenteName.trim().length < 3) {
+                    e.preventDefault();
+                    alert('Por favor, selecione ou digite o nome do docente (mínimo 3 caracteres)');
+                    return false;
+                }
+            });
+        });
+    </script>
 </body>
 </html>
