@@ -1,14 +1,63 @@
 <?php
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+
+// ========================================
+// TEMPORARY: Mock GEDTH user for testing
+// REMOVE THIS BLOCK when authentication is implemented
+// ========================================
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['user_id'] = 9999;
+    $_SESSION['user_name'] = 'Test GEDTH User';
+    $_SESSION['user_email'] = 'gedth@test.com';
+    $_SESSION['user_roles'] = ['gedth']; // This is the key - gedth can send invitations
+    $_SESSION['is_admin'] = false;
+    $_SESSION['user_type'] = 'admin';
+    $_SESSION['first_login'] = false;
+}
+// ========================================
+
+// Define navbar variable for header
+$navbar = true;
+$user_name = $_SESSION['user_name'] ?? 'User';
+
+// Helper functions needed by header
+if (!function_exists('isAdministrativeRole')) {
+    function isAdministrativeRole() {
+        return isset($_SESSION['user_roles']) && 
+               (in_array('admin', $_SESSION['user_roles']) || 
+                in_array('gedth', $_SESSION['user_roles']) || 
+                in_array('gese', $_SESSION['user_roles']) || 
+                in_array('pedagogico', $_SESSION['user_roles']));
+    }
+}
+
+if (!function_exists('translateUserType')) {
+    function translateUserType($type) {
+        $types = [
+            'admin' => 'Administrador',
+            'teacher' => 'Docente',
+            'postg_teacher' => 'Docente Pós',
+            'technician' => 'Técnico',
+            'interpreter' => 'Intérprete'
+        ];
+        return $types[$type] ?? $type;
+    }
+}
+
+if (!function_exists('isFirstLogin')) {
+    function isFirstLogin() {
+        return isset($_SESSION['first_login']) && $_SESSION['first_login'];
+    }
+}
+
 require_once "../pdf/assets/title_case.php";
 require_once '../components/header.php';
 require_once '../backend/api/get_registers.php';
 require_once '../backend/api/get_all_courses.php';
 require_once '../backend/classes/database.class.php';
-
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-  session_start();
-}
 
 $isAdmin = false;
 if (isset($_SESSION['user_roles']) && is_array($_SESSION['user_roles'])) {

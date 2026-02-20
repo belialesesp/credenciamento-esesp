@@ -24,6 +24,8 @@ $nomeUsuario = $user['apelido'] ?? $user['nome'] ?? 'Credenciado(a)';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href='https://fonts.googleapis.com/css?family=Rubik' rel='stylesheet'>
 <link rel="stylesheet" href="assets/styles/inicio.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 <title>Credenciamento ESESP</title>
 </head>
 <body>
@@ -33,12 +35,33 @@ $nomeUsuario = $user['apelido'] ?? $user['nome'] ?? 'Credenciado(a)';
     <div class="menu-topo-topo">
         <img src="assets/imagens/Hamburger menu.png" id="btn-menu" alt="Menu">
     </div>
-    <div class="usuario-area">
-        <a href="#" class="topo-notificacoes">
-            <img src="assets/imagens/Olá Credenciado(a).png" class="icone-branco" alt="Usuário">
-        </a>
-        <span>Olá <?php echo htmlspecialchars($nomeUsuario); ?></span>
+    <div class="header-caixa">
+        <div class="topo-esquerda">
+            <img class="logo-esesp" src="../assets/Imagens/Logo Esesp Colorida.png" alt="Logo ESESP">
+        </div>
+        <div class="topo-centro">
+            Escola de Serviço Público do Espírito Santo
+        </div>
+        <div class="topo-direita">
+            <a href="#" class="link-contatos">Contatos</a>
+
+            <span class="separador"></span>
+
+            <div class="usuario-area">
+                <a href="#" class="topo-notificacoes">
+                    <img src="assets/imagens/Olá Credenciado(a).png" class="icone-usuario" alt="Usuário">
+                </a>
+                <span>Olá <?php echo htmlspecialchars($nomeUsuario); ?></span>
+                <img class="seta-usuario" src="assets/imagens/seta-baixo.svg" alt="Abrir Menu">
+
+                <div class="dropdown-usuario">
+                    <a href="#">Acompanhar processos</a>
+                    <a href="#">Sair</a>
+                </div>
+            </div>
+        </div>
     </div>
+    <div class="faixa-laranja"></div>
 </header>
 
 <!-- Banner -->
