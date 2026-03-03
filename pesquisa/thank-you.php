@@ -17,11 +17,11 @@ if ($score !== null) {
         $classification = 'Excelência';
         $emoji = '🌟';
         $message = 'Sua avaliação indica excelência!';
-    } elseif ($score >= 75) {
+    } elseif ($score >= 80) {
         $classification = 'Muito Bom';
         $emoji = '😊';
         $message = 'Sua avaliação foi muito positiva!';
-    } elseif ($score >= 60) {
+    } elseif ($score >= 70) {
         $classification = 'Adequado';
         $emoji = '👍';
         $message = 'Sua avaliação foi registrada!';

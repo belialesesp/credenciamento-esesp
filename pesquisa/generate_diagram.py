@@ -17,7 +17,7 @@ def generate_diagram(data_file, output_file):
     - 3 bars (Pedagógico, Didático, Infraestrutura)
     - Goal line at 80%
     - Percentages on bars
-    - Weights shown (40%, 35%, 25%)
+    - Weights shown (35%, 40%, 25%)
     - Overall score
     - Alert if below 80%
     - Highlight lowest score
@@ -47,17 +47,17 @@ def generate_diagram(data_file, output_file):
     goal_line_color = '#dc2626'
     warning_color = '#f59e0b'
     
-    # Data for bars
+    # Data for bars — Pedagógico 35%, Didático 40%, Infraestrutura 25%
     categories = ['Pedagógico\n(35%)', 'Didático\n(40%)', 'Infraestrutura\n(25%)']
     scores = [pedagogical, didactic, infrastructure]
-    weights = [40, 35, 25]
+    weights = [35, 40, 25]  # FIX: corrected from [40, 35, 25]
     
     # Determine lowest score
     lowest_idx = scores.index(min(scores))
     lowest_aspect = ['Pedagógico', 'Didático', 'Infraestrutura'][lowest_idx]
     lowest_score = min(scores)
     
-    # Bar colors - highlight lowest in warning color
+    # Bar colors - highlight lowest
     bar_colors = []
     for i, score in enumerate(scores):
         if i == lowest_idx:
@@ -82,7 +82,6 @@ def generate_diagram(data_file, output_file):
     # Add percentage labels on bars
     for i, (bar, score) in enumerate(zip(bars, scores)):
         height = bar.get_height()
-        # Position text
         if height < 15:
             y_pos = height + 3
             va = 'bottom'
@@ -117,30 +116,26 @@ def generate_diagram(data_file, output_file):
     ax.grid(axis='y', alpha=0.3, linestyle='-', linewidth=0.5)
     ax.set_axisbelow(True)
     
-    # Title area with course info
-    title_text = f'{course_name}'
-    ax.text(0.5, 1.12, title_text, transform=ax.transAxes,
+    # Title
+    ax.text(0.5, 1.12, course_name, transform=ax.transAxes,
             fontsize=16, fontweight='bold', ha='center', color=esesp_blue)
-    
-    # Docente name (can be clicked in web interface)
     ax.text(0.5, 1.06, f'Docente: {docente_name}', transform=ax.transAxes,
             fontsize=12, ha='center', color=esesp_blue, style='italic')
     
-    # Overall score box
+    # Overall score box — FIX: thresholds updated (média now 80%)
     if overall_score >= 90:
         overall_color = esesp_green
         overall_text = 'EXCELÊNCIA'
-    elif overall_score >= 75:
+    elif overall_score >= 80:
         overall_color = esesp_cyan
         overall_text = 'MUITO BOM'
-    elif overall_score >= 60:
+    elif overall_score >= 70:
         overall_color = warning_color
         overall_text = 'ADEQUADO'
     else:
         overall_color = goal_line_color
         overall_text = 'NECESSITA INTERVENÇÃO'
     
-    # Overall score display (top right)
     bbox_props = dict(boxstyle='round,pad=0.8', facecolor=overall_color, 
                      edgecolor=esesp_blue, linewidth=2)
     ax.text(0.98, 0.97, f'Geral: {overall_score:.1f}%\n{overall_text}', 
@@ -148,7 +143,6 @@ def generate_diagram(data_file, output_file):
             fontsize=12, fontweight='bold', ha='right', va='top',
             color='white', bbox=bbox_props)
     
-    # Response count (top left)
     ax.text(0.02, 0.97, f'Respostas: {response_count}', 
             transform=ax.transAxes,
             fontsize=11, ha='left', va='top',
@@ -156,21 +150,16 @@ def generate_diagram(data_file, output_file):
             bbox=dict(boxstyle='round,pad=0.5', facecolor='#f0f9ff', 
                      edgecolor=esesp_blue, linewidth=1))
     
-    # Alert box if below 80%
+    # Alert messages
     alert_messages = []
-    
-    # Check each aspect
     if pedagogical < 80:
         alert_messages.append(f'⚠ Pedagógico abaixo da meta: {pedagogical:.1f}%')
     if didactic < 80:
         alert_messages.append(f'⚠ Didático abaixo da meta: {didactic:.1f}%')
     if infrastructure < 80:
         alert_messages.append(f'⚠ Infraestrutura abaixo da meta: {infrastructure:.1f}%')
-    
-    # Add lowest score indicator
     alert_messages.append(f'📊 Aspecto com menor nota: {lowest_aspect} ({lowest_score:.1f}%)')
     
-    # Display alerts at bottom
     if alert_messages:
         alert_y = -0.15
         for msg in alert_messages:
@@ -188,18 +177,16 @@ def generate_diagram(data_file, output_file):
                              edgecolor=edge_color, linewidth=2))
             alert_y -= 0.08
     
-    # Footer with calculation info
-    footer_text = f'Cálculo ponderado: Pedagógico (40%) + Didático (35%) + Infraestrutura (25%) = {overall_score:.1f}%'
+    # Footer — FIX: corrected from Pedagógico (40%) + Didático (35%)
+    footer_text = f'Cálculo ponderado: Pedagógico (35%) + Didático (40%) + Infraestrutura (25%) = {overall_score:.1f}%'
     ax.text(0.5, -0.25 if alert_messages else -0.12, footer_text, 
             transform=ax.transAxes,
             fontsize=9, ha='center', va='top', color='#6b7280', style='italic')
     
-    # ESESP branding
     ax.text(0.02, -0.25 if alert_messages else -0.12, 'ESESP - Observatório', 
             transform=ax.transAxes,
             fontsize=9, ha='left', va='top', color=esesp_blue, fontweight='bold')
     
-    # Remove top and right spines
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_color(esesp_blue)
@@ -207,11 +194,9 @@ def generate_diagram(data_file, output_file):
     ax.spines['left'].set_linewidth(1.5)
     ax.spines['bottom'].set_linewidth(1.5)
     
-    # Adjust layout
     plt.tight_layout()
     plt.subplots_adjust(top=0.90, bottom=0.20)
     
-    # Save
     plt.savefig(output_file, dpi=300, bbox_inches='tight', 
                 facecolor='white', edgecolor='none')
     plt.close()

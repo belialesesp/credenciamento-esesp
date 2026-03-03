@@ -63,9 +63,9 @@ def generate_monthly_diagram(data_file, output_file):
     for score in scores:
         if score >= 90:
             colors.append('#059669')  # Green - Excellence
-        elif score >= 75:
+        elif score >= 80:
             colors.append('#0891b2')  # Cyan - Very Good
-        elif score >= 60:
+        elif score >= 70:
             colors.append('#f59e0b')  # Orange - Adequate
         else:
             colors.append('#dc2626')  # Red - Needs intervention
@@ -150,9 +150,9 @@ def generate_monthly_diagram(data_file, output_file):
     # Legend for colors
     legend_elements = [
         patches.Patch(facecolor='#059669', label='Excelência (90-100%)'),
-        patches.Patch(facecolor='#0891b2', label='Muito Bom (75-89%)'),
-        patches.Patch(facecolor='#f59e0b', label='Adequado (60-74%)'),
-        patches.Patch(facecolor='#dc2626', label='Necessita Intervenção (<60%)')
+        patches.Patch(facecolor='#0891b2', label='Muito Bom (80-89%)'),
+patches.Patch(facecolor='#f59e0b', label='Adequado (70-79%)'),
+patches.Patch(facecolor='#dc2626', label='Necessita Intervenção (<70%)')
     ]
     ax.legend(handles=legend_elements, loc='upper left', fontsize=9, framealpha=0.9)
     

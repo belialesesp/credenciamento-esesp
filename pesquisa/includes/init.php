@@ -345,15 +345,15 @@ function displayFlashMessage() {
  */
 function formatScore($score) {
     if ($score >= 90) return '<span class="badge bg-success">Excelência: ' . number_format($score, 1) . '%</span>';
-    if ($score >= 75) return '<span class="badge bg-primary">Muito Bom: ' . number_format($score, 1) . '%</span>';
-    if ($score >= 60) return '<span class="badge bg-warning">Adequado: ' . number_format($score, 1) . '%</span>';
+    if ($score >= 80) return '<span class="badge bg-primary">Muito Bom: ' . number_format($score, 1) . '%</span>';
+    if ($score >= 70) return '<span class="badge bg-warning">Adequado: ' . number_format($score, 1) . '%</span>';
     return '<span class="badge bg-danger">Intervenção: ' . number_format($score, 1) . '%</span>';
 }
 
 function getClassification($score) {
     if ($score >= 90) return 'Excelência institucional';
-    if ($score >= 75) return 'Muito bom';
-    if ($score >= 60) return 'Adequado';
+    if ($score >= 80) return 'Muito bom';
+    if ($score >= 70) return 'Adequado';
     return 'Necessita intervenção';
 }
 
