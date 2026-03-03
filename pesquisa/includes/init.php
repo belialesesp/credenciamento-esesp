@@ -406,7 +406,8 @@ error_log("Pesquisa init.php: Initialization complete");
 /**
  * Generate yearly progress diagram
  */
-function generateYearlyDiagram($category = 'all', $year = 2024) {
+function generateYearlyDiagram($category = 'all', $year = null) {
+    if ($year === null) $year = (int)date('Y');
     $db = PesquisaDatabase::getInstance();
     $categoryWhere = '';
     $categoryParams = [];
@@ -488,7 +489,8 @@ function generateYearlyDiagram($category = 'all', $year = 2024) {
  * Shows breakdown for a specific month
  */
 
-function generateMonthlyDiagram($category = 'all', $year = 2024, $month = 1) {
+function generateMonthlyDiagram($category = 'all', $year = null, $month = 1) {
+    if ($year === null) $year = (int)date('Y');
     $db = PesquisaDatabase::getInstance();
     
     // Month names
@@ -621,7 +623,8 @@ function generateMonthlyDiagram($category = 'all', $year = 2024, $month = 1) {
 /**
  * Check for courses with low scores and return alert info
  */
-function checkLowScoreCourses($category = 'all', $year = 2024) {
+function checkLowScoreCourses($category = 'all', $year = null) {
+    if ($year === null) $year = (int)date('Y');
     $db = PesquisaDatabase::getInstance();
     
     $categoryWhere = '';

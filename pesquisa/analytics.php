@@ -14,7 +14,7 @@ $isAdmin = isPesquisaAdmin();
 // Get filter parameters
 $filterCategory = $_GET['category'] ?? '';
 $filterMonth = isset($_GET['month']) ? (int)$_GET['month'] : null;
-$filterYear = isset($_GET['year']) ? (int)$_GET['year'] : 2024;
+$filterYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $courseId = isset($_GET['course_id']) ? (int)$_GET['course_id'] : null;
 $filterLowScores = isset($_GET['low_scores']) && $_GET['low_scores'] === 'true';
 
@@ -286,7 +286,7 @@ if (isset($_POST['generate_diagram']) && isset($_POST['course_id'])) {
                     <label class="form-label">Ano</label>
                     <select name="year" class="form-select">
                         <?php
-                        for ($y = date('Y'); $y >= 2020; $y--) {
+                        for ($y = date('Y'); $y >= 2026; $y--) {
                             $selected = $filterYear === $y ? 'selected' : '';
                             echo "<option value='$y' $selected>$y</option>";
                         }

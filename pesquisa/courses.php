@@ -76,7 +76,7 @@ $months = [
 
 // Generate year options
 $currentYear = (int)date('Y');
-$yearOptions = range(2020, $currentYear + 1);
+$yearOptions = range(2026, $currentYear + 1);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">

@@ -12,6 +12,7 @@ $isAdmin = isPesquisaAdmin();
 
 // Get selected category filter
 $selectedCategory = $_GET['category'] ?? 'all';
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 
 // Statistics per category
 $categories = [
@@ -125,17 +126,19 @@ try {
 }
 
 // Generate yearly diagram
-$yearlyDiagram = generateYearlyDiagram($selectedCategory, 2024);
+$yearlyDiagram = generateYearlyDiagram($selectedCategory, $selectedYear);
 
 // Check for courses with low scores (only once per session per category)
-$lowScoreKey = 'low_score_alert_' . $selectedCategory . '_2024';
+$lowScoreKey = 'low_score_alert_' . $selectedCategory . '_' . $selectedYear;
 if (!isset($_SESSION[$lowScoreKey])) {
-    $lowScoreCheck = checkLowScoreCourses($selectedCategory, 2024);
+    $lowScoreCheck = checkLowScoreCourses($selectedCategory, $selectedYear);
     if ($lowScoreCheck['has_issues']) {
         setFlashMessage($lowScoreCheck['message'], 'warning', true);
         $_SESSION[$lowScoreKey] = true; // Don't show again this session
     }
 }
+$currentYear = (int)date('Y');
+$yearOptions = range($currentYear, 2026);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -393,23 +396,24 @@ if (!isset($_SESSION[$lowScoreKey])) {
         
         <div class="nav-section">
             <div class="nav-section-title">Categorias</div>
+            
             <nav class="nav flex-column">
-                <a class="nav-link <?= $selectedCategory === 'all' ? 'active' : '' ?>" href="?category=all">
+                <a class="nav-link <?= $selectedCategory === 'all' ? 'active' : '' ?>" href="?category=all&year=<?= $selectedYear ?>">
                     <i class="bi bi-grid"></i> Todas
                 </a>
-                <a class="nav-link <?= $selectedCategory === 'Agenda Esesp' ? 'active' : '' ?>" href="?category=Agenda+Esesp">
+                <a class="nav-link <?= $selectedCategory === 'Agenda Esesp' ? 'active' : '' ?>" href="?category=Agenda+Esesp&year=<?= $selectedYear ?>">
                     <i class="bi bi-calendar-event"></i> Agenda Esesp
                 </a>
-                <a class="nav-link <?= $selectedCategory === 'Esesp na Estrada' ? 'active' : '' ?>" href="?category=Esesp+na+Estrada">
+                <a class="nav-link <?= $selectedCategory === 'Esesp na Estrada' ? 'active' : '' ?>" href="?category=Esesp+na+Estrada&year=<?= $selectedYear ?>">
                     <i class="bi bi-truck"></i> Esesp na Estrada
                 </a>
-                <a class="nav-link <?= $selectedCategory === 'EAD' ? 'active' : '' ?>" href="?category=EAD">
+                <a class="nav-link <?= $selectedCategory === 'EAD' ? 'active' : '' ?>" href="?category=EAD&year=<?= $selectedYear ?>">
                     <i class="bi bi-laptop"></i> Cursos EAD
                 </a>
-                <a class="nav-link <?= $selectedCategory === 'Pós-Graduação' ? 'active' : '' ?>" href="?category=Pós-Graduação">
+                <a class="nav-link <?= $selectedCategory === 'Pós-Graduação' ? 'active' : '' ?>" href="?category=Pós-Graduação&year=<?= $selectedYear ?>">
                     <i class="bi bi-mortarboard"></i> Pós-Graduação
                 </a>
-                <a class="nav-link <?= $selectedCategory === 'Demanda Específica' ? 'active' : '' ?>" href="?category=Demanda+Específica">
+                <a class="nav-link <?= $selectedCategory === 'Demanda Específica' ? 'active' : '' ?>" href="?category=Demanda+Específica&year=<?= $selectedYear ?>">
                     <i class="bi bi-briefcase"></i> Demanda Específica
                 </a>
             </nav>
@@ -558,7 +562,7 @@ if (!isset($_SESSION[$lowScoreKey])) {
         <?php if ($yearlyDiagram && file_exists(__DIR__ . '/' . $yearlyDiagram)): ?>
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-bar-chart-line me-2"></i>Evolução Anual - 2024</span>
+                <span><i class="bi bi-bar-chart-line me-2"></i>Evolução Anual - <?= $selectedYear ?></span>
                 <span class="badge bg-primary"><?= $categories[$selectedCategory] ?></span>
             </div>
             <div class="card-body">
@@ -570,7 +574,7 @@ if (!isset($_SESSION[$lowScoreKey])) {
                      title="Clique em um mês para ver detalhes">
                 
                 <div class="mt-3 d-flex gap-2 flex-wrap">
-                    <a href="analytics.php?year=2024&category=<?= urlencode($selectedCategory) ?>" 
+                    <a href="analytics.php?year=<?= $selectedYear ?><?= urlencode($selectedCategory) ?>"
                        class="btn btn-primary">
                         <i class="bi bi-graph-up me-2"></i>Ver Análises Detalhadas
                     </a>
@@ -596,7 +600,7 @@ if (!isset($_SESSION[$lowScoreKey])) {
         <?php elseif($yearlyDiagram === false): ?>
         <div class="alert alert-warning">
             <i class="bi bi-exclamation-triangle me-2"></i>
-            Não foi possível gerar o diagrama anual. Verifique se há dados para o ano de 2024.
+            Não foi possível gerar o diagrama anual. Verifique se há dados para o ano de <?= $selectedYear ?>
         </div>
         <?php endif; ?>
         
@@ -613,7 +617,7 @@ if (!isset($_SESSION[$lowScoreKey])) {
                         </a>
                     </div>
                     <div class="col-md-6">
-                        <a href="analytics.php?category=<?= urlencode($selectedCategory) ?>" class="btn btn-outline-primary w-100">
+                        <a href="analytics.php?category=<?= urlencode($selectedCategory) ?>&year=<?= $selectedYear ?>" class="btn btn-outline-primary w-100">
                             <i class="bi bi-graph-up me-2"></i>Ver Análises
                         </a>
                     </div>
@@ -663,7 +667,7 @@ if (!isset($_SESSION[$lowScoreKey])) {
             // Get current category and year
             const urlParams = new URLSearchParams(window.location.search);
             const category = urlParams.get('category') || 'all';
-            const year = '2024';
+            const year = <?= $selectedYear ?>;
             
             // Redirect to monthly view
             window.location.href = `view-month.php?category=${encodeURIComponent(category)}&year=${year}&month=${clickedMonth}`;

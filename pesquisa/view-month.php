@@ -11,7 +11,7 @@ $userName = getCurrentUserName();
 
 // Get parameters
 $selectedCategory = $_GET['category'] ?? 'all';
-$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : 2024;
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $selectedMonth = isset($_GET['month']) ? (int)$_GET['month'] : date('n');
 
 // Month names
@@ -179,7 +179,7 @@ $stats = [
                     <p class="mb-0"><?= $categories[$selectedCategory] ?></p>
                 </div>
                 <div>
-                    <a href="index.php?category=<?= urlencode($selectedCategory) ?>" class="btn btn-light">
+                    <a href="index.php?category=<?= urlencode($selectedCategory) ?>&year=<?= $selectedYear ?>" class="btn btn-light">
                         <i class="bi bi-arrow-left me-2"></i>Voltar ao Dashboard
                     </a>
                 </div>
@@ -221,13 +221,26 @@ $stats = [
             </div>
         </div>
         
-        <!-- Month Selector -->
+        <!-- Month & Year Selector -->
         <div class="card mb-4">
             <div class="card-body">
+                <h6 class="mb-3"><i class="bi bi-calendar-range me-2"></i>Selecione o Ano:</h6>
+                <div class="d-flex gap-2 flex-wrap mb-4">
+                    <?php
+                    $currentYear = (int)date('Y');
+                    for ($y = $currentYear; $y >= 2026; $y--):
+                    ?>
+                        <a href="?category=<?= urlencode($selectedCategory) ?>&year=<?= $y ?>&month=<?= $selectedMonth ?>"
+                           class="month-btn <?= $selectedYear === $y ? 'active' : '' ?>">
+                            <?= $y ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+
                 <h6 class="mb-3"><i class="bi bi-calendar3 me-2"></i>Selecione o Mês:</h6>
                 <div class="month-selector">
                     <?php foreach ($monthNames as $m => $name): ?>
-                        <a href="?category=<?= urlencode($selectedCategory) ?>&year=<?= $selectedYear ?>&month=<?= $m ?>" 
+                        <a href="?category=<?= urlencode($selectedCategory) ?>&year=<?= $selectedYear ?>&month=<?= $m ?>"
                            class="month-btn <?= $selectedMonth === $m ? 'active' : '' ?>">
                             <?= $name ?>
                         </a>
