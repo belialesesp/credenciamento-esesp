@@ -294,6 +294,7 @@ $importData = $_SESSION['bulk_import'] ?? null;
                                     <option value="Esesp na Estrada">Esesp na Estrada</option>
                                     <option value="Pós-Graduação">Pós-Graduação</option>
                                     <option value="Demanda Específica">Demanda Específica</option>
+                                    <option value="Qualivida">Qualivida</option>
                                 </select>
                             </div>
                             

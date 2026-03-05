@@ -21,7 +21,8 @@ $categories = [
     'Esesp na Estrada' => 'Esesp na Estrada',
     'EAD' => 'Cursos EAD',
     'Pós-Graduação' => 'Pós-Graduação',
-    'Demanda Específica' => 'Demanda Específica'
+    'Demanda Específica' => 'Demanda Específica',
+    'Qualivida' => 'Qualivida'
 ];
 
 // Build WHERE clause for category filter
@@ -415,6 +416,9 @@ $yearOptions = range($currentYear, 2026);
                 </a>
                 <a class="nav-link <?= $selectedCategory === 'Demanda Específica' ? 'active' : '' ?>" href="?category=Demanda+Específica&year=<?= $selectedYear ?>">
                     <i class="bi bi-briefcase"></i> Demanda Específica
+                </a>
+                <a class="nav-link <?= $selectedCategory === 'Qualivida' ? 'active' : '' ?>" href="?category=Qualivida&year=<?= $selectedYear ?>">
+                    <i class="bi bi-heart-pulse"></i> Qualivida
                 </a>
             </nav>
         </div>

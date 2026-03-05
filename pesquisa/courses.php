@@ -243,6 +243,7 @@ $yearOptions = range(2026, $currentYear + 1);
                         <option value="EAD" <?= $filterCategory === 'EAD' ? 'selected' : '' ?>>EAD</option>
                         <option value="Pós-Graduação" <?= $filterCategory === 'Pós-Graduação' ? 'selected' : '' ?>>Pós-Graduação</option>
                         <option value="Demanda Específica" <?= $filterCategory === 'Demanda Específica' ? 'selected' : '' ?>>Demanda Específica</option>
+                        <option value="Qualivida" <?= $filterCategory === 'Qualivida' ? 'selected' : '' ?>>Qualivida</option>
                     </select>
                 </div>
                 

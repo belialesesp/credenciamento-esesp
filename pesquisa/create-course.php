@@ -218,6 +218,7 @@ $months = [
                                     <option value="EAD">EAD</option>
                                     <option value="Pós-Graduação">Pós-Graduação</option>
                                     <option value="Demanda Específica">Demanda Específica</option>
+                                    <option value="Qualivida">Qualivida</option>
                                 </select>
                             </div>
                             
